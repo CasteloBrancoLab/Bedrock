@@ -87,3 +87,58 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+
+      - name: Install Stryker
+        run: dotnet tool install --global dotnet-stryker
+
+      - name: Run Mutation Tests
+        id: mutation
+        run: |
+          mkdir -p mutation-reports
+          FAILED=0
+          SUMMARY=""
+
+          for config in $(find tests/MutationTests -name "stryker-config.json"); do
+            DIR=$(dirname "$config")
+            NAME=$(basename "$DIR")
+            echo "::group::Running mutation tests for $NAME"
+
+            cd "$DIR"
+            if dotnet stryker -O "$GITHUB_WORKSPACE/mutation-reports/$NAME"; then
+              SUMMARY="${SUMMARY}| ${NAME} | :white_check_mark: Passed |\n"
+            else
+              SUMMARY="${SUMMARY}| ${NAME} | :x: Failed |\n"
+              FAILED=1
+            fi
+            cd "$GITHUB_WORKSPACE"
+
+            echo "::endgroup::"
+          done
+
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+      - name: Upload Mutation Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-reports
+          path: mutation-reports/
+          retention-days: 3
+
+      - name: Mutation Tests Summary
+        if: always()
+        run: |
+          echo "## Mutation Tests Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Project | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo -e "${{ steps.mutation.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Mutation Results
+        if: steps.mutation.outputs.failed == '1'
+        run: |
+          echo "::error::One or more mutation test projects failed threshold requirements"
+          exit 1
