@@ -79,3 +79,82 @@ Labels padrão do GitHub também disponíveis: `bug`, `documentation`, `enhancem
 - Namespace base: `Bedrock`
 - Target Framework: .NET 10.0
 - Diagramas nas issues devem ser feitos em **Mermaid**
+
+## Testes
+
+### Estrutura
+
+```
+src/BuildingBlocks/Testing/           # BuildingBlock base para testes
+tests/UnitTests/BuildingBlocks/       # Testes unitários por componente
+```
+
+### Convenções
+
+- Relação **1:1** entre projeto `src` e projeto `tests`
+- Nomenclatura: `Bedrock.UnitTests.<namespace-do-src>`
+- Padrão obrigatório: **AAA (Arrange, Act, Assert)**
+- Motivo da relação 1:1: Compatibilidade com **Stryker.NET** (mutation testing)
+
+### Bibliotecas Obrigatórias
+
+| Biblioteca | Propósito |
+|------------|-----------|
+| xUnit | Framework de testes |
+| Shouldly | Assertions fluentes |
+| Moq | Mocking |
+| Bogus | Geração de dados fake |
+| Humanizer | Formatação humanizada de logs |
+| Coverlet | Cobertura de código |
+
+### Classes Base
+
+#### TestBase
+Classe base para todos os testes. Herdar para ter acesso a logging padronizado.
+
+```csharp
+public class MyTests : TestBase
+{
+    public MyTests(ITestOutputHelper output) : base(output) { }
+
+    [Fact]
+    public void MyTest()
+    {
+        // Arrange
+        LogArrange("Preparando dados");
+
+        // Act
+        LogAct("Executando ação");
+
+        // Assert
+        LogAssert("Verificando resultado");
+    }
+}
+```
+
+#### ServiceCollectionFixture
+Fixture para testes que precisam de IoC. Herdar e implementar `ConfigureServices`.
+
+```csharp
+public class MyFixture : ServiceCollectionFixture
+{
+    protected override void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton<IMyService, MyService>();
+    }
+}
+
+[CollectionDefinition("MyServices")]
+public class MyCollection : ICollectionFixture<MyFixture> { }
+
+[Collection("MyServices")]
+public class MyTests : TestBase
+{
+    private readonly MyFixture _fixture;
+
+    public MyTests(MyFixture fixture, ITestOutputHelper output) : base(output)
+    {
+        _fixture = fixture;
+    }
+}
+```

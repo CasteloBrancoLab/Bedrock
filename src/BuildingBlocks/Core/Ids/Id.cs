@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 namespace Bedrock.BuildingBlocks.Core.Ids;
 
 public readonly struct Id
-    : IEquatable<Id>
+    : IEquatable<Id>, IComparable<Id>
 {
     [ThreadStatic] private static long _lastTimestamp;
     [ThreadStatic] private static long _counter;
@@ -81,6 +81,11 @@ public readonly struct Id
     public bool Equals(Id other)
     {
         return Value == other.Value;
+    }
+
+    public int CompareTo(Id other)
+    {
+        return Value.CompareTo(other.Value);
     }
 
     public static implicit operator Guid(Id id)
