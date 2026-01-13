@@ -52,7 +52,7 @@ jobs:
             /k:"CasteloBrancoLab_Bedrock" \
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
-            /d:sonar.cs.cobertura.reportsPaths="coverage/coverage.cobertura.xml"
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.*.xml"
 
       - name: Build
         run: dotnet build --no-restore
@@ -62,24 +62,22 @@ jobs:
           mkdir -p coverage/raw
 
           # Find and run all test projects under tests/UnitTests
+          # Generate coverage in OpenCover format (supported by SonarCloud)
           find tests/UnitTests -name "*.csproj" | while read project; do
             echo "Running tests for: $project"
             dotnet test "$project" \
               --no-build \
               --collect:"XPlat Code Coverage" \
-              --results-directory:"./coverage/raw"
+              --results-directory:"./coverage/raw" \
+              -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
           done
 
-      - name: Merge coverage reports
+      - name: Verify coverage files
         run: |
-          # Find all coverage files and merge them
-          COVERAGE_FILES=$(find coverage/raw -name "*.xml" -type f | tr '\n' ' ')
+          echo "Coverage files generated:"
+          find coverage/raw -name "*.xml" -type f
 
-          if [ -n "$COVERAGE_FILES" ]; then
-            dotnet-coverage merge $COVERAGE_FILES \
-              --output coverage/coverage.cobertura.xml \
-              --output-format cobertura
-          else
+          if [ -z "$(find coverage/raw -name '*.xml' -type f)" ]; then
             echo "No coverage files found"
             exit 1
           fi
