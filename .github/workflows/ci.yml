@@ -10,5 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Placeholder
         run: echo "CI pipeline - to be implemented in issue #4"
