@@ -5,6 +5,11 @@
 
 _old/
 
+# Claude Code local files
+.claude/settings.local.json
+.claude/CLAUDE.local.md
+CLAUDE.local.md
+
 # User-specific files
 *.rsuser
 *.suo

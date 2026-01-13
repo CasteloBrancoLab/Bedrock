@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Assembly Information">
+    <Version>1.0.0-alpha.1</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0-alpha.1</InformationalVersion>
+    <Company>MarceloCastelo.IO</Company>
+    <Product>Bedrock</Product>
+    <Description>Core building blocks for Bedrock, providing fundamental abstractions and utilities.</Description>
+    <Copyright>Copyright © 2023-2026 Marcelo Castelo Branco</Copyright>
+  </PropertyGroup>
+
+</Project>
