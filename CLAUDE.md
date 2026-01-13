@@ -11,6 +11,46 @@
   - `gh issue close <number>` — fechar issue
   - `gh label list` — listar labels
 
+### Campo Type (Obrigatório)
+
+Toda issue deve ter o campo **Type** definido. Os tipos disponíveis são:
+
+| Type | Descrição |
+|------|-----------|
+| `Bug` | Problema inesperado ou comportamento incorreto |
+| `Feature` | Nova funcionalidade ou melhoria |
+| `Task` | Tarefa específica de trabalho |
+
+**Como definir o Type via GraphQL:**
+
+```bash
+# 1. Obter o ID da issue e os tipos disponíveis
+gh api graphql -f query='
+{
+  repository(owner: "CasteloBrancoLab", name: "Bedrock") {
+    issue(number: <NUMERO>) {
+      id
+    }
+    issueTypes(first: 10) {
+      nodes { id name }
+    }
+  }
+}'
+
+# 2. Atualizar o tipo da issue
+gh api graphql -f query='
+mutation {
+  updateIssue(input: {
+    id: "<ISSUE_ID>"
+    issueTypeId: "<TYPE_ID>"
+  }) {
+    issue { issueType { name } }
+  }
+}'
+```
+
+> **Nota**: O campo Type não pode ser definido via `gh issue create` ou `gh issue edit`. É necessário usar a API GraphQL.
+
 ## Fluxo de Trabalho
 
 ### Branches
