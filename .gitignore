@@ -9,6 +9,7 @@ _old/
 .claude/settings.local.json
 .claude/CLAUDE.local.md
 CLAUDE.local.md
+tmpclaude-*
 
 # User-specific files
 *.rsuser

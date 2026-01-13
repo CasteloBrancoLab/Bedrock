@@ -36,8 +36,10 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Install SonarScanner
-        run: dotnet tool install --global dotnet-sonarscanner
+      - name: Install tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet tool install --global dotnet-coverage
 
       - name: Restore dependencies
         run: dotnet restore
@@ -50,13 +52,37 @@ jobs:
             /k:"CasteloBrancoLab_Bedrock" \
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
-            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml"
 
       - name: Build
         run: dotnet build --no-restore
 
       - name: Test with coverage
-        run: dotnet test --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        run: |
+          mkdir -p coverage/raw
+
+          # Find and run all test projects under tests/UnitTests
+          find tests/UnitTests -name "*.csproj" | while read project; do
+            echo "Running tests for: $project"
+            dotnet test "$project" \
+              --no-build \
+              --collect:"XPlat Code Coverage" \
+              --results-directory:"./coverage/raw"
+          done
+
+      - name: Merge coverage reports
+        run: |
+          # Find all coverage files and merge them
+          COVERAGE_FILES=$(find coverage/raw -name "*.xml" -type f | tr '\n' ' ')
+
+          if [ -n "$COVERAGE_FILES" ]; then
+            dotnet-coverage merge $COVERAGE_FILES \
+              --output coverage/coverage.xml \
+              --output-format xml
+          else
+            echo "No coverage files found"
+            exit 1
+          fi
 
       - name: End SonarCloud analysis
         env:
