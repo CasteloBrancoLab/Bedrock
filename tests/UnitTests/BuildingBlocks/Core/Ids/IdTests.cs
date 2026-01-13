@@ -219,8 +219,10 @@ public class IdTests : TestBase
         (id2 > id1).ShouldBeTrue("Second Id should be greater than first");
         (id1 <= id2).ShouldBeTrue("First Id should be less than or equal to second");
         (id2 >= id1).ShouldBeTrue("Second Id should be greater than or equal to first");
+#pragma warning disable CS1718 // Comparison to same variable - intentional test of reflexive comparison operators
         (id1 <= id1).ShouldBeTrue("Id should be less than or equal to itself");
         (id1 >= id1).ShouldBeTrue("Id should be greater than or equal to itself");
+#pragma warning restore CS1718
         LogAssert("All comparison operators work correctly");
     }
 
