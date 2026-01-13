@@ -62,27 +62,24 @@ jobs:
           mkdir -p coverage/raw
 
           # Find and run all test projects under tests/UnitTests
+          # Use dotnet-coverage collect to generate VS Coverage format
           find tests/UnitTests -name "*.csproj" | while read project; do
-            echo "Running tests for: $project"
-            dotnet test "$project" \
-              --no-build \
-              --collect:"XPlat Code Coverage" \
-              --results-directory:"./coverage/raw"
+            name=$(basename "$(dirname "$project")")
+            echo "Running tests for: $project (output: coverage/raw/$name.xml)"
+            dotnet-coverage collect "dotnet test --no-build $project" \
+              -f xml \
+              -o "coverage/raw/$name.xml"
           done
 
       - name: Merge coverage reports
         run: |
-          # Find all coverage files and merge them
-          COVERAGE_FILES=$(find coverage/raw -name "*.xml" -type f | tr '\n' ' ')
+          mkdir -p coverage
+          dotnet-coverage merge coverage/raw/*.xml \
+            -f xml \
+            -o coverage/coverage.xml
 
-          if [ -n "$COVERAGE_FILES" ]; then
-            dotnet-coverage merge $COVERAGE_FILES \
-              --output coverage/coverage.xml \
-              --output-format xml
-          else
-            echo "No coverage files found"
-            exit 1
-          fi
+          echo "Merged coverage file:"
+          ls -la coverage/coverage.xml
 
       - name: End SonarCloud analysis
         env:
