@@ -59,17 +59,31 @@ jobs:
 
       - name: Test with coverage
         run: |
-          dotnet test tests/UnitTests/**/*.csproj \
-            --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory:"./coverage/raw" \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+          mkdir -p coverage/raw
+
+          # Find and run all test projects under tests/UnitTests
+          find tests/UnitTests -name "*.csproj" | while read project; do
+            echo "Running tests for: $project"
+            dotnet test "$project" \
+              --no-build \
+              --collect:"XPlat Code Coverage" \
+              --results-directory:"./coverage/raw" \
+              -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+          done
 
       - name: Merge coverage reports
         run: |
-          dotnet-coverage merge coverage/raw/**/*.xml \
-            --output coverage/coverage.opencover.xml \
-            --output-format opencover
+          # Find all coverage files and merge them
+          COVERAGE_FILES=$(find coverage/raw -name "*.xml" -type f | tr '\n' ' ')
+
+          if [ -n "$COVERAGE_FILES" ]; then
+            dotnet-coverage merge $COVERAGE_FILES \
+              --output coverage/coverage.opencover.xml \
+              --output-format opencover
+          else
+            echo "No coverage files found"
+            exit 1
+          fi
 
       - name: End SonarCloud analysis
         env:
