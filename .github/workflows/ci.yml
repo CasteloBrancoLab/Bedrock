@@ -36,8 +36,10 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Install SonarScanner
-        run: dotnet tool install --global dotnet-sonarscanner
+      - name: Install tools
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet tool install --global dotnet-coverage
 
       - name: Restore dependencies
         run: dotnet restore
@@ -50,13 +52,24 @@ jobs:
             /k:"CasteloBrancoLab_Bedrock" \
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
-            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+            /d:sonar.cs.opencover.reportsPaths="coverage/coverage.opencover.xml"
 
       - name: Build
         run: dotnet build --no-restore
 
       - name: Test with coverage
-        run: dotnet test --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        run: |
+          dotnet test tests/UnitTests/**/*.csproj \
+            --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory:"./coverage/raw" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Merge coverage reports
+        run: |
+          dotnet-coverage merge coverage/raw/**/*.xml \
+            --output coverage/coverage.opencover.xml \
+            --output-format opencover
 
       - name: End SonarCloud analysis
         env:
