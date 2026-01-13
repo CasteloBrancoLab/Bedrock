@@ -52,7 +52,7 @@ jobs:
             /k:"CasteloBrancoLab_Bedrock" \
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
-            /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml"
+            /d:sonar.cs.cobertura.reportsPaths="coverage/coverage.cobertura.xml"
 
       - name: Build
         run: dotnet build --no-restore
@@ -77,8 +77,8 @@ jobs:
 
           if [ -n "$COVERAGE_FILES" ]; then
             dotnet-coverage merge $COVERAGE_FILES \
-              --output coverage/coverage.xml \
-              --output-format xml
+              --output coverage/coverage.cobertura.xml \
+              --output-format cobertura
           else
             echo "No coverage files found"
             exit 1
