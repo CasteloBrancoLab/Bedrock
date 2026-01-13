@@ -34,14 +34,16 @@ backlog → ready → in-progress → review → approved → merged
 
 ## Labels
 
-### Tipo (`type:`)
+### Tipo
 | Label | Descrição |
 |-------|-----------|
-| `type:feature` | Nova funcionalidade |
+| `bug` | Algo não está funcionando (padrão GitHub) |
+| `enhancement` | Nova funcionalidade ou melhoria (padrão GitHub) |
+| `documentation` | Melhorias ou adições à documentação (padrão GitHub) |
+| `type:task` | Tarefa técnica ou manutenção |
 | `type:refactor` | Refatoração de código |
 | `type:migration` | Migração de código legado |
 | `type:test` | Testes |
-| `type:chore` | Manutenção e tarefas auxiliares |
 
 ### Componente (`component:`)
 | Label | Descrição |
@@ -70,8 +72,8 @@ backlog → ready → in-progress → review → approved → merged
 | `status:approved` | Downstream | Aprovado, pronto para merge |
 | `status:blocked` | — | Bloqueado por dependência |
 
-### Padrão GitHub
-Labels padrão do GitHub também disponíveis: `bug`, `documentation`, `enhancement`, `question`, etc.
+### Outros (padrão GitHub)
+Outros labels padrão do GitHub: `duplicate`, `invalid`, `wontfix`, `question`, `help wanted`, `good first issue`.
 
 ## Convenções
 
