@@ -78,3 +78,4 @@ Labels padrão do GitHub também disponíveis: `bug`, `documentation`, `enhancem
 - Nome do framework: **Bedrock**
 - Namespace base: `Bedrock`
 - Target Framework: .NET 10.0
+- Diagramas nas issues devem ser feitos em **Mermaid**
