@@ -11,6 +11,46 @@
   - `gh issue close <number>` — fechar issue
   - `gh label list` — listar labels
 
+### Campo Type (Obrigatório)
+
+Toda issue deve ter o campo **Type** definido. Os tipos disponíveis são:
+
+| Type | Descrição |
+|------|-----------|
+| `Bug` | Problema inesperado ou comportamento incorreto |
+| `Feature` | Nova funcionalidade ou melhoria |
+| `Task` | Tarefa específica de trabalho |
+
+**Como definir o Type via GraphQL:**
+
+```bash
+# 1. Obter o ID da issue e os tipos disponíveis
+gh api graphql -f query='
+{
+  repository(owner: "CasteloBrancoLab", name: "Bedrock") {
+    issue(number: <NUMERO>) {
+      id
+    }
+    issueTypes(first: 10) {
+      nodes { id name }
+    }
+  }
+}'
+
+# 2. Atualizar o tipo da issue
+gh api graphql -f query='
+mutation {
+  updateIssue(input: {
+    id: "<ISSUE_ID>"
+    issueTypeId: "<TYPE_ID>"
+  }) {
+    issue { issueType { name } }
+  }
+}'
+```
+
+> **Nota**: O campo Type não pode ser definido via `gh issue create` ou `gh issue edit`. É necessário usar a API GraphQL.
+
 ## Fluxo de Trabalho
 
 ### Branches
@@ -87,12 +127,14 @@ Labels padrão do GitHub também disponíveis: `bug`, `documentation`, `enhancem
 ```
 src/BuildingBlocks/Testing/           # BuildingBlock base para testes
 tests/UnitTests/BuildingBlocks/       # Testes unitários por componente
+tests/MutationTests/BuildingBlocks/   # Testes de mutação por componente
 ```
 
 ### Convenções
 
 - Relação **1:1** entre projeto `src` e projeto `tests`
-- Nomenclatura: `Bedrock.UnitTests.<namespace-do-src>`
+- Nomenclatura UnitTests: `Bedrock.UnitTests.<namespace-do-src>`
+- Nomenclatura MutationTests: `Bedrock.MutationTests.<namespace-do-src>`
 - Padrão obrigatório: **AAA (Arrange, Act, Assert)**
 - Motivo da relação 1:1: Compatibilidade com **Stryker.NET** (mutation testing)
 
@@ -106,6 +148,7 @@ tests/UnitTests/BuildingBlocks/       # Testes unitários por componente
 | Bogus | Geração de dados fake |
 | Humanizer | Formatação humanizada de logs |
 | Coverlet | Cobertura de código |
+| Stryker.NET | Testes de mutação |
 
 ### Classes Base
 
@@ -158,3 +201,42 @@ public class MyTests : TestBase
     }
 }
 ```
+
+### Testes de Mutação
+
+Testes de mutação validam a qualidade dos testes unitários através do **Stryker.NET**.
+
+#### Estrutura
+
+Cada projeto de UnitTests tem um correspondente em MutationTests:
+
+```
+tests/MutationTests/BuildingBlocks/Core/
+└── stryker-config.json
+```
+
+#### Configuração (stryker-config.json)
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
+  "stryker-config": {
+    "project": "Bedrock.BuildingBlocks.Core.csproj",
+    "test-projects": [
+      "../../../UnitTests/BuildingBlocks/Core/Bedrock.UnitTests.BuildingBlocks.Core.csproj"
+    ],
+    "reporters": ["html", "progress"],
+    "thresholds": {
+      "high": 100,
+      "low": 100,
+      "break": 100
+    }
+  }
+}
+```
+
+#### Regras
+
+- Threshold mínimo: **100%** (código desenvolvido com IA não aceita mutantes sobreviventes)
+- Cada projeto de mutação referencia **apenas** seu projeto de UnitTests correspondente
+- Relatórios HTML são armazenados como artifacts na pipeline (retenção: 3 dias)
