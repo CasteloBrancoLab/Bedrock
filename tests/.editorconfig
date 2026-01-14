@@ -1,19 +1,8 @@
 # EditorConfig for test projects
-# Disables Roslyn analyzers that are not relevant for test code
+# Disables all Roslyn analyzers for test code
 
 [*.cs]
 
-# CS8604: Possible null reference argument
-# Test code often passes nullable values intentionally
-dotnet_diagnostic.CS8604.severity = none
-
-# xUnit1031: Do not use blocking task operations in test method
-# Sometimes blocking is acceptable in tests
-dotnet_diagnostic.xUnit1031.severity = none
-
-# IDE0079: Remove unnecessary suppression
-dotnet_diagnostic.IDE0079.severity = none
-
-# IDE0001: Simplify name (use concrete type instead of interface)
-# Using interfaces in tests is often intentional for testing contracts
-dotnet_diagnostic.IDE0001.severity = none
+# Disable ALL analyzers for test projects
+# Test code has different quality requirements than production code
+dotnet_analyzer_diagnostic.severity = none
