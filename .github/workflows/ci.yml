@@ -52,9 +52,7 @@ jobs:
             /k:"CasteloBrancoLab_Bedrock" \
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
-            /d:sonar.exclusions="**/scripts/**,**/obj/**,**/bin/**" \
-            /d:sonar.test.exclusions="**/tests/**" \
-            /d:sonar.issue.ignore.allfile="**/tests/**" \
+            /d:sonar.exclusions="**/scripts/**,**/obj/**,**/bin/**,**/tests/**" \
             /d:sonar.coverage.exclusions="**/tests/**" \
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml"
 
