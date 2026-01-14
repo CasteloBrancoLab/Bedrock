@@ -28,7 +28,7 @@ public class TenantInfoTests : TestBase
         LogAssert("Verifying values are preserved");
         tenant.Code.ShouldBe(code);
         tenant.Name.ShouldBe(name);
-        LogInfo("TenantInfo created with Code: {0}, Name: {1}", tenant.Code, tenant.Name);
+        LogInfo("TenantInfo created with Code: {0}, Name: {1}", tenant.Code, tenant.Name ?? "(null)");
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class TenantInfoTests : TestBase
         updated.Code.ShouldBe(code);
         updated.Name.ShouldBe("New Name");
         original.Name.ShouldBe("Original Name");
-        LogInfo("Original name: {0}, Updated name: {1}", original.Name, updated.Name);
+        LogInfo("Original name: {0}, Updated name: {1}", original.Name ?? "(null)", updated.Name ?? "(null)");
     }
 
     [Fact]
