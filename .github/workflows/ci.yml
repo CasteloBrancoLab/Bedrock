@@ -53,9 +53,8 @@ jobs:
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
-            /d:sonar.inclusions="src/**/*" \
-            /d:sonar.exclusions="**/bin/**,**/obj/**" \
-            /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,tests/**/*"
+            /d:sonar.exclusions="**/tests/**/*,**/scripts/**/*,**/obj/**/*,**/bin/**/*" \
+            /d:sonar.coverage.exclusions="**/tests/**/*"
 
       - name: Build
         run: dotnet build --no-restore
