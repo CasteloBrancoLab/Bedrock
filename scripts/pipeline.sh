@@ -110,10 +110,14 @@ echo ""
 if [ $MUTATION_FAILED -eq 1 ]; then
     echo "STATUS: FAILED (mutation threshold not met)"
     echo ""
+    echo ">>> Extracting pending items..."
+    "$SCRIPT_DIR/summarize.sh"
+    echo ""
     echo "Next steps:"
-    echo "  1. Check artifacts/mutation/ for survived mutants"
-    echo "  2. Improve test assertions to kill mutants"
-    echo "  3. Run pipeline again"
+    echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
+    echo "  2. Check individual files in artifacts/pending/ for details"
+    echo "  3. Improve test assertions to kill mutants"
+    echo "  4. Run pipeline again"
     exit 1
 else
     echo "STATUS: SUCCESS"

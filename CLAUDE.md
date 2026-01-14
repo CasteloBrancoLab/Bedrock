@@ -241,6 +241,34 @@ tests/MutationTests/BuildingBlocks/Core/
 - Cada projeto de mutação referencia **apenas** seu projeto de UnitTests correspondente
 - Relatórios HTML são armazenados como artifacts na pipeline (retenção: 3 dias)
 
+#### Exclusões com Stryker Comments
+
+Para código **impossível de testar** (ex: spin-wait que requer milhões de iterações), usar comentários do Stryker:
+
+```csharp
+// Stryker disable all : Reason for exclusion
+if (_counter > 0x3FFFFFF)
+{
+    SpinWaitForNextMillisecond(ref timestamp, ref _lastTimestamp);
+    _counter = 0;
+}
+// Stryker restore all
+```
+
+**Regras para exclusão:**
+- Usar **apenas** quando for genuinamente impossível testar
+- **Sempre** incluir justificativa após o `:`
+- Preferir exclusões granulares (`disable once`) quando possível
+- Documentar no PR o motivo da exclusão
+
+**Comentários disponíveis:**
+| Comentário | Uso |
+|------------|-----|
+| `// Stryker disable all : reason` | Desabilita todas as mutações até `restore` |
+| `// Stryker restore all` | Restaura mutações |
+| `// Stryker disable once all : reason` | Desabilita apenas na próxima linha |
+| `// Stryker disable Equality,Arithmetic : reason` | Desabilita mutadores específicos |
+
 ### Pipeline Local
 
 Scripts bash para execução local da pipeline, otimizados para uso pelo **code agent**.

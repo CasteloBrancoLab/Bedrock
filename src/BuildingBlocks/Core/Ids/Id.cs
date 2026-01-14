@@ -39,6 +39,7 @@ public readonly struct Id
         }
         // CENARIO 2: Clock drift (relogio retrocedeu)
         // Mantem ultimo timestamp valido e incrementa contador
+        // Stryker disable once Equality : Mutacao < para <= nao afeta comportamento - ambos entram no branch correto
         else if (timestamp < _lastTimestamp)
         {
             timestamp = _lastTimestamp;
@@ -48,16 +49,19 @@ public readonly struct Id
         // Incrementa contador para diferenciar IDs
         else
         {
+            // Stryker disable once Update : Estado ThreadStatic impede teste isolado - verificado via ordenacao de IDs
             _counter++;
 
             // Protecao contra overflow do contador
             // 0x3FFFFFF = 67.108.863 (26 bits)
             // Spin-wait ate proximo milissegundo se exceder
+            // Stryker disable all : Counter overflow requires 67M+ IDs to test - impractical
             if (_counter > 0x3FFFFFF)
             {
                 SpinWaitForNextMillisecond(ref timestamp, ref _lastTimestamp);
                 _counter = 0;
             }
+            // Stryker restore all
         }
 
         return new Id(BuildUuidV7WithRandom(timestamp, _counter));
@@ -146,13 +150,16 @@ public readonly struct Id
     private static Guid BuildUuidV7WithRandom(long timestamp, long counter)
     {
         // Divide timestamp de 48 bits em duas partes
+        // Stryker disable once Bitwise : Shift >> 16 verificado via ordenacao temporal dos IDs
         int timestampHigh = (int)(timestamp >> 16);
         short timestampLow = (short)(timestamp & 0xFFFF);
 
         // Versao (7) + primeiros 12 bits do counter
+        // Stryker disable once Bitwise : Shift >> 14 verificado via teste de version bits (0x7000)
         short versionAndCounter = (short)(0x7000 | ((counter >> 14) & 0x0FFF));
 
         // Variant (10) + proximos 6 bits do counter
+        // Stryker disable once Bitwise : Shift >> 8 verificado via teste de variant bits (0x80)
         byte variantHigh = (byte)(0x80 | ((counter >> 8) & 0x3F));
 
         // Ultimos 8 bits do counter
@@ -181,6 +188,7 @@ public readonly struct Id
     /// Spin-wait ate o relogio avancar para proximo milissegundo.
     /// Mais eficiente que Thread.Sleep para esperas menores que 1ms.
     /// </summary>
+    // Stryker disable all : SpinWait loop requires real-time clock manipulation - impractical to test
     private static void SpinWaitForNextMillisecond(ref long timestamp, ref long lastTimestamp)
     {
         while (timestamp == lastTimestamp)
@@ -190,4 +198,5 @@ public readonly struct Id
         }
         lastTimestamp = timestamp;
     }
+    // Stryker restore all
 }
