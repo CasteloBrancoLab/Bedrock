@@ -989,6 +989,77 @@ public class IdTests : TestBase
         LogAssert("Variant correto em todos os IDs");
     }
 
+    [Fact]
+    public void GenerateNewId_BitwiseMask_TimestampLow_AndNotOr()
+    {
+        // Mata mutante: timestamp & 0xFFFF -> timestamp | 0xFFFF
+        // Se usar |, timestampLow seria sempre 0xFFFF, quebrando ordenacao
+        // para timestamps que diferem apenas nos 16 bits baixos
+
+        // Arrange
+        LogArrange("Verificando mascara & 0xFFFF dos 16 bits baixos do timestamp");
+
+        // Usar timestamps muito no futuro para garantir que sejam maiores
+        // que qualquer _lastTimestamp de testes anteriores (evita clock drift branch)
+        // Os timestamps diferem APENAS nos 16 bits baixos
+        // timestampHigh sera identico, apenas timestampLow difere
+
+        // Ano 2200 = aproximadamente 7.2e12 ms desde epoch
+        // Usamos base com bits baixos zerados e depois adicionamos valores especificos
+        var baseTime = new DateTimeOffset(2200, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var baseMs = baseTime.ToUnixTimeMilliseconds();
+
+        // Garantir que bits baixos estao zerados para controle preciso
+        // Alinhar para proximo multiplo de 0x10000 (65536 ms = ~65 segundos)
+        var alignedBase = (baseMs / 0x10000) * 0x10000 + 0x10000;
+
+        // time1 tem bits baixos = 0x0001
+        // time2 tem bits baixos = 0x8000
+        var ts1 = alignedBase + 0x0001;
+        var ts2 = alignedBase + 0x8000;
+
+        var time1 = DateTimeOffset.FromUnixTimeMilliseconds(ts1);
+        var time2 = DateTimeOffset.FromUnixTimeMilliseconds(ts2);
+
+        // Act
+        LogAct("Gerando IDs com timestamps que diferem apenas nos 16 bits baixos");
+        var id1 = Id.GenerateNewId(time1);
+        var id2 = Id.GenerateNewId(time2);
+
+        // Assert
+        LogAssert("Verificando ordenacao correta baseada nos 16 bits baixos");
+
+        // O ponto crucial: se & for substituido por |, ambos timestampLow = 0xFFFF
+        // e id2 NAO seria maior que id1 baseado no timestamp
+        // Com & correto, id2 > id1 porque 0x8000 > 0x0001
+        id2.ShouldBeGreaterThan(id1, "ID com timestamp maior deve ser maior");
+
+        // Verificar que os IDs sao realmente diferentes
+        id1.Value.ShouldNotBe(id2.Value);
+
+        // Verificar explicitamente os bits baixos do timestamp
+        // Guid structure: a(4) b(2) c(2) d(1) e(1) f-k(6)
+        // b = timestampLow = timestamp & 0xFFFF
+        var bytes1 = id1.Value.ToByteArray();
+        var bytes2 = id2.Value.ToByteArray();
+
+        // Extrair campo b (bytes 4-5) que contem timestampLow
+        ushort b1 = BitConverter.ToUInt16(bytes1, 4);
+        ushort b2 = BitConverter.ToUInt16(bytes2, 4);
+
+        // Se & funciona corretamente:
+        // b1 = 0x0001 (bits baixos de ts1)
+        // b2 = 0x8000 (bits baixos de ts2)
+        // Se | fosse usado: b1 = b2 = 0xFFFF (ERRADO)
+        b1.ShouldNotBe(b2, "TimestampLow deve ser diferente para timestamps diferentes nos bits baixos");
+
+        // Verificar valores esperados
+        b1.ShouldBe((ushort)0x0001, $"TimestampLow deve ser 0x0001, foi 0x{b1:X4}");
+        b2.ShouldBe((ushort)0x8000, $"TimestampLow deve ser 0x8000, foi 0x{b2:X4}");
+
+        LogInfo("TimestampLow correto: id1=0x{0:X4}, id2=0x{1:X4}", b1, b2);
+    }
+
     private static int ExtractCounter(Id id)
     {
         var bytes = id.Value.ToByteArray();
