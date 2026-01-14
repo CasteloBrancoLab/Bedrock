@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 
 namespace Bedrock.BuildingBlocks.Core.Ids;
@@ -52,16 +53,8 @@ public readonly struct Id
             // Stryker disable once Update : Estado ThreadStatic impede teste isolado - verificado via ordenacao de IDs
             _counter++;
 
-            // Protecao contra overflow do contador
-            // 0x3FFFFFF = 67.108.863 (26 bits)
-            // Spin-wait ate proximo milissegundo se exceder
-            // Stryker disable all : Counter overflow requires 67M+ IDs to test - impractical
-            if (_counter > 0x3FFFFFF)
-            {
-                SpinWaitForNextMillisecond(ref timestamp, ref _lastTimestamp);
-                _counter = 0;
-            }
-            // Stryker restore all
+            // Stryker disable once Statement : Counter overflow requires 67M+ IDs to test - impractical
+            HandleCounterOverflowIfNeeded(ref timestamp);
         }
 
         return new Id(BuildUuidV7WithRandom(timestamp, _counter));
@@ -185,10 +178,27 @@ public readonly struct Id
     }
 
     /// <summary>
+    /// Verifica e trata overflow do contador (> 67M IDs no mesmo milissegundo).
+    /// </summary>
+    // Stryker disable all : Counter overflow requires 67M+ IDs to test - impractical
+    [ExcludeFromCodeCoverage(Justification = "Counter overflow requer 67M+ IDs para testar - impraticavel")]
+    private static void HandleCounterOverflowIfNeeded(ref long timestamp)
+    {
+        // 0x3FFFFFF = 67.108.863 (26 bits)
+        if (_counter > 0x3FFFFFF)
+        {
+            SpinWaitForNextMillisecond(ref timestamp, ref _lastTimestamp);
+            _counter = 0;
+        }
+    }
+    // Stryker restore all
+
+    /// <summary>
     /// Spin-wait ate o relogio avancar para proximo milissegundo.
     /// Mais eficiente que Thread.Sleep para esperas menores que 1ms.
     /// </summary>
     // Stryker disable all : SpinWait loop requires real-time clock manipulation - impractical to test
+    [ExcludeFromCodeCoverage(Justification = "SpinWait requer manipulacao de relogio em tempo real - impraticavel testar")]
     private static void SpinWaitForNextMillisecond(ref long timestamp, ref long lastTimestamp)
     {
         while (timestamp == lastTimestamp)
