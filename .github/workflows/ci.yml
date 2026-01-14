@@ -54,6 +54,7 @@ jobs:
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.sources="src" \
             /d:sonar.tests="tests" \
+            /d:sonar.exclusions="scripts/**/*" \
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml"
 
       - name: Build
