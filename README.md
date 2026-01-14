@@ -32,6 +32,40 @@ O objetivo é desenvolver software direcionando code agents com:
 - .NET 10.0
 - C# (latest)
 
+## Claude Code
+
+Este projeto utiliza [Claude Code](https://claude.com/claude-code) como code agent. Para configurar as permissões locais, crie o arquivo `.claude/settings.local.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh *)",
+      "Bash(git *)",
+      "Bash(./scripts/*)",
+      "Bash(mkdir *)",
+      "Edit",
+      "Write",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "mcp__*"
+    ]
+  }
+}
+```
+
+### Formato das permissões
+
+| Formato | Descrição |
+|---------|-----------|
+| `"Bash"` | Permite todos os comandos Bash |
+| `"Bash(gh *)"` | Permite comandos que iniciam com `gh` |
+| `"Edit"` | Permite editar qualquer arquivo |
+| `"mcp__*"` | Permite todos os MCP servers |
+
+> **Nota**: O arquivo `settings.local.json` não é versionado (está no `.gitignore`).
+
 ## Estrutura
 
 ```
