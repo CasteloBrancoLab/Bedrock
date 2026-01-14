@@ -1,8 +1,0 @@
-# EditorConfig for test projects
-# Disables all Roslyn analyzers for test code
-
-[*.cs]
-
-# Disable ALL analyzers for test projects
-# Test code has different quality requirements than production code
-dotnet_analyzer_diagnostic.severity = none
