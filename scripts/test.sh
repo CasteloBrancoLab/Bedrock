@@ -27,7 +27,8 @@ for project in $(find tests/UnitTests -name "*.csproj"); do
         --collect:"XPlat Code Coverage" \
         --results-directory "artifacts/coverage/raw/$name" \
         --logger "trx;LogFileName=results.trx" \
-        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura \
+           DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[Bedrock.BuildingBlocks.Testing]*"
 
     # Copy coverage file to a known location
     coverage_file=$(find "artifacts/coverage/raw/$name" -name "coverage.cobertura.xml" 2>/dev/null | head -1)
