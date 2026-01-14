@@ -52,6 +52,7 @@ jobs:
             /k:"CasteloBrancoLab_Bedrock" \
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
+            /d:sonar.inclusions="src/**/*" \
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml"
 
       - name: Build
