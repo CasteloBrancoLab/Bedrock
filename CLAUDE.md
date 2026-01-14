@@ -241,33 +241,49 @@ tests/MutationTests/BuildingBlocks/Core/
 - Cada projeto de mutação referencia **apenas** seu projeto de UnitTests correspondente
 - Relatórios HTML são armazenados como artifacts na pipeline (retenção: 3 dias)
 
-#### Exclusões com Stryker Comments
+#### Exclusões de Código Não-Testável
 
-Para código **impossível de testar** (ex: spin-wait que requer milhões de iterações), usar comentários do Stryker:
+Para código **genuinamente impossível de testar** (ex: spin-wait, overflow que requer milhões de iterações), usar:
+
+1. **Stryker comments** - para ignorar mutações
+2. **`[ExcludeFromCodeCoverage]`** - para ignorar cobertura (Coverlet e SonarCloud)
+
+**Exemplo completo:**
 
 ```csharp
-// Stryker disable all : Reason for exclusion
-if (_counter > 0x3FFFFFF)
+/// <summary>
+/// Método impossível de testar em tempo razoável.
+/// </summary>
+// Stryker disable all : Counter overflow requires 67M+ IDs to test - impractical
+[ExcludeFromCodeCoverage(Justification = "Counter overflow requer 67M+ IDs para testar - impraticavel")]
+private static void HandleCounterOverflowIfNeeded(ref long timestamp)
 {
-    SpinWaitForNextMillisecond(ref timestamp, ref _lastTimestamp);
-    _counter = 0;
+    if (_counter > 0x3FFFFFF)
+    {
+        SpinWaitForNextMillisecond(ref timestamp, ref _lastTimestamp);
+        _counter = 0;
+    }
 }
 // Stryker restore all
 ```
 
 **Regras para exclusão:**
 - Usar **apenas** quando for genuinamente impossível testar
-- **Sempre** incluir justificativa após o `:`
+- **Sempre** incluir justificativa em pt-BR
+- Preferir extrair para método separado com `[ExcludeFromCodeCoverage]`
 - Preferir exclusões granulares (`disable once`) quando possível
 - Documentar no PR o motivo da exclusão
 
-**Comentários disponíveis:**
+**Stryker comments disponíveis:**
 | Comentário | Uso |
 |------------|-----|
 | `// Stryker disable all : reason` | Desabilita todas as mutações até `restore` |
 | `// Stryker restore all` | Restaura mutações |
 | `// Stryker disable once all : reason` | Desabilita apenas na próxima linha |
+| `// Stryker disable once Statement : reason` | Desabilita remoção de statement |
 | `// Stryker disable Equality,Arithmetic : reason` | Desabilita mutadores específicos |
+
+**Requer `using System.Diagnostics.CodeAnalysis;`** para usar o atributo.
 
 ### Pipeline Local
 
