@@ -6,6 +6,7 @@ using System.Text;
 using Avro;
 using Avro.Generic;
 using Avro.IO;
+using Bedrock.BuildingBlocks.Serialization.Abstractions.Internal;
 using Bedrock.BuildingBlocks.Serialization.Avro.Interfaces;
 using Bedrock.BuildingBlocks.Serialization.Avro.Models;
 using Microsoft.IO;
@@ -15,19 +16,7 @@ namespace Bedrock.BuildingBlocks.Serialization.Avro;
 public abstract class AvroSerializerBase
     : IAvroSerializer
 {
-    // Stryker disable all : RecyclableMemoryStreamManager configuration is internal infrastructure - values are performance tuning parameters
-    private static readonly RecyclableMemoryStreamManager _streamManager = new(new RecyclableMemoryStreamManager.Options
-    {
-        BlockSize = 4096,
-        LargeBufferMultiple = 1024 * 1024,
-        MaximumBufferSize = 16 * 1024 * 1024,
-        GenerateCallStacks = false,
-        AggressiveBufferReturn = true,
-    });
-    // Stryker restore all
-
     private static readonly ConcurrentDictionary<Type, (RecordSchema Schema, PropertyInfo[] Properties)> _schemaCache = new();
-    private static readonly BindingFlags _propertyFlags = BindingFlags.Instance | BindingFlags.Public;
 
     public Options Options { get; }
 
@@ -58,7 +47,7 @@ public abstract class AvroSerializerBase
         if (input is null)
             return null;
 
-        using RecyclableMemoryStream ms = _streamManager.GetStream();
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream();
         SerializeToStreamInternal(input, typeof(TInput), ms);
         return ms.ToArray();
     }
@@ -244,10 +233,7 @@ public abstract class AvroSerializerBase
     {
         return _schemaCache.GetOrAdd(type, t =>
         {
-            PropertyInfo[] props = [.. t
-                .GetProperties(_propertyFlags)
-                .Where(p => p.CanRead && p.CanWrite && p.GetIndexParameters().Length == 0)
-                .OrderBy(p => p.Name, StringComparer.Ordinal)];
+            PropertyInfo[] props = SerializerInfrastructure.GetSerializableProperties(t);
 
             var fields = new List<Field>(props.Length);
             int position = 0;
@@ -304,11 +290,7 @@ public abstract class AvroSerializerBase
         return baseSchema;
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Verificacao de nullable - usado internamente pelo mapeamento de tipos")]
-    private static bool IsNullable(Type type)
-    {
-        return !type.IsValueType || Nullable.GetUnderlyingType(type) is not null;
-    }
+    private static bool IsNullable(Type type) => SerializerInfrastructure.IsNullable(type);
 
     [ExcludeFromCodeCoverage(Justification = "Conversao de valores CLR para Avro - cada branch requer tipo especifico, impraticavel testar todas as combinacoes")]
     private static object? ConvertToAvroValue(object? value, Type propertyType)

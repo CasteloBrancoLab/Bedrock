@@ -4,6 +4,7 @@ using System.Reflection;
 using Apache.Arrow;
 using Apache.Arrow.Ipc;
 using Apache.Arrow.Types;
+using Bedrock.BuildingBlocks.Serialization.Abstractions.Internal;
 using Bedrock.BuildingBlocks.Serialization.Parquet.Interfaces;
 using Bedrock.BuildingBlocks.Serialization.Parquet.Models;
 using Microsoft.IO;
@@ -13,19 +14,7 @@ namespace Bedrock.BuildingBlocks.Serialization.Parquet;
 public abstract class ParquetSerializerBase
     : IParquetSerializer
 {
-    // Stryker disable all : RecyclableMemoryStreamManager configuration is internal infrastructure - values are performance tuning parameters
-    private static readonly RecyclableMemoryStreamManager _streamManager = new(new RecyclableMemoryStreamManager.Options
-    {
-        BlockSize = 4096,
-        LargeBufferMultiple = 1024 * 1024,
-        MaximumBufferSize = 16 * 1024 * 1024,
-        GenerateCallStacks = false,
-        AggressiveBufferReturn = true,
-    });
-    // Stryker restore all
-
     private static readonly ConcurrentDictionary<Type, (Schema Schema, PropertyInfo[] Properties)> _schemaCache = new();
-    private static readonly BindingFlags _propertyFlags = BindingFlags.Instance | BindingFlags.Public;
 
     public Options Options { get; }
 
@@ -106,7 +95,7 @@ public abstract class ParquetSerializerBase
         if (input is null)
             return null;
 
-        using RecyclableMemoryStream ms = _streamManager.GetStream();
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream();
         SerializeCollectionToStreamInternal(input, typeof(TInput), ms);
         return ms.ToArray();
     }
@@ -371,10 +360,7 @@ public abstract class ParquetSerializerBase
     {
         return _schemaCache.GetOrAdd(type, t =>
         {
-            PropertyInfo[] props = [.. t
-                .GetProperties(_propertyFlags)
-                .Where(p => p.CanRead && p.CanWrite && p.GetIndexParameters().Length == 0)
-                .OrderBy(p => p.Name, StringComparer.Ordinal)];
+            PropertyInfo[] props = SerializerInfrastructure.GetSerializableProperties(t);
 
             var fields = new List<Field>(props.Length);
 
@@ -420,11 +406,7 @@ public abstract class ParquetSerializerBase
         };
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Verificacao de nullable - usado internamente pelo mapeamento de tipos")]
-    private static bool IsNullable(Type type)
-    {
-        return !type.IsValueType || Nullable.GetUnderlyingType(type) is not null;
-    }
+    private static bool IsNullable(Type type) => SerializerInfrastructure.IsNullable(type);
 
     [ExcludeFromCodeCoverage(Justification = "Construcao de arrays Arrow - cada tipo requer DTO especifico, impraticavel testar todas as combinacoes")]
     private static IArrowArray BuildArray<TInput>(PropertyInfo property, List<TInput> items)

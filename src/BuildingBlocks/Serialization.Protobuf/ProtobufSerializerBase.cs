@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Bedrock.BuildingBlocks.Serialization.Abstractions.Internal;
 using Bedrock.BuildingBlocks.Serialization.Protobuf.Interfaces;
 using Bedrock.BuildingBlocks.Serialization.Protobuf.Models;
 using Microsoft.IO;
@@ -11,17 +12,6 @@ namespace Bedrock.BuildingBlocks.Serialization.Protobuf;
 public abstract class ProtobufSerializerBase
     : IProtobufSerializer
 {
-    // Stryker disable all : RecyclableMemoryStreamManager configuration is internal infrastructure - values are performance tuning parameters
-    private static readonly RecyclableMemoryStreamManager _streamManager = new(new RecyclableMemoryStreamManager.Options
-    {
-        BlockSize = 4096,
-        LargeBufferMultiple = 1024 * 1024,
-        MaximumBufferSize = 16 * 1024 * 1024,
-        GenerateCallStacks = false,
-        AggressiveBufferReturn = true,
-    });
-    // Stryker restore all
-
     private readonly Lock _modelInitLock = new();
     private readonly ConcurrentDictionary<Type, byte> _registeredTypes = new();
     private volatile bool _initialized;
@@ -65,7 +55,7 @@ public abstract class ProtobufSerializerBase
         if (input is null)
             return null;
 
-        using RecyclableMemoryStream ms = _streamManager.GetStream();
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream();
         _ = _runtimeTypeModel.Serialize((Stream)ms, input);
         return ms.ToArray();
     }
@@ -211,9 +201,6 @@ public abstract class ProtobufSerializerBase
     }
     // Stryker restore all
 
-    private static readonly BindingFlags _propertyFlags =
-        BindingFlags.Instance | BindingFlags.Public;
-
     // Stryker disable all : Type registration internals - tested indirectly through serialization round-trips
     [ExcludeFromCodeCoverage(Justification = "Configuracao de tipos Protobuf - testado indiretamente atraves de round-trips de serializacao")]
     private void Configure(Options options)
@@ -248,11 +235,7 @@ public abstract class ProtobufSerializerBase
         }
 
         MetaType meta = model.Add(type, applyDefaultBehaviour: false);
-
-        PropertyInfo[] props = [.. type
-            .GetProperties(_propertyFlags)
-            .Where(p => p.CanRead && p.CanWrite && p.GetIndexParameters().Length == 0)
-            .OrderBy(p => p.Name, StringComparer.Ordinal)];
+        PropertyInfo[] props = SerializerInfrastructure.GetSerializableProperties(type);
 
         int field = 1;
 
