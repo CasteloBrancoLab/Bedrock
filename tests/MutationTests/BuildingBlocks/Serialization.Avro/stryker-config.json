@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
+  "stryker-config": {
+    "project": "Bedrock.BuildingBlocks.Serialization.Avro.csproj",
+    "test-projects": [
+      "../../../UnitTests/BuildingBlocks/Serialization.Avro/Bedrock.UnitTests.BuildingBlocks.Serialization.Avro.csproj"
+    ],
+    "reporters": ["html", "progress"],
+    "thresholds": {
+      "high": 100,
+      "low": 100,
+      "break": 100
+    }
+  }
+}
