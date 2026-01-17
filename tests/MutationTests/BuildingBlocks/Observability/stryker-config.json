@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
+  "stryker-config": {
+    "project": "Bedrock.BuildingBlocks.Observability.csproj",
+    "test-projects": [
+      "../../../UnitTests/BuildingBlocks/Observability/Bedrock.UnitTests.BuildingBlocks.Observability.csproj"
+    ],
+    "reporters": ["html", "progress"],
+    "thresholds": {
+      "high": 100,
+      "low": 100,
+      "break": 100
+    }
+  }
+}
