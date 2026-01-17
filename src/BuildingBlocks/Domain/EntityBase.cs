@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Core.Validations;
@@ -438,7 +439,11 @@ public abstract class EntityBase : IEntity
         return true;
     }
 
+    /// <summary>
+    /// Explicit interface implementation that forwards to the protected internal SetEntityInfo.
+    /// </summary>
     // Stryker disable once Block : Explicit interface implementation forwarding to protected internal method - already tested through SetEntityInfo
+    [ExcludeFromCodeCoverage(Justification = "Explicit interface implementation forwarding - tested through protected internal SetEntityInfo")]
     bool IEntity.SetEntityInfo(ExecutionContext executionContext, EntityInfo entityInfo)
     {
         return SetEntityInfo(executionContext, entityInfo);
