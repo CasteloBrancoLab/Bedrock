@@ -89,13 +89,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Observability", "Observabil
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.UnitTests.BuildingBlocks.Observability", "tests\UnitTests\BuildingBlocks\Observability\Bedrock.UnitTests.BuildingBlocks.Observability.csproj", "{301F7D49-9848-47CA-ABBA-9A737D37E243}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{ECD95A43-C9BE-77D4-424E-0507ED99E066}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence.Abstractions", "Persistence.Abstractions", "{ECD95A43-C9BE-77D4-424E-0507ED99E066}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.BuildingBlocks.Persistence", "src\BuildingBlocks\Persistence\Bedrock.BuildingBlocks.Persistence.csproj", "{F1FD33DF-5EA0-4BBB-85DE-5878053A0859}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.BuildingBlocks.Persistence.Abstractions", "src\BuildingBlocks\Persistence.Abstractions\Bedrock.BuildingBlocks.Persistence.Abstractions.csproj", "{F1FD33DF-5EA0-4BBB-85DE-5878053A0859}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence", "Persistence", "{350112AD-B785-303F-467A-064455742E29}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence.Abstractions", "Persistence.Abstractions", "{350112AD-B785-303F-467A-064455742E29}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.UnitTests.BuildingBlocks.Persistence", "tests\UnitTests\BuildingBlocks\Persistence\Bedrock.UnitTests.BuildingBlocks.Persistence.csproj", "{29DF8DC5-1816-4A0D-9001-764CAA4E7D92}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.UnitTests.BuildingBlocks.Persistence.Abstractions", "tests\UnitTests\BuildingBlocks\Persistence.Abstractions\Bedrock.UnitTests.BuildingBlocks.Persistence.Abstractions.csproj", "{29DF8DC5-1816-4A0D-9001-764CAA4E7D92}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

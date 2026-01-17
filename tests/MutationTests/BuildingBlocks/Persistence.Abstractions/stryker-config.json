@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
   "stryker-config": {
-    "project": "Bedrock.BuildingBlocks.Persistence.csproj",
+    "project": "Bedrock.BuildingBlocks.Persistence.Abstractions.csproj",
     "test-projects": [
-      "../../../UnitTests/BuildingBlocks/Persistence/Bedrock.UnitTests.BuildingBlocks.Persistence.csproj"
+      "../../../UnitTests/BuildingBlocks/Persistence.Abstractions/Bedrock.UnitTests.BuildingBlocks.Persistence.Abstractions.csproj"
     ],
     "reporters": ["html", "progress"],
     "thresholds": {

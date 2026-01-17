@@ -1,10 +1,10 @@
-using Bedrock.BuildingBlocks.Persistence.Utils;
+using Bedrock.BuildingBlocks.Persistence.Abstractions.Utils;
 using Bedrock.BuildingBlocks.Testing;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Bedrock.UnitTests.BuildingBlocks.Persistence.Utils;
+namespace Bedrock.UnitTests.BuildingBlocks.Persistence.Abstractions.Utils;
 
 public class IdUtilsTests : TestBase
 {

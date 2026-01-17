@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Persistence.DistributedLock;
+namespace Bedrock.BuildingBlocks.Persistence.Abstractions.DistributedLock;
 
 public interface IDistributedLock
 {
