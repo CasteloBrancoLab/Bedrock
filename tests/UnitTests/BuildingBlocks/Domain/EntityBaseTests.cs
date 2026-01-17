@@ -253,6 +253,44 @@ public class EntityBaseTests : TestBase
         entity.ShouldBeNull();
     }
 
+    [Fact]
+    public void RegisterNewInternal_WithInvalidEntityInfo_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Storing original metadata values");
+        var originalCreatedByMinLength = EntityBase.EntityBaseMetadata.CreatedByMinLength;
+
+        try
+        {
+            // Make CreatedBy validation fail by requiring min length greater than what's provided
+            EntityBase.EntityBaseMetadata.ChangeCreationInfoMetadata(
+                createdAtIsRequired: true,
+                createdByIsRequired: true,
+                createdByMinLength: 1000, // Impossibly high min length
+                createdByMaxLength: 255);
+
+            var timeProvider = new FixedTimeProvider(DateTimeOffset.UtcNow);
+            var executionContext = CreateExecutionContext(timeProvider);
+
+            // Act
+            LogAct("Creating entity with invalid EntityInfo due to metadata constraints");
+            var entity = TestEntity.CreateNew(executionContext, "Test");
+
+            // Assert
+            LogAssert("Verifying null is returned when EntityInfo validation fails");
+            entity.ShouldBeNull();
+        }
+        finally
+        {
+            // Restore original metadata
+            EntityBase.EntityBaseMetadata.ChangeCreationInfoMetadata(
+                createdAtIsRequired: true,
+                createdByIsRequired: true,
+                createdByMinLength: originalCreatedByMinLength,
+                createdByMaxLength: 255);
+        }
+    }
+
     private class TestEntityWithFailingHandler : EntityBase<TestEntityWithFailingHandler>
     {
         public string Name { get; private set; } = string.Empty;
@@ -427,6 +465,46 @@ public class EntityBaseTests : TestBase
         // Assert
         LogAssert("Verifying null is returned when handler fails");
         modified.ShouldBeNull();
+    }
+
+    [Fact]
+    public void RegisterChangeInternal_WithInvalidEntityInfo_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Creating entity and storing original metadata values");
+        var tenantInfo = TenantInfo.Create(Guid.NewGuid(), "Test Tenant");
+        var timeProvider = new FixedTimeProvider(DateTimeOffset.UtcNow);
+        var executionContext = CreateExecutionContext(timeProvider, tenantInfo);
+        var original = TestEntity.CreateNew(executionContext, "OriginalName")!;
+
+        var originalLastChangedByMinLength = EntityBase.EntityBaseMetadata.LastChangedByMinLength;
+
+        try
+        {
+            // Make LastChangedBy validation fail by requiring min length greater than what's provided
+            EntityBase.EntityBaseMetadata.ChangeUpdateInfoMetadata(
+                lastChangedAtIsRequired: false,
+                lastChangedByIsRequired: true,
+                lastChangedByMinLength: 1000, // Impossibly high min length
+                lastChangedByMaxLength: 255);
+
+            // Act
+            LogAct("Modifying entity with invalid EntityInfo due to metadata constraints");
+            var modified = TestEntity.Modify(executionContext, original, "NewName");
+
+            // Assert
+            LogAssert("Verifying null is returned when EntityInfo validation fails");
+            modified.ShouldBeNull();
+        }
+        finally
+        {
+            // Restore original metadata
+            EntityBase.EntityBaseMetadata.ChangeUpdateInfoMetadata(
+                lastChangedAtIsRequired: false,
+                lastChangedByIsRequired: false,
+                lastChangedByMinLength: originalLastChangedByMinLength,
+                lastChangedByMaxLength: 255);
+        }
     }
 
     #endregion
@@ -1185,6 +1263,40 @@ public class EntityBaseTests : TestBase
         // Act & Assert
         LogAct("Checking default CreatedByIsRequired");
         EntityBase.EntityBaseMetadata.CreatedByIsRequired.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void EntityBaseMetadata_DefaultValues_CreatedByIsRequired_ShouldFailValidationWhenNull()
+    {
+        // Arrange
+        LogArrange("Creating EntityInfo with null CreatedBy to verify default behavior");
+        var timeProvider = new FixedTimeProvider(DateTimeOffset.UtcNow);
+        var executionContext = CreateExecutionContext(timeProvider);
+        var entityInfoWithNullCreatedBy = EntityInfo.CreateFromExistingInfo(
+            id: Id.GenerateNewId(),
+            tenantInfo: TenantInfo.Create(Guid.NewGuid(), "Tenant"),
+            createdAt: DateTimeOffset.UtcNow,
+            createdBy: null, // This should fail because CreatedByIsRequired defaults to true
+            createdCorrelationId: Guid.NewGuid(),
+            createdExecutionOrigin: "System",
+            createdBusinessOperationCode: "OP",
+            lastChangedAt: null,
+            lastChangedBy: null,
+            lastChangedCorrelationId: null,
+            lastChangedExecutionOrigin: null,
+            lastChangedBusinessOperationCode: null,
+            entityVersion: RegistryVersion.CreateFromExistingInfo(DateTimeOffset.UtcNow));
+
+        // Act
+        LogAct("Validating EntityInfo with null CreatedBy");
+        var result = EntityBase.ValidateEntityInfo(executionContext, entityInfoWithNullCreatedBy);
+
+        // Assert
+        LogAssert("Verifying validation fails because CreatedByIsRequired is true by default");
+        result.ShouldBeFalse();
+        executionContext.HasErrorMessages.ShouldBeTrue();
+        var messages = executionContext.Messages.ToList();
+        messages.ShouldContain(m => m.Code.Contains("CreatedBy"));
     }
 
     [Fact]

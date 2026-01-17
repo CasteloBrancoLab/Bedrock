@@ -45,6 +45,7 @@ public abstract class EntityBase : IEntity
 
         public static string CreatedByPropertyName { get; } =
             $"{nameof(EntityInfo)}.{nameof(EntityInfo.EntityChangeInfo)}.{nameof(EntityChangeInfo.CreatedBy)}";
+        // Stryker disable once Boolean : Static initializer - value tested in EntityBaseMetadata_DefaultValues tests, behavior in ShouldFailValidationWhenNull test
         public static bool CreatedByIsRequired { get; private set; } = true;
         public static int CreatedByMinLength { get; private set; } = 1;
         public static int CreatedByMaxLength { get; private set; } = 255;
