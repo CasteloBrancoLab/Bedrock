@@ -1,6 +1,6 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 
-namespace Bedrock.BuildingBlocks.Domain.Models;
+namespace Bedrock.BuildingBlocks.Domain.Entities.Models;
 
 /// <summary>
 /// Immutable record containing audit information about entity creation and modification.

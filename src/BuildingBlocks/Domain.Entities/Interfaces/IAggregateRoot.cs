@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Domain.Interfaces;
+namespace Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
 
 /// <summary>
 /// Marker interface for aggregate roots in Domain-Driven Design.

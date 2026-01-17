@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
   "stryker-config": {
-    "project": "Bedrock.BuildingBlocks.Domain.csproj",
+    "project": "Bedrock.BuildingBlocks.Domain.Entities.csproj",
     "test-projects": [
-      "../../../UnitTests/BuildingBlocks/Domain/Bedrock.UnitTests.BuildingBlocks.Domain.csproj"
+      "../../../UnitTests/BuildingBlocks/Domain.Entities/Bedrock.UnitTests.BuildingBlocks.Domain.Entities.csproj"
     ],
     "reporters": ["html", "progress"],
     "thresholds": {

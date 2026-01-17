@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts;
-using Bedrock.BuildingBlocks.Domain.Models;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
 
-namespace Bedrock.BuildingBlocks.Domain.Interfaces;
+namespace Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
 
 /// <summary>
 /// Base contract for all domain entities.

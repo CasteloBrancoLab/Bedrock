@@ -2,10 +2,10 @@ using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Core.Validations;
-using Bedrock.BuildingBlocks.Domain.Interfaces;
-using Bedrock.BuildingBlocks.Domain.Models;
+using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
 
-namespace Bedrock.BuildingBlocks.Domain;
+namespace Bedrock.BuildingBlocks.Domain.Entities;
 
 /// <summary>
 /// Abstract base class for all domain entities.
@@ -41,6 +41,7 @@ public abstract class EntityBase : IEntity
         // Creation Info
         public static string CreatedAtPropertyName { get; } =
             $"{nameof(EntityInfo)}.{nameof(EntityInfo.EntityChangeInfo)}.{nameof(EntityChangeInfo.CreatedAt)}";
+        // Stryker disable once Boolean : Static initializer - value tested in EntityBaseMetadata_DefaultValues tests, behavior in ShouldFailValidationWhenNull test
         public static bool CreatedAtIsRequired { get; private set; } = true;
 
         public static string CreatedByPropertyName { get; } =

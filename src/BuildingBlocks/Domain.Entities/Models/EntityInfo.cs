@@ -3,7 +3,7 @@ using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
 
-namespace Bedrock.BuildingBlocks.Domain.Models;
+namespace Bedrock.BuildingBlocks.Domain.Entities.Models;
 
 /// <summary>
 /// Immutable record containing all metadata for a domain entity.

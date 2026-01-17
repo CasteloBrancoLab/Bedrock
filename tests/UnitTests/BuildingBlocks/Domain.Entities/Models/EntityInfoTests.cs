@@ -2,13 +2,13 @@ using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
-using Bedrock.BuildingBlocks.Domain.Models;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Testing;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Bedrock.UnitTests.BuildingBlocks.Domain.Models;
+namespace Bedrock.UnitTests.BuildingBlocks.Domain.Entities.Models;
 
 public class EntityInfoTests : TestBase
 {

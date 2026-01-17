@@ -2,15 +2,15 @@ using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
-using Bedrock.BuildingBlocks.Domain;
-using Bedrock.BuildingBlocks.Domain.Interfaces;
-using Bedrock.BuildingBlocks.Domain.Models;
+using Bedrock.BuildingBlocks.Domain.Entities;
+using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Testing;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Bedrock.UnitTests.BuildingBlocks.Domain;
+namespace Bedrock.UnitTests.BuildingBlocks.Domain.Entities;
 
 public class EntityBaseTests : TestBase
 {
