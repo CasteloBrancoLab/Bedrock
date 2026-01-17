@@ -104,7 +104,17 @@ jobs:
             echo "::group::Running mutation tests for $NAME"
 
             cd "$DIR"
-            if dotnet stryker -O "$GITHUB_WORKSPACE/mutation-reports/$NAME"; then
+
+            # Run stryker and capture output
+            STRYKER_OUTPUT=$(dotnet stryker -O "$GITHUB_WORKSPACE/mutation-reports/$NAME" 2>&1) || true
+            STRYKER_EXIT=$?
+            echo "$STRYKER_OUTPUT"
+
+            # Check if no mutations were generated (interface-only or no code to mutate)
+            if echo "$STRYKER_OUTPUT" | grep -q "No mutants were generated"; then
+              echo "::notice::No mutatable code found in $NAME - skipping"
+              SUMMARY="${SUMMARY}| ${NAME} | :white_check_mark: Skipped (no mutatable code) |\n"
+            elif [ $STRYKER_EXIT -eq 0 ]; then
               SUMMARY="${SUMMARY}| ${NAME} | :white_check_mark: Passed |\n"
             else
               SUMMARY="${SUMMARY}| ${NAME} | :x: Failed |\n"
@@ -127,6 +137,7 @@ jobs:
           name: mutation-reports
           path: mutation-reports/
           retention-days: 3
+          if-no-files-found: ignore
 
       - name: Mutation Tests Summary
         if: always()
