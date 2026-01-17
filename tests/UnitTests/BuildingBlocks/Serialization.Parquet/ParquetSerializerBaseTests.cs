@@ -574,6 +574,104 @@ public class ParquetSerializerBaseTests : TestBase
         LogInfo("Non-generic from stream: {0}", ((TestDto)result).Name);
     }
 
+    [Fact]
+    public void DeserializeFromStream_WithType_ShouldReturnObject()
+    {
+        // Arrange
+        LogArrange("Creating and serializing test object to stream");
+        var original = new TestDto { Name = "FromStreamType", Value = 32 };
+        using var stream = new MemoryStream();
+        _serializer.SerializeToStream(original, stream);
+        stream.Position = 0;
+
+        // Act
+        LogAct("Deserializing from stream with type");
+        var result = _serializer.DeserializeFromStream<TestDto>(stream, typeof(TestDto));
+
+        // Assert
+        LogAssert("Verifying deserialized object");
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("FromStreamType");
+        LogInfo("Deserialized from stream with type: {0}", result.Name);
+    }
+
+    [Fact]
+    public void DeserializeFromStream_WithTypeAndNullStream_ShouldThrow()
+    {
+        // Arrange
+        LogArrange("Preparing null stream");
+
+        // Act & Assert
+        LogAct("Attempting to deserialize from null stream with type");
+        Should.Throw<ArgumentNullException>(() => _serializer.DeserializeFromStream<TestDto>(null!, typeof(TestDto)));
+        LogAssert("ArgumentNullException thrown as expected");
+    }
+
+    [Fact]
+    public void DeserializeFromStream_NonGenericWithNullStream_ShouldThrow()
+    {
+        // Arrange
+        LogArrange("Preparing null stream");
+
+        // Act & Assert
+        LogAct("Attempting to deserialize non-generic from null stream");
+        Should.Throw<ArgumentNullException>(() => _serializer.DeserializeFromStream(null!, typeof(TestDto)));
+        LogAssert("ArgumentNullException thrown as expected");
+    }
+
+    [Fact]
+    public void Deserialize_WithType_ShouldReturnObject()
+    {
+        // Arrange
+        LogArrange("Creating and serializing test object");
+        var original = new TestDto { Name = "DeserializeType", Value = 12 };
+        var bytes = _serializer.Serialize(original);
+
+        // Act
+        LogAct("Deserializing with type");
+        var result = _serializer.Deserialize<TestDto>(bytes, typeof(TestDto));
+
+        // Assert
+        LogAssert("Verifying deserialized object");
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("DeserializeType");
+        LogInfo("Deserialized with type: {0}", result.Name);
+    }
+
+    [Fact]
+    public void Deserialize_WithTypeAndEmptyArray_ShouldReturnDefault()
+    {
+        // Arrange
+        LogArrange("Preparing empty array");
+        var emptyBytes = Array.Empty<byte>();
+
+        // Act
+        LogAct("Deserializing empty array with type");
+        var result = _serializer.Deserialize<TestDto>(emptyBytes, typeof(TestDto));
+
+        // Assert
+        LogAssert("Verifying default result");
+        result.ShouldBeNull();
+        LogInfo("Empty array with type correctly returned default");
+    }
+
+    [Fact]
+    public void Deserialize_NonGenericWithEmptyArray_ShouldReturnDefault()
+    {
+        // Arrange
+        LogArrange("Preparing empty array");
+        var emptyBytes = Array.Empty<byte>();
+
+        // Act
+        LogAct("Deserializing empty array non-generic");
+        var result = _serializer.Deserialize(emptyBytes, typeof(TestDto));
+
+        // Assert
+        LogAssert("Verifying default result");
+        result.ShouldBeNull();
+        LogInfo("Non-generic empty array correctly returned default");
+    }
+
     #endregion
 
     #region DeserializeAsync Tests
@@ -612,6 +710,194 @@ public class ParquetSerializerBaseTests : TestBase
         LogAssert("Verifying default result");
         result.ShouldBeNull();
         LogInfo("Async null correctly returned default");
+    }
+
+    [Fact]
+    public async Task DeserializeAsync_WithType_ShouldReturnObject()
+    {
+        // Arrange
+        LogArrange("Creating and serializing test object");
+        var original = new TestDto { Name = "AsyncDeserializeType", Value = 22 };
+        var bytes = _serializer.Serialize(original);
+
+        // Act
+        LogAct("Deserializing asynchronously with type");
+        var result = await _serializer.DeserializeAsync<TestDto>(bytes, typeof(TestDto), CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying deserialized object");
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("AsyncDeserializeType");
+        LogInfo("Async deserialized with type: {0}", result.Name);
+    }
+
+    [Fact]
+    public async Task DeserializeAsync_NonGeneric_ShouldReturnObject()
+    {
+        // Arrange
+        LogArrange("Creating and serializing test object");
+        var original = new TestDto { Name = "AsyncNonGeneric", Value = 23 };
+        var bytes = _serializer.Serialize(original);
+
+        // Act
+        LogAct("Deserializing asynchronously non-generic");
+        var result = await _serializer.DeserializeAsync(bytes, typeof(TestDto), CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying deserialized object");
+        result.ShouldNotBeNull();
+        result.ShouldBeOfType<TestDto>();
+        ((TestDto)result).Name.ShouldBe("AsyncNonGeneric");
+        LogInfo("Async non-generic deserialized: {0}", ((TestDto)result).Name);
+    }
+
+    [Fact]
+    public async Task DeserializeFromStreamAsync_WithValidStream_ShouldReturnObject()
+    {
+        // Arrange
+        LogArrange("Creating and serializing test object to stream");
+        var original = new TestDto { Name = "AsyncFromStream", Value = 41 };
+        using var stream = new MemoryStream();
+        _serializer.SerializeToStream(original, stream);
+        stream.Position = 0;
+
+        // Act
+        LogAct("Deserializing from stream asynchronously");
+        var result = await _serializer.DeserializeFromStreamAsync<TestDto>(stream, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying deserialized object");
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("AsyncFromStream");
+        LogInfo("Async deserialized from stream: {0}", result.Name);
+    }
+
+    [Fact]
+    public async Task DeserializeFromStreamAsync_WithNullStream_ShouldThrow()
+    {
+        // Arrange
+        LogArrange("Preparing null stream");
+
+        // Act & Assert
+        LogAct("Attempting to deserialize async from null stream");
+        await Should.ThrowAsync<ArgumentNullException>(async () =>
+            await _serializer.DeserializeFromStreamAsync<TestDto>(null!, CancellationToken.None));
+        LogAssert("ArgumentNullException thrown as expected");
+    }
+
+    [Fact]
+    public async Task DeserializeFromStreamAsync_WithType_ShouldReturnObject()
+    {
+        // Arrange
+        LogArrange("Creating and serializing test object to stream");
+        var original = new TestDto { Name = "AsyncFromStreamType", Value = 42 };
+        using var stream = new MemoryStream();
+        _serializer.SerializeToStream(original, stream);
+        stream.Position = 0;
+
+        // Act
+        LogAct("Deserializing from stream asynchronously with type");
+        var result = await _serializer.DeserializeFromStreamAsync<TestDto>(stream, typeof(TestDto), CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying deserialized object");
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("AsyncFromStreamType");
+        LogInfo("Async deserialized from stream with type: {0}", result.Name);
+    }
+
+    [Fact]
+    public async Task DeserializeFromStreamAsync_NonGeneric_ShouldReturnObject()
+    {
+        // Arrange
+        LogArrange("Creating and serializing test object to stream");
+        var original = new TestDto { Name = "AsyncNonGenericStream", Value = 43 };
+        using var stream = new MemoryStream();
+        _serializer.SerializeToStream(original, stream);
+        stream.Position = 0;
+
+        // Act
+        LogAct("Deserializing from stream asynchronously non-generic");
+        var result = await _serializer.DeserializeFromStreamAsync(stream, typeof(TestDto), CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying deserialized object");
+        result.ShouldNotBeNull();
+        result.ShouldBeOfType<TestDto>();
+        ((TestDto)result).Name.ShouldBe("AsyncNonGenericStream");
+        LogInfo("Async non-generic from stream: {0}", ((TestDto)result).Name);
+    }
+
+    [Fact]
+    public async Task SerializeAsync_WithType_ShouldReturnBytes()
+    {
+        // Arrange
+        LogArrange("Creating test object");
+        var testObject = new TestDto { Name = "AsyncType", Value = 88 };
+
+        // Act
+        LogAct("Serializing asynchronously with type");
+        var result = await _serializer.SerializeAsync(testObject, typeof(TestDto), CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying bytes output");
+        result.ShouldNotBeNull();
+        result.Length.ShouldBeGreaterThan(0);
+        LogInfo("Async serialized with type bytes count: {0}", result.Length);
+    }
+
+    [Fact]
+    public void SerializeToStream_WithType_ShouldWriteToStream()
+    {
+        // Arrange
+        LogArrange("Creating test object and stream");
+        var testObject = new TestDto { Name = "StreamType", Value = 44 };
+        using var stream = new MemoryStream();
+
+        // Act
+        LogAct("Serializing to stream with type");
+        _serializer.SerializeToStream(testObject, typeof(TestDto), stream);
+
+        // Assert
+        LogAssert("Verifying stream content");
+        stream.Length.ShouldBeGreaterThan(0);
+        LogInfo("Stream with type length: {0}", stream.Length);
+    }
+
+    [Fact]
+    public async Task SerializeToStreamAsync_WithValidObject_ShouldWriteToStream()
+    {
+        // Arrange
+        LogArrange("Creating test object and stream");
+        var testObject = new TestDto { Name = "AsyncStream", Value = 33 };
+        using var stream = new MemoryStream();
+
+        // Act
+        LogAct("Serializing to stream asynchronously");
+        await _serializer.SerializeToStreamAsync(testObject, stream, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying stream content");
+        stream.Length.ShouldBeGreaterThan(0);
+        LogInfo("Async stream length: {0}", stream.Length);
+    }
+
+    [Fact]
+    public async Task SerializeToStreamAsync_WithType_ShouldWriteToStream()
+    {
+        // Arrange
+        LogArrange("Creating test object and stream");
+        var testObject = new TestDto { Name = "AsyncStreamType", Value = 34 };
+        using var stream = new MemoryStream();
+
+        // Act
+        LogAct("Serializing to stream asynchronously with type");
+        await _serializer.SerializeToStreamAsync(testObject, typeof(TestDto), stream, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying stream content");
+        stream.Length.ShouldBeGreaterThan(0);
+        LogInfo("Async stream with type length: {0}", stream.Length);
     }
 
     #endregion

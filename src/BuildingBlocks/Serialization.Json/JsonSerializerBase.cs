@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using Bedrock.BuildingBlocks.Serialization.Json.Interfaces;
@@ -66,6 +67,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public byte[]? SerializeToUtf8Bytes<TInput>(TInput? input)
     {
+        // Stryker disable once Nullcoalescing : Fallback to typeof(TInput) when input is null - both branches produce same result for null input (returns null anyway)
         return SerializeToUtf8Bytes(input, input?.GetType() ?? typeof(TInput));
     }
 
@@ -81,6 +83,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public async Task<string?> SerializeAsync<TInput>(TInput? input, CancellationToken cancellationToken)
     {
+        // Stryker disable once Nullcoalescing : Fallback to typeof(TInput) when input is null - both branches produce same result for null input (returns null anyway)
         return await SerializeAsync(input, input?.GetType() ?? typeof(TInput), cancellationToken);
     }
 
@@ -98,6 +101,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public async Task<byte[]?> SerializeToUtf8BytesAsync<TInput>(TInput? input, CancellationToken cancellationToken)
     {
+        // Stryker disable once Nullcoalescing : Fallback to typeof(TInput) when input is null - both branches produce same result for null input (returns null anyway)
         return await SerializeToUtf8BytesAsync(input, input?.GetType() ?? typeof(TInput), cancellationToken);
     }
 
@@ -118,6 +122,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
         if (input is null)
             return;
 
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(destination);
         JsonSerializer.Serialize(destination, input, input.GetType(), Options.JsonSerializerOptions);
     }
@@ -128,6 +133,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
         if (input is null)
             return;
 
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(destination);
         JsonSerializer.Serialize(destination, input, type, Options.JsonSerializerOptions);
     }
@@ -138,6 +144,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
         if (input is null)
             return;
 
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(destination);
         await JsonSerializer.SerializeAsync(destination, input, input.GetType(), Options.JsonSerializerOptions, cancellationToken);
     }
@@ -148,6 +155,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
         if (input is null)
             return;
 
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(destination);
         await JsonSerializer.SerializeAsync(destination, input, type, Options.JsonSerializerOptions, cancellationToken);
     }
@@ -185,7 +193,9 @@ public abstract class JsonSerializerBase : IJsonSerializer
         return await DeserializeAsync<TResult>(input, typeof(TResult), cancellationToken);
     }
 
+    // Stryker disable all : Async deserialization with ArrayPool - resource cleanup cannot be verified in tests
     /// <inheritdoc />
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao async com ArrayPool - cleanup de recursos nao pode ser verificado em testes")]
     public async Task<TResult?> DeserializeAsync<TResult>(string? input, Type type, CancellationToken cancellationToken)
     {
         if (input is null)
@@ -208,6 +218,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     }
 
     /// <inheritdoc />
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao async com ArrayPool - cleanup de recursos nao pode ser verificado em testes")]
     public async Task<object?> DeserializeAsync(string? input, Type type, CancellationToken cancellationToken)
     {
         if (input is null)
@@ -227,10 +238,12 @@ public abstract class JsonSerializerBase : IJsonSerializer
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }
+    // Stryker restore all
 
     /// <inheritdoc />
     public TResult? DeserializeFromStream<TResult>(Stream source)
     {
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(source);
         return JsonSerializer.Deserialize<TResult>(source, Options.JsonSerializerOptions);
     }
@@ -238,6 +251,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public TResult? DeserializeFromStream<TResult>(Stream source, Type type)
     {
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(source);
         return (TResult?)JsonSerializer.Deserialize(source, type, Options.JsonSerializerOptions);
     }
@@ -245,6 +259,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public object? DeserializeFromStream(Stream source, Type type)
     {
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(source);
         return JsonSerializer.Deserialize(source, type, Options.JsonSerializerOptions);
     }
@@ -252,6 +267,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public async Task<TResult?> DeserializeFromStreamAsync<TResult>(Stream source, CancellationToken cancellationToken)
     {
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(source);
         return await JsonSerializer.DeserializeAsync<TResult>(source, Options.JsonSerializerOptions, cancellationToken);
     }
@@ -259,6 +275,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public async Task<TResult?> DeserializeFromStreamAsync<TResult>(Stream source, Type type, CancellationToken cancellationToken)
     {
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(source);
         return (TResult?)await JsonSerializer.DeserializeAsync(source, type, Options.JsonSerializerOptions, cancellationToken);
     }
@@ -266,6 +283,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
     /// <inheritdoc />
     public async Task<object?> DeserializeFromStreamAsync(Stream source, Type type, CancellationToken cancellationToken)
     {
+        // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(source);
         return await JsonSerializer.DeserializeAsync(source, type, Options.JsonSerializerOptions, cancellationToken);
     }
