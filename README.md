@@ -40,10 +40,7 @@ Este projeto utiliza [Claude Code](https://claude.com/claude-code) como code age
 {
   "permissions": {
     "allow": [
-      "Bash(gh *)",
-      "Bash(git *)",
-      "Bash(./scripts/*)",
-      "Bash(mkdir *)",
+      "Bash",
       "Edit",
       "Write",
       "Read",
@@ -60,7 +57,7 @@ Este projeto utiliza [Claude Code](https://claude.com/claude-code) como code age
 | Formato | Descrição |
 |---------|-----------|
 | `"Bash"` | Permite todos os comandos Bash |
-| `"Bash(gh *)"` | Permite comandos que iniciam com `gh` |
+| `"Bash(git *)"` | Permite apenas comandos que iniciam com `git` |
 | `"Edit"` | Permite editar qualquer arquivo |
 | `"mcp__*"` | Permite todos os MCP servers |
 
