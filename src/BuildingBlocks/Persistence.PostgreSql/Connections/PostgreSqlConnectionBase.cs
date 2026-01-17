@@ -23,6 +23,15 @@ public abstract class PostgreSqlConnectionBase
         return _npgsqlConnection?.State == System.Data.ConnectionState.Open;
     }
 
+    /// <summary>
+    /// Opens a connection asynchronously with thread-safe double-check locking pattern.
+    /// </summary>
+    /// <remarks>
+    /// Cannot be unit tested - requires active NpgsqlConnection.OpenAsync which needs real database.
+    /// The double-check pattern inside lock requires race conditions to test.
+    /// </remarks>
+    // Stryker disable all : Requer conexao PostgreSQL real para OpenAsync - testes de integracao necessarios
+    [ExcludeFromCodeCoverage(Justification = "Requer conexao PostgreSQL real para OpenAsync - testes de integracao necessarios")]
     public async Task<bool> TryOpenConnectionAsync(ExecutionContext executionContext, CancellationToken cancellationToken)
     {
         // Caminho rápido: evita overhead do lock se a conexão já estiver aberta
@@ -75,6 +84,7 @@ public abstract class PostgreSqlConnectionBase
             throw;
         }
     }
+    // Stryker restore all
 
     /// <summary>
     /// Closes the connection asynchronously.
@@ -137,7 +147,8 @@ public abstract class PostgreSqlConnectionBase
     }
     // Stryker restore all
 
-    // Stryker disable all : Padrao Dispose - chamadas internas ja cobertas por excusao do Dispose(bool)
+    // Stryker disable all : Padrao Dispose - chamadas internas ja cobertas por exclusao do Dispose(bool)
+    [ExcludeFromCodeCoverage(Justification = "Padrao Dispose - chamadas internas ja cobertas por exclusao do Dispose(bool)")]
     public void Dispose()
     {
         Dispose(disposing: true);
