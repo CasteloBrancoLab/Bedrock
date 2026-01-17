@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Persistence.UnitOfWork;
+namespace Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork;
 
 public interface IUnitOfWork : IDisposable
 {

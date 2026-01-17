@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Persistence.Utils;
+namespace Bedrock.BuildingBlocks.Persistence.Abstractions.Utils;
 
 public static class IdUtils
 {
