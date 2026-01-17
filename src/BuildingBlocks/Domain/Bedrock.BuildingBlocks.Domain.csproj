@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Bedrock.BuildingBlocks.Core.csproj" />
+    <ProjectReference Include="..\Domain.Entities\Bedrock.BuildingBlocks.Domain.Entities.csproj" />
+  </ItemGroup>
+
+</Project>
