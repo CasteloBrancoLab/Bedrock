@@ -12,6 +12,7 @@ namespace Bedrock.BuildingBlocks.Serialization.Json;
 /// </summary>
 public abstract class JsonSerializerBase : IJsonSerializer
 {
+    // Stryker disable all : RecyclableMemoryStreamManager configuration is internal infrastructure - values are performance tuning parameters
     private static readonly RecyclableMemoryStreamManager StreamManager = new(new RecyclableMemoryStreamManager.Options
     {
         BlockSize = 4096,
@@ -20,6 +21,7 @@ public abstract class JsonSerializerBase : IJsonSerializer
         GenerateCallStacks = false,
         AggressiveBufferReturn = true,
     });
+    // Stryker restore all
 
     /// <summary>
     /// Gets the serialization options.

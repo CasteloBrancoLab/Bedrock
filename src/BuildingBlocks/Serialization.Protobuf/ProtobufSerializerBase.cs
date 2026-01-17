@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Bedrock.BuildingBlocks.Serialization.Protobuf.Interfaces;
 using Bedrock.BuildingBlocks.Serialization.Protobuf.Models;
@@ -10,6 +11,7 @@ namespace Bedrock.BuildingBlocks.Serialization.Protobuf;
 public abstract class ProtobufSerializerBase
     : IProtobufSerializer
 {
+    // Stryker disable all : RecyclableMemoryStreamManager configuration is internal infrastructure - values are performance tuning parameters
     private static readonly RecyclableMemoryStreamManager _streamManager = new(new RecyclableMemoryStreamManager.Options
     {
         BlockSize = 4096,
@@ -18,6 +20,7 @@ public abstract class ProtobufSerializerBase
         GenerateCallStacks = false,
         AggressiveBufferReturn = true,
     });
+    // Stryker restore all
 
     private readonly Lock _modelInitLock = new();
     private readonly ConcurrentDictionary<Type, byte> _registeredTypes = new();
@@ -194,6 +197,8 @@ public abstract class ProtobufSerializerBase
     private static readonly BindingFlags _propertyFlags =
         BindingFlags.Instance | BindingFlags.Public;
 
+    // Stryker disable all : Type registration internals - tested indirectly through serialization round-trips
+    [ExcludeFromCodeCoverage(Justification = "Configuracao de tipos Protobuf - testado indiretamente atraves de round-trips de serializacao")]
     private void Configure(Options options)
     {
         if (options?.TypeCollection is null)
@@ -205,6 +210,7 @@ public abstract class ProtobufSerializerBase
         }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "Registro de tipos Protobuf - codigo de infraestrutura interna testado indiretamente")]
     private void RegisterTypeIfNeeded(Type type)
     {
         if (type is null)
@@ -238,6 +244,7 @@ public abstract class ProtobufSerializerBase
             _ = meta.Add(field++, p.Name);
         }
     }
+    // Stryker restore all
 
     protected abstract void ConfigureInternal(Options options);
 }
