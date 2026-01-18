@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.Paginations;
@@ -6,6 +7,7 @@ using Bedrock.BuildingBlocks.Data.Repositories;
 using Bedrock.BuildingBlocks.Domain.Entities;
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
 using Bedrock.BuildingBlocks.Domain.Entities.Models;
+using Bedrock.BuildingBlocks.Domain.Repositories;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -89,54 +91,110 @@ public class RepositoryBaseTests : TestBase
 
     #endregion
 
-    #region GetAllAsync Tests
+    #region EnumerateAllAsync Tests
 
     [Fact]
-    public async Task GetAllAsync_WhenInternalMethodSucceeds_ShouldReturnResults()
+    public async Task EnumerateAllAsync_WhenHandlerReturnsTrue_ShouldProcessAllItems()
     {
         // Arrange
-        LogArrange("Setting up repository with successful GetAllInternal");
+        LogArrange("Setting up repository with items");
         var expectedItems = new List<TestAggregateRoot>
         {
             new("Item1"),
             new("Item2")
         };
+        var processedItems = new List<TestAggregateRoot>();
         var repository = new TestRepository(_loggerMock.Object)
         {
             GetAllInternalResult = expectedItems.ToAsyncEnumerable()
         };
 
         // Act
-        LogAct("Calling GetAllAsync");
-        var results = await repository.GetAllAsync(_executionContext, _paginationInfo, CancellationToken.None)
-            .ToListAsync();
+        LogAct("Calling EnumerateAllAsync");
+        var result = await repository.EnumerateAllAsync(
+            _executionContext,
+            _paginationInfo,
+            (ctx, item, ct) =>
+            {
+                processedItems.Add(item);
+                return Task.FromResult(true);
+            },
+            CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying results");
-        results.Count.ShouldBe(2);
-        results[0].Name.ShouldBe("Item1");
-        results[1].Name.ShouldBe("Item2");
-        LogInfo("GetAllAsync returned expected results");
+        LogAssert("Verifying all items processed");
+        result.ShouldBeTrue();
+        processedItems.Count.ShouldBe(2);
+        processedItems[0].Name.ShouldBe("Item1");
+        processedItems[1].Name.ShouldBe("Item2");
+        LogInfo("EnumerateAllAsync processed all items successfully");
     }
 
     [Fact]
-    public async Task GetAllAsync_WhenInternalMethodThrows_ShouldReturnEmptyAndLogException()
+    public async Task EnumerateAllAsync_WhenHandlerReturnsFalse_ShouldStopProcessing()
+    {
+        // Arrange
+        LogArrange("Setting up repository with multiple items");
+        var expectedItems = new List<TestAggregateRoot>
+        {
+            new("Item1"),
+            new("Item2"),
+            new("Item3")
+        };
+        var processedItems = new List<TestAggregateRoot>();
+        var repository = new TestRepository(_loggerMock.Object)
+        {
+            GetAllInternalResult = expectedItems.ToAsyncEnumerable()
+        };
+
+        // Act
+        LogAct("Calling EnumerateAllAsync with handler that stops on second item");
+        var result = await repository.EnumerateAllAsync(
+            _executionContext,
+            _paginationInfo,
+            (ctx, item, ct) =>
+            {
+                processedItems.Add(item);
+                return Task.FromResult(processedItems.Count < 2);
+            },
+            CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying processing stopped after second item");
+        result.ShouldBeTrue();
+        processedItems.Count.ShouldBe(2);
+        processedItems[0].Name.ShouldBe("Item1");
+        processedItems[1].Name.ShouldBe("Item2");
+        LogInfo("EnumerateAllAsync stopped when handler returned false");
+    }
+
+    [Fact]
+    public async Task EnumerateAllAsync_WhenInternalMethodThrows_ShouldReturnFalseAndLogException()
     {
         // Arrange
         LogArrange("Setting up repository to throw exception");
+        var processedItems = new List<TestAggregateRoot>();
         var repository = new TestRepository(_loggerMock.Object)
         {
             GetAllInternalShouldThrow = true
         };
 
         // Act
-        LogAct("Calling GetAllAsync");
-        var results = await repository.GetAllAsync(_executionContext, _paginationInfo, CancellationToken.None)
-            .ToListAsync();
+        LogAct("Calling EnumerateAllAsync");
+        var result = await repository.EnumerateAllAsync(
+            _executionContext,
+            _paginationInfo,
+            (ctx, item, ct) =>
+            {
+                processedItems.Add(item);
+                return Task.FromResult(true);
+            },
+            CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying empty result and logging");
-        results.ShouldBeEmpty();
+        LogAssert("Verifying false result and logging");
+        result.ShouldBeFalse();
+        processedItems.ShouldBeEmpty();
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -145,7 +203,76 @@ public class RepositoryBaseTests : TestBase
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
-        LogInfo("GetAllAsync returned empty and logged exception");
+        LogInfo("EnumerateAllAsync returned false and logged exception");
+    }
+
+    [Fact]
+    public async Task EnumerateAllAsync_WhenExceptionDuringIteration_ShouldReturnFalseAndLogException()
+    {
+        // Arrange
+        LogArrange("Setting up repository that throws mid-iteration");
+        var processedItems = new List<TestAggregateRoot>();
+        var repository = new TestRepository(_loggerMock.Object)
+        {
+            GetAllInternalResult = CreateThrowingAsyncEnumerable()
+        };
+
+        // Act
+        LogAct("Calling EnumerateAllAsync");
+        var result = await repository.EnumerateAllAsync(
+            _executionContext,
+            _paginationInfo,
+            (ctx, item, ct) =>
+            {
+                processedItems.Add(item);
+                return Task.FromResult(true);
+            },
+            CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying false result after mid-iteration exception");
+        result.ShouldBeFalse();
+        processedItems.Count.ShouldBe(1);
+        processedItems[0].Name.ShouldBe("Item1");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+        LogInfo("EnumerateAllAsync caught mid-iteration exception");
+    }
+
+    [Fact]
+    public async Task EnumerateAllAsync_WhenNoItems_ShouldReturnTrueWithoutCallingHandler()
+    {
+        // Arrange
+        LogArrange("Setting up repository with no items");
+        var handlerCalled = false;
+        var repository = new TestRepository(_loggerMock.Object)
+        {
+            GetAllInternalResult = AsyncEnumerable.Empty<TestAggregateRoot>()
+        };
+
+        // Act
+        LogAct("Calling EnumerateAllAsync");
+        var result = await repository.EnumerateAllAsync(
+            _executionContext,
+            _paginationInfo,
+            (ctx, item, ct) =>
+            {
+                handlerCalled = true;
+                return Task.FromResult(true);
+            },
+            CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying true result without handler calls");
+        result.ShouldBeTrue();
+        handlerCalled.ShouldBeFalse();
+        LogInfo("EnumerateAllAsync returned true for empty enumerable");
     }
 
     #endregion
@@ -371,58 +498,114 @@ public class RepositoryBaseTests : TestBase
 
     #endregion
 
-    #region GetModifiedSinceAsync Tests
+    #region EnumerateModifiedSinceAsync Tests
 
     [Fact]
-    public async Task GetModifiedSinceAsync_WhenInternalMethodSucceeds_ShouldReturnResults()
+    public async Task EnumerateModifiedSinceAsync_WhenHandlerReturnsTrue_ShouldProcessAllItems()
     {
         // Arrange
-        LogArrange("Setting up repository with successful GetModifiedSinceInternal");
+        LogArrange("Setting up repository with modified items");
         var expectedItems = new List<TestAggregateRoot>
         {
             new("Modified1"),
             new("Modified2"),
             new("Modified3")
         };
+        var processedItems = new List<TestAggregateRoot>();
         var repository = new TestRepository(_loggerMock.Object)
         {
             GetModifiedSinceInternalResult = expectedItems.ToAsyncEnumerable()
         };
 
         // Act
-        LogAct("Calling GetModifiedSinceAsync");
-        var results = await repository.GetModifiedSinceAsync(
-            _executionContext, _timeProvider, _sinceDate, CancellationToken.None)
-            .ToListAsync();
+        LogAct("Calling EnumerateModifiedSinceAsync");
+        var result = await repository.EnumerateModifiedSinceAsync(
+            _executionContext,
+            _timeProvider,
+            _sinceDate,
+            (ctx, item, ct) =>
+            {
+                processedItems.Add(item);
+                return Task.FromResult(true);
+            },
+            CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying results");
-        results.Count.ShouldBe(3);
-        results[0].Name.ShouldBe("Modified1");
-        results[1].Name.ShouldBe("Modified2");
-        results[2].Name.ShouldBe("Modified3");
-        LogInfo("GetModifiedSinceAsync returned expected results");
+        LogAssert("Verifying all items processed");
+        result.ShouldBeTrue();
+        processedItems.Count.ShouldBe(3);
+        processedItems[0].Name.ShouldBe("Modified1");
+        processedItems[1].Name.ShouldBe("Modified2");
+        processedItems[2].Name.ShouldBe("Modified3");
+        LogInfo("EnumerateModifiedSinceAsync processed all items successfully");
     }
 
     [Fact]
-    public async Task GetModifiedSinceAsync_WhenInternalMethodThrows_ShouldReturnEmptyAndLogException()
+    public async Task EnumerateModifiedSinceAsync_WhenHandlerReturnsFalse_ShouldStopProcessing()
+    {
+        // Arrange
+        LogArrange("Setting up repository with multiple modified items");
+        var expectedItems = new List<TestAggregateRoot>
+        {
+            new("Modified1"),
+            new("Modified2"),
+            new("Modified3")
+        };
+        var processedItems = new List<TestAggregateRoot>();
+        var repository = new TestRepository(_loggerMock.Object)
+        {
+            GetModifiedSinceInternalResult = expectedItems.ToAsyncEnumerable()
+        };
+
+        // Act
+        LogAct("Calling EnumerateModifiedSinceAsync with handler that stops on first item");
+        var result = await repository.EnumerateModifiedSinceAsync(
+            _executionContext,
+            _timeProvider,
+            _sinceDate,
+            (ctx, item, ct) =>
+            {
+                processedItems.Add(item);
+                return Task.FromResult(false);
+            },
+            CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying processing stopped after first item");
+        result.ShouldBeTrue();
+        processedItems.Count.ShouldBe(1);
+        processedItems[0].Name.ShouldBe("Modified1");
+        LogInfo("EnumerateModifiedSinceAsync stopped when handler returned false");
+    }
+
+    [Fact]
+    public async Task EnumerateModifiedSinceAsync_WhenInternalMethodThrows_ShouldReturnFalseAndLogException()
     {
         // Arrange
         LogArrange("Setting up repository to throw exception");
+        var processedItems = new List<TestAggregateRoot>();
         var repository = new TestRepository(_loggerMock.Object)
         {
             GetModifiedSinceInternalShouldThrow = true
         };
 
         // Act
-        LogAct("Calling GetModifiedSinceAsync");
-        var results = await repository.GetModifiedSinceAsync(
-            _executionContext, _timeProvider, _sinceDate, CancellationToken.None)
-            .ToListAsync();
+        LogAct("Calling EnumerateModifiedSinceAsync");
+        var result = await repository.EnumerateModifiedSinceAsync(
+            _executionContext,
+            _timeProvider,
+            _sinceDate,
+            (ctx, item, ct) =>
+            {
+                processedItems.Add(item);
+                return Task.FromResult(true);
+            },
+            CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying empty result and logging");
-        results.ShouldBeEmpty();
+        LogAssert("Verifying false result and logging");
+        result.ShouldBeFalse();
+        processedItems.ShouldBeEmpty();
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -431,7 +614,38 @@ public class RepositoryBaseTests : TestBase
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
-        LogInfo("GetModifiedSinceAsync returned empty and logged exception");
+        LogInfo("EnumerateModifiedSinceAsync returned false and logged exception");
+    }
+
+    [Fact]
+    public async Task EnumerateModifiedSinceAsync_WhenNoItems_ShouldReturnTrueWithoutCallingHandler()
+    {
+        // Arrange
+        LogArrange("Setting up repository with no modified items");
+        var handlerCalled = false;
+        var repository = new TestRepository(_loggerMock.Object)
+        {
+            GetModifiedSinceInternalResult = AsyncEnumerable.Empty<TestAggregateRoot>()
+        };
+
+        // Act
+        LogAct("Calling EnumerateModifiedSinceAsync");
+        var result = await repository.EnumerateModifiedSinceAsync(
+            _executionContext,
+            _timeProvider,
+            _sinceDate,
+            (ctx, item, ct) =>
+            {
+                handlerCalled = true;
+                return Task.FromResult(true);
+            },
+            CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying true result without handler calls");
+        result.ShouldBeTrue();
+        handlerCalled.ShouldBeFalse();
+        LogInfo("EnumerateModifiedSinceAsync returned true for empty enumerable");
     }
 
     #endregion
@@ -459,6 +673,13 @@ public class RepositoryBaseTests : TestBase
     #endregion
 
     #region Test Helpers
+
+    private static async IAsyncEnumerable<TestAggregateRoot> CreateThrowingAsyncEnumerable()
+    {
+        yield return new TestAggregateRoot("Item1");
+        await Task.Yield();
+        throw new InvalidOperationException("Test exception during iteration");
+    }
 
     private class TestAggregateRoot : EntityBase<TestAggregateRoot>, IAggregateRoot
     {

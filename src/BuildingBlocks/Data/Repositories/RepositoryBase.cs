@@ -106,14 +106,22 @@ public abstract class RepositoryBase<TAggregateRoot>
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<TAggregateRoot> GetAllAsync(
+    public async Task<bool> EnumerateAllAsync(
         ExecutionContext executionContext,
         PaginationInfo paginationInfo,
+        ItemHandler<TAggregateRoot> handler,
         CancellationToken cancellationToken)
     {
         try
         {
-            return GetAllInternalAsync(paginationInfo, cancellationToken);
+            await foreach (var item in GetAllInternalAsync(paginationInfo, cancellationToken))
+            {
+                var shouldContinue = await handler(executionContext, item, cancellationToken);
+                if (!shouldContinue)
+                    break;
+            }
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -121,8 +129,8 @@ public abstract class RepositoryBase<TAggregateRoot>
             Logger.LogExceptionForDistributedTracing(
                 executionContext,
                 ex,
-                "An error occurred while getting all aggregate roots.");
-            return AsyncEnumerable.Empty<TAggregateRoot>();
+                "An error occurred while enumerating all aggregate roots.");
+            return false;
         }
     }
 
@@ -190,15 +198,23 @@ public abstract class RepositoryBase<TAggregateRoot>
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<TAggregateRoot> GetModifiedSinceAsync(
+    public async Task<bool> EnumerateModifiedSinceAsync(
         ExecutionContext executionContext,
         TimeProvider timeProvider,
         DateTimeOffset since,
+        ItemHandler<TAggregateRoot> handler,
         CancellationToken cancellationToken)
     {
         try
         {
-            return GetModifiedSinceInternalAsync(executionContext, timeProvider, since, cancellationToken);
+            await foreach (var item in GetModifiedSinceInternalAsync(executionContext, timeProvider, since, cancellationToken))
+            {
+                var shouldContinue = await handler(executionContext, item, cancellationToken);
+                if (!shouldContinue)
+                    break;
+            }
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -206,8 +222,8 @@ public abstract class RepositoryBase<TAggregateRoot>
             Logger.LogExceptionForDistributedTracing(
                 executionContext,
                 ex,
-                "An error occurred while getting modified aggregate roots since specified time.");
-            return AsyncEnumerable.Empty<TAggregateRoot>();
+                "An error occurred while enumerating modified aggregate roots since specified time.");
+            return false;
         }
     }
 
