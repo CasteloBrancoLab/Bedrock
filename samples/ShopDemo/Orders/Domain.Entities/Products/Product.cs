@@ -1,0 +1,24 @@
+using Bedrock.BuildingBlocks.Domain.Entities;
+using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
+using ShopDemo.Core.Entities.Products;
+
+namespace ShopDemo.Orders.Domain.Entities.Products;
+
+public class Product
+    : EntityBase<Product>,
+    IProduct
+{
+    public string Code { get; } = string.Empty;
+    public string Name { get; } = string.Empty;
+    public string? Description { get; }
+
+    public override IEntity<Product> Clone()
+    {
+        return default!;
+    }
+
+    protected override bool IsValidInternal(ExecutionContext executionContext)
+    {
+        return true;
+    }
+}
