@@ -1,5 +1,5 @@
 #!/bin/bash
-# Limpa todas as pastas bin/ e obj/ de forma recursiva
+# Limpa todas as pastas bin/, obj/ e artefatos de forma recursiva
 
 set -e
 
@@ -14,3 +14,17 @@ echo "Cleaning bin/ and obj/ directories..."
 find . -type d \( -name "bin" -o -name "obj" \) -exec rm -rf {} + 2>/dev/null || true
 
 echo "Done: Cleaned bin/ and obj/ directories"
+
+echo "Cleaning artifacts and temporary files..."
+
+# Remove generated artifacts
+rm -rf artifacts/
+rm -rf TestResults/
+rm -rf StrykerOutput/
+rm -rf coverage/
+rm -rf mutation-reports/
+
+# Remove temporary PowerShell scripts (if any)
+rm -f scripts/replace-namespace*.ps1
+
+echo "Done: Cleaned all artifacts and temporary files"
