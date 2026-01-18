@@ -350,7 +350,7 @@ public abstract class AvroSerializerBase
             _ when underlyingType == typeof(uint) => (uint)Convert.ToInt64(avroValue, CultureInfo.InvariantCulture),
             _ when underlyingType == typeof(ulong) => (ulong)Convert.ToInt64(avroValue, CultureInfo.InvariantCulture),
             _ when underlyingType == typeof(decimal) => decimal.Parse(avroValue.ToString()!, CultureInfo.InvariantCulture),
-            _ when underlyingType == typeof(DateTime) => new DateTime(Convert.ToInt64(avroValue, CultureInfo.InvariantCulture)),
+            _ when underlyingType == typeof(DateTime) => new DateTime(Convert.ToInt64(avroValue, CultureInfo.InvariantCulture), DateTimeKind.Utc),
             _ when underlyingType == typeof(DateTimeOffset) => new DateTimeOffset(Convert.ToInt64(avroValue, CultureInfo.InvariantCulture), TimeSpan.Zero),
             _ when underlyingType == typeof(DateOnly) => DateOnly.FromDayNumber(Convert.ToInt32(avroValue, CultureInfo.InvariantCulture)),
             _ when underlyingType == typeof(TimeOnly) => new TimeOnly(Convert.ToInt64(avroValue, CultureInfo.InvariantCulture)),

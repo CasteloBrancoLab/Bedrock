@@ -1276,7 +1276,7 @@ public class EntityBaseTests : TestBase
             id: Id.GenerateNewId(),
             tenantInfo: TenantInfo.Create(Guid.NewGuid(), "Tenant"),
             createdAt: DateTimeOffset.UtcNow,
-            createdBy: null, // This should fail because CreatedByIsRequired defaults to true
+            createdBy: null!, // Intentionally passing null to test validation - CS8625 suppressed
             createdCorrelationId: Guid.NewGuid(),
             createdExecutionOrigin: "System",
             createdBusinessOperationCode: "OP",
