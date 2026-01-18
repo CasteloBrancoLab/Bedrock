@@ -43,37 +43,49 @@ public static class StringExtensions
         for (int i = 0; i < input.Length; i++)
         {
             char character = input[i];
-
-            if (!char.IsLetterOrDigit(character))
-            {
-                if (CanAppendKebabSeparator(builder, lastCharWasSeparator, character))
-                {
-                    builder.Append(KebabCaseSeparator);
-                    lastCharWasSeparator = true;
-                }
-            }
-            else if (char.IsUpper(character))
-            {
-                if (lastCharWasLowerCase && !lastCharWasSeparator)
-                {
-                    builder.Append(KebabCaseSeparator);
-                }
-
-                builder.Append(char.ToLower(character, CultureInfo.InvariantCulture));
-                lastCharWasLowerCase = false;
-                lastCharWasSeparator = false;
-            }
-            else
-            {
-                builder.Append(character);
-                lastCharWasLowerCase = true;
-                lastCharWasSeparator = false;
-            }
+            ProcessKebabCharacter(builder, character, ref lastCharWasLowerCase, ref lastCharWasSeparator);
         }
 
-        string result = builder.ToString();
+        return TrimTrailingSeparator(builder.ToString(), KebabCaseSeparator);
+    }
 
-        if (result.Length > 0 && result[^1] == KebabCaseSeparator)
+    private static void ProcessKebabCharacter(StringBuilder builder, char character, ref bool lastCharWasLowerCase, ref bool lastCharWasSeparator)
+    {
+        if (!char.IsLetterOrDigit(character))
+        {
+            if (CanAppendKebabSeparator(builder, lastCharWasSeparator, character))
+            {
+                builder.Append(KebabCaseSeparator);
+                lastCharWasSeparator = true;
+            }
+        }
+        else if (char.IsUpper(character))
+        {
+            AppendUpperCharAsKebab(builder, character, lastCharWasLowerCase, lastCharWasSeparator);
+            lastCharWasLowerCase = false;
+            lastCharWasSeparator = false;
+        }
+        else
+        {
+            builder.Append(character);
+            lastCharWasLowerCase = true;
+            lastCharWasSeparator = false;
+        }
+    }
+
+    private static void AppendUpperCharAsKebab(StringBuilder builder, char character, bool lastCharWasLowerCase, bool lastCharWasSeparator)
+    {
+        if (lastCharWasLowerCase && !lastCharWasSeparator)
+        {
+            builder.Append(KebabCaseSeparator);
+        }
+
+        builder.Append(char.ToLower(character, CultureInfo.InvariantCulture));
+    }
+
+    private static string TrimTrailingSeparator(string result, char separator)
+    {
+        if (result.Length > 0 && result[^1] == separator)
         {
             return result[..^1];
         }
