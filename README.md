@@ -120,6 +120,33 @@ A IA segue regras definidas em:
 
 ## Configuracao Local
 
+### Arquivo .env
+
+O projeto utiliza um arquivo `.env` na raiz para configuracoes sensiveis. Este arquivo **nao e versionado** (`.gitignore`).
+
+**Criar o arquivo `.env`:**
+
+```bash
+# Na raiz do projeto
+touch .env
+```
+
+**Conteudo do arquivo:**
+
+```env
+SONAR_TOKEN=<seu-token-do-sonarcloud>
+```
+
+**Onde obter o SONAR_TOKEN:**
+
+1. Acesse [SonarCloud](https://sonarcloud.io)
+2. Faca login com sua conta GitHub
+3. Va em **My Account** → **Security**
+4. Gere um novo token em **Generate Tokens**
+5. Copie o token e adicione ao `.env`
+
+> **Nota**: Sem o `SONAR_TOKEN`, a pipeline local funcionara normalmente, mas a etapa de busca de issues do SonarCloud sera ignorada (bypass). Isso permite que qualquer pessoa rode a pipeline local sem precisar de acesso ao SonarCloud.
+
 ### Claude Code
 
 Este projeto utiliza [Claude Code](https://claude.com/claude-code). Para configurar:

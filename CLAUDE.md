@@ -120,6 +120,35 @@ Labels padrão do GitHub também disponíveis: `bug`, `documentation`, `enhancem
 - Target Framework: .NET 10.0
 - Diagramas nas issues devem ser feitos em **Mermaid**
 
+## Configuração do Ambiente Local
+
+### Arquivo .env
+
+O projeto utiliza um arquivo `.env` na raiz para configurações sensíveis. Este arquivo **não é versionado** (está no `.gitignore`).
+
+**Criar o arquivo `.env`:**
+
+```bash
+# Na raiz do projeto
+touch .env
+```
+
+**Conteúdo do arquivo:**
+
+```env
+SONAR_TOKEN=<seu-token-do-sonarcloud>
+```
+
+**Onde obter o SONAR_TOKEN:**
+
+1. Acesse [SonarCloud](https://sonarcloud.io)
+2. Faça login com sua conta GitHub
+3. Vá em **My Account** → **Security**
+4. Gere um novo token em **Generate Tokens**
+5. Copie o token e adicione ao `.env`
+
+> **Nota**: Sem o `SONAR_TOKEN`, a pipeline local funcionará normalmente, mas a etapa de busca de issues do SonarCloud será ignorada (bypass). Isso permite que qualquer pessoa rode a pipeline local sem precisar de acesso ao SonarCloud.
+
 ## Testes
 
 ### Estrutura
@@ -377,6 +406,42 @@ MESSAGE: <descrição-do-problema>
    - Repetir até não ter mais issue do SonarCloud para resolver
 4. Só commitar quando a pipeline passar completamente
 
+### Limite de Retentativas
+
+Para evitar loops infinitos, o code agent DEVE respeitar os seguintes limites:
+
+| Etapa | Máximo de Tentativas |
+|-------|---------------------|
+| Pipeline local (passo 3-4) | 5 tentativas |
+| Pipeline GitHub Actions (passo 7-9) | 5 tentativas |
+
+**Ao atingir o limite**:
+1. **Parar imediatamente** a execução
+2. **Informar o usuário** com um resumo claro:
+   - Quantas tentativas foram feitas
+   - Quais pendências ainda existem
+   - Últimos erros encontrados
+3. **Solicitar intervenção humana** para decidir próximos passos
+
+### Após Pipeline Local Passar
+
+Quando a pipeline local passar com sucesso, o code agent DEVE:
+
+1. **Criar a PR** usando `gh pr create`
+   - Título descritivo seguindo o padrão do projeto
+   - Body com `Closes #<issue>` para auto-close
+2. **Aguardar a pipeline do GitHub Actions**
+   - Verificar status com `gh pr checks <number>`
+3. **Se a pipeline passar**:
+   - Fazer merge com `gh pr merge <number> --squash --delete-branch`
+   - Atualizar branch local: `git checkout main && git pull`
+   - Limpar branches locais obsoletas: `git branch -d <branch-name>`
+4. **Se a pipeline falhar** (máximo 5 tentativas):
+   - Analisar os logs com `gh run view <run-id> --log-failed`
+   - Corrigir os problemas localmente
+   - Commitar e push (a PR será atualizada automaticamente)
+   - Repetir até passar ou atingir o limite de tentativas
+
 **Issues do SonarCloud que NÃO fazem sentido:**
 
 Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Nestes casos, o code agent DEVE:
@@ -392,23 +457,33 @@ Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Ne
 4. **Marcar como "Won't Fix"** no SonarCloud se tiver acesso, ou documentar no PR
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  FLUXO OBRIGATÓRIO DO CODE AGENT                    │
-├─────────────────────────────────────────────────────┤
-│  1. Implementar código                              │
-│  2. Implementar testes                              │
-│  3. Executar: ./scripts/pipeline.sh                 │
-│  4. Se FAILED ou com pendências:                    │
-│     - Ler artifacts/pending/SUMMARY.txt             │
-│     - Ler artifacts/pending/mutant_*.txt            │
-│     - Ler artifacts/pending/coverage_*.txt          │
-│     - Ler artifacts/pending/sonar_*.txt             │
-│     - Corrigir testes para matar mutantes           │
-│     - Adicionar testes para cobertura               │
-│     - Resolver issues do SonarCloud (ou justificar) │
-│     - Voltar ao passo 3                             │
-│  5. Se SUCCESS: commitar                            │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  FLUXO OBRIGATÓRIO DO CODE AGENT                         │
+├──────────────────────────────────────────────────────────┤
+│  1. Implementar código                                   │
+│  2. Implementar testes                                   │
+│  3. Executar: ./scripts/pipeline.sh                      │
+│  4. Se FAILED ou com pendências (max 5 tentativas):      │
+│     - Ler artifacts/pending/SUMMARY.txt                  │
+│     - Ler artifacts/pending/mutant_*.txt                 │
+│     - Ler artifacts/pending/coverage_*.txt               │
+│     - Ler artifacts/pending/sonar_*.txt                  │
+│     - Corrigir testes para matar mutantes                │
+│     - Adicionar testes para cobertura                    │
+│     - Resolver issues do SonarCloud (ou justificar)      │
+│     - Voltar ao passo 3                                  │
+│  5. Se SUCCESS: commitar e push                          │
+│  6. Criar PR: gh pr create                               │
+│  7. Verificar pipeline: gh pr checks <number>            │
+│  8. Se pipeline PASSOU:                                  │
+│     - gh pr merge <number> --squash --delete-branch      │
+│     - git checkout main && git pull                      │
+│     - git branch -d <branch-local>                       │
+│  9. Se pipeline FALHOU (max 5 tentativas):               │
+│     - Analisar: gh run view <run-id> --log-failed        │
+│     - Corrigir e voltar ao passo 3                       │
+│ 10. Se atingiu limite: PARAR e informar o usuário        │
+└──────────────────────────────────────────────────────────┘
 ```
 
 > **Nota**: Os artefatos são gerados em formato texto para consumo programático. Relatórios HTML são gerados apenas no GitHub Actions.
