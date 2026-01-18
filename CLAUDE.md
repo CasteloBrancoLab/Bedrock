@@ -333,7 +333,9 @@ artifacts/
 3. Se coverage ou mutation falhar:
    - Analisar os relatórios em `artifacts/`
    - Corrigir os testes
-   - Repetir até atingir **100%**
+   - Repetir até atingir **100%** de cobertura
+   - Repetir até atingir **100%** de mutação
+   - Repetir até não ter mais issue do sonarcloud para resolver
 4. Só commitar quando a pipeline passar completamente
 
 ```
