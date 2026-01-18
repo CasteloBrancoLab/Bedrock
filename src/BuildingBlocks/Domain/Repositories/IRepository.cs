@@ -6,6 +6,70 @@ namespace Bedrock.BuildingBlocks.Domain.Repositories;
 
 /*
 ═══════════════════════════════════════════════════════════════════════════════
+LLM_GUIDANCE: ItemHandler Delegate - Handler Pattern para Enumeração
+═══════════════════════════════════════════════════════════════════════════════
+
+O delegate ItemHandler<T> é usado pelo padrão Handler para processar itens
+durante enumeração, permitindo tratamento de exceções centralizado no repositório.
+
+───────────────────────────────────────────────────────────────────────────────
+LLM_RULE: Evitar Leaky Abstraction com IAsyncEnumerable
+───────────────────────────────────────────────────────────────────────────────
+
+IAsyncEnumerable<T> tem execução diferida - exceções durante iteração caem
+no CLIENTE (Service), não no repositório. Isso força o cliente a conhecer
+detalhes de infraestrutura (SqlException, DbException, etc).
+
+O Handler Pattern resolve isso:
+✅ Repositório controla toda a iteração
+✅ Exceções são capturadas no repositório
+✅ Cliente recebe apenas bool de sucesso/falha
+✅ Cliente pode interromper retornando false
+
+───────────────────────────────────────────────────────────────────────────────
+LLM_RULE: Retorno do Handler
+───────────────────────────────────────────────────────────────────────────────
+
+O handler retorna Task<bool>:
+✅ true = continuar processando próximo item
+✅ false = interromper enumeração (sem erro)
+
+O método EnumerateXxxAsync retorna Task<bool>:
+✅ true = enumeração completou com sucesso (ou foi interrompida pelo handler)
+✅ false = ocorreu exceção durante enumeração
+
+═══════════════════════════════════════════════════════════════════════════════
+*/
+
+/// <summary>
+/// Handler delegate for processing items during enumeration.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This delegate is called for each item during enumeration operations like
+/// <see cref="IRepository{TAggregateRoot}.EnumerateAllAsync"/> and
+/// <see cref="IRepository{TAggregateRoot}.EnumerateModifiedSinceAsync"/>.
+/// </para>
+/// <para>
+/// The handler receives the execution context, the current item, and a cancellation token.
+/// It should return <c>true</c> to continue processing the next item, or <c>false</c> to
+/// stop enumeration early (without error).
+/// </para>
+/// </remarks>
+/// <typeparam name="T">The type of item being processed.</typeparam>
+/// <param name="executionContext">The execution context for multi-tenancy and audit.</param>
+/// <param name="item">The current item being processed.</param>
+/// <param name="cancellationToken">A token to cancel the operation.</param>
+/// <returns>
+/// <c>true</c> to continue processing the next item; <c>false</c> to stop enumeration.
+/// </returns>
+public delegate Task<bool> ItemHandler<in T>(
+    ExecutionContext executionContext,
+    T item,
+    CancellationToken cancellationToken);
+
+/*
+═══════════════════════════════════════════════════════════════════════════════
 LLM_GUIDANCE: Separação Entre BuildingBlocks.Domain.Entities e BuildingBlocks.Domain
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -198,14 +262,14 @@ public interface IRepository<TAggregateRoot>
 
     /*
     ───────────────────────────────────────────────────────────────────────────────
-    LLM_GUIDANCE: GetAllAsync - Listagem Paginada de Agregados
+    LLM_GUIDANCE: EnumerateAllAsync - Enumeração Paginada com Handler
     ───────────────────────────────────────────────────────────────────────────────
 
     Embora nem toda raiz de agregação precise ser listada, este método é
     universalmente aplicável para repositórios que suportam paginação.
 
     ───────────────────────────────────────────────────────────────────────────────
-    LLM_RULE: GetAllAsync na Interface Base (Quase Universal)
+    LLM_RULE: EnumerateAllAsync na Interface Base (Quase Universal)
     ───────────────────────────────────────────────────────────────────────────────
 
     Caso não colocássemos este método na interface base, cada repositório específico
@@ -225,34 +289,61 @@ public interface IRepository<TAggregateRoot>
     ✅ pagination.IsUnbounded - Verifica se é query sem limite
 
     EXEMPLO:
-      var allItems = repository.GetAllAsync(PaginationInfo.All, cancellationToken);
-      var allSorted = repository.GetAllAsync(
-          PaginationInfo.All.WithSortCollection(sorts),
+      var success = await repository.EnumerateAllAsync(
+          context,
+          PaginationInfo.All,
+          async (ctx, item, ct) => { Process(item); return true; },
           cancellationToken);
+
+    ───────────────────────────────────────────────────────────────────────────────
+    LLM_RULE: Handler Pattern para Tratamento de Exceções
+    ───────────────────────────────────────────────────────────────────────────────
+
+    Este método usa o Handler Pattern em vez de IAsyncEnumerable para evitar
+    leaky abstraction. Exceções de infraestrutura são capturadas no repositório,
+    não no cliente.
+
+    O handler retorna bool:
+    ✅ true = continuar processando próximo item
+    ✅ false = interromper (sem erro)
+
+    O método retorna Task<bool>:
+    ✅ true = sucesso (completou ou handler interrompeu)
+    ✅ false = falha (exceção ocorreu)
 
     ───────────────────────────────────────────────────────────────────────────────
     */
 
     /// <summary>
-    /// Retrieves all aggregate roots with pagination support.
+    /// Enumerates all aggregate roots with pagination support, calling the handler for each item.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// This method uses the Handler Pattern to avoid leaky abstractions. Infrastructure
+    /// exceptions are caught and logged by the repository, not propagated to the caller.
+    /// </para>
     /// <para>
     /// Pagination is always required to prevent unbounded queries. Use
     /// <see cref="PaginationInfo.All"/> to explicitly request all records.
     /// </para>
     /// <para>
-    /// The <see cref="PaginationInfo.IsUnbounded"/> property can be used to
-    /// detect if the query has no limits.
+    /// The handler is called for each item and should return <c>true</c> to continue
+    /// or <c>false</c> to stop enumeration early (without error).
     /// </para>
     /// </remarks>
     /// <param name="executionContext">The execution context for multi-tenancy and audit.</param>
     /// <param name="paginationInfo">The pagination parameters including page, size, sorts, and filters.</param>
+    /// <param name="handler">The handler to process each item. Return <c>true</c> to continue, <c>false</c> to stop.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
-    /// An async enumerable of aggregate roots matching the pagination criteria.
+    /// <c>true</c> if enumeration completed successfully (or was stopped by handler);
+    /// <c>false</c> if an error occurred during enumeration.
     /// </returns>
-    IAsyncEnumerable<TAggregateRoot> GetAllAsync(ExecutionContext executionContext, PaginationInfo paginationInfo, CancellationToken cancellationToken);
+    Task<bool> EnumerateAllAsync(
+        ExecutionContext executionContext,
+        PaginationInfo paginationInfo,
+        ItemHandler<TAggregateRoot> handler,
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// Checks if an aggregate root with the specified identifier exists.
@@ -282,12 +373,23 @@ public interface IRepository<TAggregateRoot>
     ❌ DateTime.Now / DateTime.UtcNow - não testável, não consistente
 
     ───────────────────────────────────────────────────────────────────────────────
+    LLM_RULE: Handler Pattern para Tratamento de Exceções
+    ───────────────────────────────────────────────────────────────────────────────
+
+    Este método usa o Handler Pattern em vez de IAsyncEnumerable para evitar
+    leaky abstraction. Veja documentação de EnumerateAllAsync para detalhes.
+
+    ───────────────────────────────────────────────────────────────────────────────
     */
 
     /// <summary>
-    /// Retrieves aggregate roots that have been modified since a specified timestamp.
+    /// Enumerates aggregate roots modified since a specified timestamp, calling the handler for each item.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// This method uses the Handler Pattern to avoid leaky abstractions. Infrastructure
+    /// exceptions are caught and logged by the repository, not propagated to the caller.
+    /// </para>
     /// <para>
     /// This method is useful for synchronization and audit scenarios where you need
     /// to track changes over time.
@@ -296,15 +398,26 @@ public interface IRepository<TAggregateRoot>
     /// The <paramref name="timeProvider"/> parameter is required for testability and
     /// consistency across operations.
     /// </para>
+    /// <para>
+    /// The handler is called for each item and should return <c>true</c> to continue
+    /// or <c>false</c> to stop enumeration early (without error).
+    /// </para>
     /// </remarks>
     /// <param name="executionContext">The execution context for multi-tenancy and audit.</param>
     /// <param name="timeProvider">The time provider for consistent time operations.</param>
     /// <param name="since">The timestamp to compare against.</param>
+    /// <param name="handler">The handler to process each item. Return <c>true</c> to continue, <c>false</c> to stop.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>
-    /// An async enumerable of aggregate roots modified after the specified timestamp.
+    /// <c>true</c> if enumeration completed successfully (or was stopped by handler);
+    /// <c>false</c> if an error occurred during enumeration.
     /// </returns>
-    IAsyncEnumerable<TAggregateRoot> GetModifiedSinceAsync(ExecutionContext executionContext, TimeProvider timeProvider, DateTimeOffset since, CancellationToken cancellationToken);
+    Task<bool> EnumerateModifiedSinceAsync(
+        ExecutionContext executionContext,
+        TimeProvider timeProvider,
+        DateTimeOffset since,
+        ItemHandler<TAggregateRoot> handler,
+        CancellationToken cancellationToken);
 
     /*
     ───────────────────────────────────────────────────────────────────────────────
