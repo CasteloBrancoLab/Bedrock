@@ -1,10 +1,14 @@
 #!/bin/bash
-# summarize.sh - Extrai pendências de cobertura e mutação para arquivos digestíveis
+# summarize.sh - Extrai pendências de cobertura, mutação e SonarCloud para arquivos digestíveis
 set -e
 
 ARTIFACTS_DIR="artifacts"
 PENDING_DIR="$ARTIFACTS_DIR/pending"
 SUMMARY_FILE="$PENDING_DIR/SUMMARY.txt"
+
+# Configuração SonarCloud
+SONAR_PROJECT="CasteloBrancoLab_Bedrock"
+SONAR_API_URL="https://sonarcloud.io/api/issues/search"
 
 echo "=== SUMMARIZE ==="
 
@@ -110,6 +114,107 @@ done
 COVERAGE_PENDING=$(find "$PENDING_DIR" -name "coverage_*.txt" 2>/dev/null | wc -l)
 
 # ========================================
+# ISSUES DO SONARCLOUD
+# ========================================
+echo "Fetching SonarCloud issues..."
+
+SONAR_PENDING=0
+TEMP_JSON="$ARTIFACTS_DIR/.sonar_response.json"
+
+# Busca todas as issues abertas do SonarCloud (paginado)
+page=1
+page_size=100
+total=0
+issue_index=0
+
+while true; do
+    # Busca issues e salva em arquivo temporário
+    curl -s "${SONAR_API_URL}?componentKeys=${SONAR_PROJECT}&resolved=false&ps=${page_size}&p=${page}" > "$TEMP_JSON" 2>/dev/null || echo "{}" > "$TEMP_JSON"
+
+    # Verifica se a resposta é válida
+    if ! grep -q '"issues"' "$TEMP_JSON"; then
+        echo "Warning: Could not fetch SonarCloud issues (page $page)"
+        break
+    fi
+
+    # Extrai total de issues na primeira página
+    if [ $page -eq 1 ]; then
+        total=$(powershell -NoProfile -Command "
+            \$json = Get-Content '$TEMP_JSON' -Raw | ConvertFrom-Json
+            Write-Host \$json.total
+        " 2>/dev/null || echo "0")
+        total=${total//[^0-9]/}
+        [ -z "$total" ] && total=0
+        echo "Total SonarCloud issues: $total"
+    fi
+
+    # Processa cada issue da página
+    issues_processed=$(powershell -NoProfile -Command "
+        \$json = Get-Content '$TEMP_JSON' -Raw | ConvertFrom-Json
+        \$issueIndex = $issue_index
+
+        foreach (\$issue in \$json.issues) {
+            \$issueIndex++
+
+            \$type = \$issue.type
+            \$severity = \$issue.severity
+            \$component = \$issue.component -replace '^${SONAR_PROJECT}:', ''
+            \$line = if (\$issue.line) { \$issue.line } else { 'N/A' }
+            \$message = \$issue.message -replace '[\r\n]+', ' '
+            \$rule = \$issue.rule
+            \$effort = if (\$issue.effort) { \$issue.effort } else { 'N/A' }
+
+            \$typePrefix = switch (\$type) {
+                'BUG' { 'bug' }
+                'VULNERABILITY' { 'vuln' }
+                'CODE_SMELL' { 'smell' }
+                'SECURITY_HOTSPOT' { 'hotspot' }
+                default { 'issue' }
+            }
+
+            \$outFile = '$PENDING_DIR/sonar_' + \$typePrefix + '_' + \$issueIndex.ToString('D3') + '.txt'
+
+            @(
+                \"TYPE: \$type\",
+                \"SEVERITY: \$severity\",
+                \"FILE: \$component\",
+                \"LINE: \$line\",
+                \"RULE: \$rule\",
+                \"EFFORT: \$effort\",
+                \"MESSAGE: \$message\"
+            ) | Out-File -FilePath \$outFile -Encoding UTF8
+        }
+
+        Write-Host \$issueIndex
+    " 2>/dev/null || echo "$issue_index")
+
+    issues_processed=${issues_processed//[^0-9]/}
+    [ -z "$issues_processed" ] && issues_processed=$issue_index
+
+    # Se não processou novas issues, sai do loop
+    if [ "$issues_processed" -eq "$issue_index" ]; then
+        break
+    fi
+
+    issue_index=$issues_processed
+
+    # Verifica se há mais páginas
+    if [ "$issue_index" -ge "$total" ]; then
+        break
+    fi
+
+    page=$((page + 1))
+done
+
+# Limpa arquivo temporário
+rm -f "$TEMP_JSON"
+
+SONAR_PENDING=$(find "$PENDING_DIR" -name "sonar_*.txt" 2>/dev/null | wc -l)
+SONAR_PENDING=${SONAR_PENDING//[^0-9]/}
+
+echo "Found $SONAR_PENDING SonarCloud issues"
+
+# ========================================
 # GERA SUMÁRIO CONSOLIDADO
 # ========================================
 echo "Generating summary..."
@@ -121,6 +226,7 @@ echo "Generating summary..."
     echo ""
     echo "MUTANTES PENDENTES: $MUTATION_PENDING"
     echo "COBERTURA PENDENTE: $COVERAGE_PENDING arquivos"
+    echo "SONARCLOUD ISSUES: $SONAR_PENDING"
     echo ""
     echo "----------------------------------------"
     echo "MUTANTES SOBREVIVENTES:"
@@ -153,6 +259,26 @@ for f in $coverage_files_pending; do
         file=$(grep "^FILE:" "$f" | cut -d: -f2- | xargs)
         count=$(grep "^COUNT:" "$f" | cut -d: -f2 | tr -d ' ')
         echo "  $file ($count linhas)" >> "$SUMMARY_FILE"
+    fi
+done
+
+{
+    echo ""
+    echo "----------------------------------------"
+    echo "ISSUES DO SONARCLOUD:"
+    echo "----------------------------------------"
+} >> "$SUMMARY_FILE"
+
+# Lista issues do SonarCloud resumidas
+sonar_files=$(find "$PENDING_DIR" -name "sonar_*.txt" 2>/dev/null | sort || true)
+for f in $sonar_files; do
+    if [ -f "$f" ]; then
+        type=$(grep "^TYPE:" "$f" | cut -d: -f2 | tr -d ' ')
+        severity=$(grep "^SEVERITY:" "$f" | cut -d: -f2 | tr -d ' ')
+        file=$(grep "^FILE:" "$f" | cut -d: -f2- | xargs)
+        line=$(grep "^LINE:" "$f" | cut -d: -f2 | tr -d ' ')
+        rule=$(grep "^RULE:" "$f" | cut -d: -f2 | tr -d ' ')
+        echo "  [$severity] $type - $file:$line ($rule)" >> "$SUMMARY_FILE"
     fi
 done
 

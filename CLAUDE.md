@@ -321,22 +321,75 @@ scripts/
 artifacts/
 ├── coverage/         # Relatórios de cobertura (Cobertura XML)
 ├── mutation/         # Relatórios de mutação (JSON)
+├── pending/          # Pendências extraídas para análise
+│   ├── SUMMARY.txt           # Resumo consolidado das pendências
+│   ├── mutant_*.txt          # Mutantes sobreviventes (um arquivo por mutante)
+│   ├── coverage_*.txt        # Arquivos com cobertura insuficiente
+│   └── sonar_*.txt           # Issues do SonarCloud (um arquivo por issue)
 └── summary.json      # Resumo consolidado da pipeline
 ```
+
+#### Formato dos Arquivos de Pendências
+
+**Mutantes (`mutant_<projeto>_<numero>.txt`):**
+```
+PROJECT: <nome-do-projeto>
+FILE: <caminho-do-arquivo>
+LINE: <linha>
+STATUS: Survived|NoCoverage
+MUTATOR: <tipo-de-mutador>
+DESCRIPTION: <descrição-da-mutação>
+```
+
+**Cobertura (`coverage_<projeto>_<numero>.txt`):**
+```
+PROJECT: <nome-do-projeto>
+FILE: <caminho-do-arquivo>
+UNCOVERED_LINES: <linhas-separadas-por-virgula>
+COUNT: <quantidade-de-linhas>
+```
+
+**SonarCloud (`sonar_<tipo>_<numero>.txt`):**
+```
+TYPE: BUG|CODE_SMELL|VULNERABILITY|SECURITY_HOTSPOT
+SEVERITY: BLOCKER|CRITICAL|MAJOR|MINOR|INFO
+FILE: <caminho-do-arquivo>
+LINE: <linha>
+RULE: <regra-violada>
+EFFORT: <esforço-estimado>
+MESSAGE: <descrição-do-problema>
+```
+
+> **Tipos de arquivo SonarCloud**: `sonar_bug_*.txt`, `sonar_smell_*.txt`, `sonar_vuln_*.txt`, `sonar_hotspot_*.txt`
 
 #### Instruções para Code Agent
 
 **IMPORTANTE**: Antes de commitar qualquer código, o code agent DEVE:
 
 1. Executar `./scripts/pipeline.sh`
-2. Verificar `artifacts/summary.json`
-3. Se coverage ou mutation falhar:
-   - Analisar os relatórios em `artifacts/`
-   - Corrigir os testes
+2. Verificar `artifacts/pending/SUMMARY.txt`
+3. Se houver pendências:
+   - **Mutantes**: Ler `artifacts/pending/mutant_*.txt` e corrigir testes
+   - **Cobertura**: Ler `artifacts/pending/coverage_*.txt` e adicionar testes
+   - **SonarCloud**: Ler `artifacts/pending/sonar_*.txt` e corrigir issues
    - Repetir até atingir **100%** de cobertura
    - Repetir até atingir **100%** de mutação
-   - Repetir até não ter mais issue do sonarcloud para resolver
+   - Repetir até não ter mais issue do SonarCloud para resolver
 4. Só commitar quando a pipeline passar completamente
+
+**Issues do SonarCloud que NÃO fazem sentido:**
+
+Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Nestes casos, o code agent DEVE:
+
+1. **Avaliar criticamente** se a issue realmente se aplica ao contexto
+2. **Não resolver** issues que:
+   - Contradizem decisões arquiteturais documentadas em ADRs
+   - São falsos positivos (ex: código gerado, testes, mocks)
+   - Não se aplicam ao contexto específico do projeto
+3. **Informar o usuário** sobre a decisão de não resolver, explicando:
+   - Qual issue foi ignorada
+   - Motivo da decisão (ex: "contradiz ADR-XXX", "falso positivo", etc.)
+4. **Marcar como "Won't Fix"** no SonarCloud se tiver acesso, ou documentar no PR
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -345,13 +398,17 @@ artifacts/
 │  1. Implementar código                              │
 │  2. Implementar testes                              │
 │  3. Executar: ./scripts/pipeline.sh                 │
-│  4. Se FAILED:                                      │
-│     - Ler artifacts/summary.json                    │
-│     - Ler artifacts/mutation/*.json                 │
+│  4. Se FAILED ou com pendências:                    │
+│     - Ler artifacts/pending/SUMMARY.txt             │
+│     - Ler artifacts/pending/mutant_*.txt            │
+│     - Ler artifacts/pending/coverage_*.txt          │
+│     - Ler artifacts/pending/sonar_*.txt             │
 │     - Corrigir testes para matar mutantes           │
+│     - Adicionar testes para cobertura               │
+│     - Resolver issues do SonarCloud (ou justificar) │
 │     - Voltar ao passo 3                             │
 │  5. Se SUCCESS: commitar                            │
 └─────────────────────────────────────────────────────┘
 ```
 
-> **Nota**: Os artefatos são gerados em formato JSON para consumo programático. Relatórios HTML são gerados apenas no GitHub Actions.
+> **Nota**: Os artefatos são gerados em formato texto para consumo programático. Relatórios HTML são gerados apenas no GitHub Actions.
