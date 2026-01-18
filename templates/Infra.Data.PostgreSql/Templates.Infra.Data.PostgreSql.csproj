@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\src\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\Persistence.Abstractions\Bedrock.BuildingBlocks.Persistence.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\Persistence.PostgreSql\Bedrock.BuildingBlocks.Persistence.PostgreSql.csproj" />
+    <ProjectReference Include="..\Domain.Entities\Templates.Domain.Entities.csproj" />
   </ItemGroup>
 
 </Project>
