@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 using Bedrock.BuildingBlocks.Core.Paginations;
+using Bedrock.BuildingBlocks.Observability.ExtensionMethods;
 using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
@@ -25,7 +27,7 @@ LLM_RULE: Separação de Responsabilidades
 
 Esta classe trabalha APENAS com DataModels:
 ✅ CRUD operations em DataModelBase
-✅ Multi-tenancy via TenantCode
+✅ Multi-tenancy via ExecutionContext.TenantInfo.Code
 ✅ Paginação e ordenação
 ✅ Optimistic locking via EntityVersion
 
@@ -52,6 +54,17 @@ Benefícios:
 ✅ Cliente só vê bool de sucesso/falha
 ✅ Handler pode retornar false para interromper iteração
 ✅ Abstração limpa sem vazamento de detalhes de infraestrutura
+
+───────────────────────────────────────────────────────────────────────────────
+LLM_RULE: Tratamento de Erros
+───────────────────────────────────────────────────────────────────────────────
+
+Todos os métodos:
+1. Recebem ExecutionContext para rastreamento distribuído
+2. Usam try-catch para capturar exceções
+3. Logam exceções via LogExceptionForDistributedTracing
+4. Adicionam exceções ao ExecutionContext via AddException
+5. Retornam false/null em caso de erro
 
 ═══════════════════════════════════════════════════════════════════════════════
 */
@@ -120,28 +133,37 @@ public abstract class DataModelRepositoryBase<TDataModel>
     // Stryker disable all : NpgsqlCommand e NpgsqlDataReader sao sealed e nao podem ser mockados - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e NpgsqlDataReader sao sealed e nao podem ser mockados - requer testes de integracao")]
     public async Task<TDataModel?> GetByIdAsync(
-        Guid tenantCode,
+        ExecutionContext executionContext,
         Guid id,
         CancellationToken cancellationToken)
     {
-        WhereClause whereClause = _mapper.Where(x => x.Id);
-        string commandText = _mapper.GenerateSelectCommand(whereClause);
-
-        using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-        _mapper.AddParameterForCommand(command, x => x.TenantCode, tenantCode);
-        _mapper.AddParameterForCommand(command, x => x.Id, id);
-
-        await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
-
-        if (!await reader.ReadAsync(cancellationToken))
+        try
         {
+            WhereClause whereClause = _mapper.Where(x => x.Id);
+            string commandText = _mapper.GenerateSelectCommand(whereClause);
+
+            using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
+            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, x => x.Id, id);
+
+            await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return null;
+            }
+
+            TDataModel dataModel = new();
+            _mapper.PopulateDataModelBaseFromReader(reader, dataModel, PopulateAdditionalProperties);
+
+            return dataModel;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogExceptionForDistributedTracing(executionContext, ex);
+            executionContext.AddException(ex);
             return null;
         }
-
-        TDataModel dataModel = new();
-        _mapper.PopulateDataModelBaseFromReader(reader, dataModel, PopulateAdditionalProperties);
-
-        return dataModel;
     }
     // Stryker restore all
 
@@ -151,12 +173,12 @@ public abstract class DataModelRepositoryBase<TDataModel>
     /// <remarks>
     /// Cannot be unit tested - requires active NpgsqlConnection for ExecuteReaderAsync.
     /// Uses the handler pattern instead of IAsyncEnumerable to avoid leaky abstractions.
-    /// Exceptions are caught and logged, returning false on failure.
+    /// Exceptions are caught, logged, and added to ExecutionContext.
     /// </remarks>
     // Stryker disable all : NpgsqlCommand e NpgsqlDataReader sao sealed e nao podem ser mockados - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e NpgsqlDataReader sao sealed e nao podem ser mockados - requer testes de integracao")]
     public async Task<bool> EnumerateAllAsync(
-        Guid tenantCode,
+        ExecutionContext executionContext,
         PaginationInfo paginationInfo,
         DataModelItemHandler<TDataModel> handler,
         CancellationToken cancellationToken)
@@ -166,7 +188,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             string commandText = _mapper.GenerateSelectCommand(paginationInfo);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-            _mapper.AddParameterForCommand(command, x => x.TenantCode, tenantCode);
+            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
 
             await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -186,7 +208,8 @@ public abstract class DataModelRepositoryBase<TDataModel>
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error enumerating all data models for tenant {TenantCode}", tenantCode);
+            _logger.LogExceptionForDistributedTracing(executionContext, ex);
+            executionContext.AddException(ex);
             return false;
         }
     }
@@ -201,20 +224,29 @@ public abstract class DataModelRepositoryBase<TDataModel>
     // Stryker disable all : NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao")]
     public async Task<bool> ExistsAsync(
-        Guid tenantCode,
+        ExecutionContext executionContext,
         Guid id,
         CancellationToken cancellationToken)
     {
-        WhereClause whereClause = _mapper.Where(x => x.Id);
-        string commandText = _mapper.GenerateExistsCommand(whereClause);
+        try
+        {
+            WhereClause whereClause = _mapper.Where(x => x.Id);
+            string commandText = _mapper.GenerateExistsCommand(whereClause);
 
-        using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-        _mapper.AddParameterForCommand(command, x => x.TenantCode, tenantCode);
-        _mapper.AddParameterForCommand(command, x => x.Id, id);
+            using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
+            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, x => x.Id, id);
 
-        object? result = await command.ExecuteScalarAsync(cancellationToken);
+            object? result = await command.ExecuteScalarAsync(cancellationToken);
 
-        return result is bool exists && exists;
+            return result is bool exists && exists;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogExceptionForDistributedTracing(executionContext, ex);
+            executionContext.AddException(ex);
+            return false;
+        }
     }
     // Stryker restore all
 
@@ -227,16 +259,26 @@ public abstract class DataModelRepositoryBase<TDataModel>
     // Stryker disable all : NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao")]
     public async Task<bool> InsertAsync(
+        ExecutionContext executionContext,
         TDataModel dataModel,
         CancellationToken cancellationToken)
     {
-        using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(_mapper.InsertCommand);
-        _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
-        ConfigureAdditionalParameters(command, dataModel);
+        try
+        {
+            using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(_mapper.InsertCommand);
+            _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
+            ConfigureAdditionalParameters(command, dataModel);
 
-        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 
-        return rowsAffected > 0;
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogExceptionForDistributedTracing(executionContext, ex);
+            executionContext.AddException(ex);
+            return false;
+        }
     }
     // Stryker restore all
 
@@ -250,16 +292,26 @@ public abstract class DataModelRepositoryBase<TDataModel>
     // Stryker disable all : NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao")]
     public async Task<bool> UpdateAsync(
+        ExecutionContext executionContext,
         TDataModel dataModel,
         CancellationToken cancellationToken)
     {
-        using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(_mapper.UpdateCommand);
-        _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
-        ConfigureAdditionalParameters(command, dataModel);
+        try
+        {
+            using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(_mapper.UpdateCommand);
+            _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
+            ConfigureAdditionalParameters(command, dataModel);
 
-        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 
-        return rowsAffected > 0;
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogExceptionForDistributedTracing(executionContext, ex);
+            executionContext.AddException(ex);
+            return false;
+        }
     }
     // Stryker restore all
 
@@ -272,20 +324,29 @@ public abstract class DataModelRepositoryBase<TDataModel>
     // Stryker disable all : NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao")]
     public async Task<bool> DeleteAsync(
-        Guid tenantCode,
+        ExecutionContext executionContext,
         Guid id,
         CancellationToken cancellationToken)
     {
-        WhereClause whereClause = _mapper.Where(x => x.Id);
-        string commandText = _mapper.GenerateDeleteCommand(whereClause);
+        try
+        {
+            WhereClause whereClause = _mapper.Where(x => x.Id);
+            string commandText = _mapper.GenerateDeleteCommand(whereClause);
 
-        using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-        _mapper.AddParameterForCommand(command, x => x.TenantCode, tenantCode);
-        _mapper.AddParameterForCommand(command, x => x.Id, id);
+            using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
+            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, x => x.Id, id);
 
-        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 
-        return rowsAffected > 0;
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogExceptionForDistributedTracing(executionContext, ex);
+            executionContext.AddException(ex);
+            return false;
+        }
     }
     // Stryker restore all
 
@@ -295,12 +356,12 @@ public abstract class DataModelRepositoryBase<TDataModel>
     /// <remarks>
     /// Cannot be unit tested - requires active NpgsqlConnection for ExecuteReaderAsync.
     /// Uses the handler pattern instead of IAsyncEnumerable to avoid leaky abstractions.
-    /// Exceptions are caught and logged, returning false on failure.
+    /// Exceptions are caught, logged, and added to ExecutionContext.
     /// </remarks>
     // Stryker disable all : NpgsqlCommand e NpgsqlDataReader sao sealed e nao podem ser mockados - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e NpgsqlDataReader sao sealed e nao podem ser mockados - requer testes de integracao")]
     public async Task<bool> EnumerateModifiedSinceAsync(
-        Guid tenantCode,
+        ExecutionContext executionContext,
         DateTimeOffset since,
         DataModelItemHandler<TDataModel> handler,
         CancellationToken cancellationToken)
@@ -312,7 +373,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             string commandText = _mapper.GenerateSelectCommand(whereClause, orderByClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-            _mapper.AddParameterForCommand(command, x => x.TenantCode, tenantCode);
+            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
             _mapper.AddParameterForCommand(command, x => x.LastChangedAt, since);
 
             await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -333,7 +394,8 @@ public abstract class DataModelRepositoryBase<TDataModel>
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error enumerating modified data models for tenant {TenantCode} since {Since}", tenantCode, since);
+            _logger.LogExceptionForDistributedTracing(executionContext, ex);
+            executionContext.AddException(ex);
             return false;
         }
     }
