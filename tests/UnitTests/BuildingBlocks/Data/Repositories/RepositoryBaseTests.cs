@@ -114,7 +114,7 @@ public class RepositoryBaseTests : TestBase
         var result = await repository.EnumerateAllAsync(
             _executionContext,
             _paginationInfo,
-            (ctx, item, ct) =>
+            (ctx, item, pagination, ct) =>
             {
                 processedItems.Add(item);
                 return Task.FromResult(true);
@@ -152,7 +152,7 @@ public class RepositoryBaseTests : TestBase
         var result = await repository.EnumerateAllAsync(
             _executionContext,
             _paginationInfo,
-            (ctx, item, ct) =>
+            (ctx, item, pagination, ct) =>
             {
                 processedItems.Add(item);
                 return Task.FromResult(processedItems.Count < 2);
@@ -184,7 +184,7 @@ public class RepositoryBaseTests : TestBase
         var result = await repository.EnumerateAllAsync(
             _executionContext,
             _paginationInfo,
-            (ctx, item, ct) =>
+            (ctx, item, pagination, ct) =>
             {
                 processedItems.Add(item);
                 return Task.FromResult(true);
@@ -222,7 +222,7 @@ public class RepositoryBaseTests : TestBase
         var result = await repository.EnumerateAllAsync(
             _executionContext,
             _paginationInfo,
-            (ctx, item, ct) =>
+            (ctx, item, pagination, ct) =>
             {
                 processedItems.Add(item);
                 return Task.FromResult(true);
@@ -261,7 +261,7 @@ public class RepositoryBaseTests : TestBase
         var result = await repository.EnumerateAllAsync(
             _executionContext,
             _paginationInfo,
-            (ctx, item, ct) =>
+            (ctx, item, pagination, ct) =>
             {
                 handlerCalled = true;
                 return Task.FromResult(true);
@@ -523,7 +523,7 @@ public class RepositoryBaseTests : TestBase
             _executionContext,
             _timeProvider,
             _sinceDate,
-            (ctx, item, ct) =>
+            (ctx, item, tp, since, ct) =>
             {
                 processedItems.Add(item);
                 return Task.FromResult(true);
@@ -563,7 +563,7 @@ public class RepositoryBaseTests : TestBase
             _executionContext,
             _timeProvider,
             _sinceDate,
-            (ctx, item, ct) =>
+            (ctx, item, tp, since, ct) =>
             {
                 processedItems.Add(item);
                 return Task.FromResult(false);
@@ -595,7 +595,7 @@ public class RepositoryBaseTests : TestBase
             _executionContext,
             _timeProvider,
             _sinceDate,
-            (ctx, item, ct) =>
+            (ctx, item, tp, since, ct) =>
             {
                 processedItems.Add(item);
                 return Task.FromResult(true);
@@ -634,7 +634,7 @@ public class RepositoryBaseTests : TestBase
             _executionContext,
             _timeProvider,
             _sinceDate,
-            (ctx, item, ct) =>
+            (ctx, item, tp, since, ct) =>
             {
                 handlerCalled = true;
                 return Task.FromResult(true);

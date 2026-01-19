@@ -66,13 +66,13 @@ public class SimpleAggregateRootPostgreSqlRepository
     public Task<bool> EnumerateAllAsync(
         ExecutionContext executionContext,
         PaginationInfo paginationInfo,
-        ItemHandler<SimpleAggregateRoot> handler,
+        EnumerateAllItemHandler<SimpleAggregateRoot> handler,
         CancellationToken cancellationToken)
     {
         return _dataModelRepository.EnumerateAllAsync(
             executionContext,
             paginationInfo,
-            CreateDataModelHandler(executionContext, handler),
+            CreateEnumerateAllDataModelHandler(executionContext, paginationInfo, handler),
             cancellationToken);
     }
 
@@ -80,24 +80,38 @@ public class SimpleAggregateRootPostgreSqlRepository
         ExecutionContext executionContext,
         TimeProvider timeProvider,
         DateTimeOffset since,
-        ItemHandler<SimpleAggregateRoot> handler,
+        EnumerateModifiedSinceItemHandler<SimpleAggregateRoot> handler,
         CancellationToken cancellationToken)
     {
         return _dataModelRepository.EnumerateModifiedSinceAsync(
             executionContext,
             since,
-            CreateDataModelHandler(executionContext, handler),
+            CreateEnumerateModifiedSinceDataModelHandler(executionContext, timeProvider, since, handler),
             cancellationToken);
     }
 
-    private static DataModelItemHandler<SimpleAggregateRootDataModel> CreateDataModelHandler(
+    private static DataModelItemHandler<SimpleAggregateRootDataModel> CreateEnumerateAllDataModelHandler(
         ExecutionContext executionContext,
-        ItemHandler<SimpleAggregateRoot> handler)
+        PaginationInfo paginationInfo,
+        EnumerateAllItemHandler<SimpleAggregateRoot> handler)
     {
         return async (dataModel, cancellationToken) =>
         {
             SimpleAggregateRoot entity = SimpleAggregateRootFactory.Create(dataModel);
-            return await handler(executionContext, entity, cancellationToken);
+            return await handler(executionContext, entity, paginationInfo, cancellationToken);
+        };
+    }
+
+    private static DataModelItemHandler<SimpleAggregateRootDataModel> CreateEnumerateModifiedSinceDataModelHandler(
+        ExecutionContext executionContext,
+        TimeProvider timeProvider,
+        DateTimeOffset since,
+        EnumerateModifiedSinceItemHandler<SimpleAggregateRoot> handler)
+    {
+        return async (dataModel, cancellationToken) =>
+        {
+            SimpleAggregateRoot entity = SimpleAggregateRootFactory.Create(dataModel);
+            return await handler(executionContext, entity, timeProvider, since, cancellationToken);
         };
     }
 }
