@@ -154,7 +154,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             }
 
             TDataModel dataModel = new();
-            _mapper.PopulateDataModelBaseFromReader(reader, dataModel, PopulateAdditionalProperties);
+            _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
 
             return dataModel;
         }
@@ -195,7 +195,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             while (await reader.ReadAsync(cancellationToken))
             {
                 TDataModel dataModel = new();
-                _mapper.PopulateDataModelBaseFromReader(reader, dataModel, PopulateAdditionalProperties);
+                _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
 
                 bool shouldContinue = await handler(dataModel, cancellationToken);
                 if (!shouldContinue)
@@ -267,7 +267,6 @@ public abstract class DataModelRepositoryBase<TDataModel>
         {
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(_mapper.InsertCommand);
             _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
-            ConfigureAdditionalParameters(command, dataModel);
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -307,7 +306,6 @@ public abstract class DataModelRepositoryBase<TDataModel>
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
             _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
-            ConfigureAdditionalParameters(command, dataModel);
 
             // Add the expected version parameter for the WHERE clause
             _mapper.AddParameterForCommand(command, x => x.EntityVersion, expectedVersion);
@@ -399,7 +397,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             while (await reader.ReadAsync(cancellationToken))
             {
                 TDataModel dataModel = new();
-                _mapper.PopulateDataModelBaseFromReader(reader, dataModel, PopulateAdditionalProperties);
+                _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
 
                 bool shouldContinue = await handler(dataModel, cancellationToken);
                 if (!shouldContinue)
@@ -418,48 +416,4 @@ public abstract class DataModelRepositoryBase<TDataModel>
         }
     }
     // Stryker restore all
-
-    // Protected Virtual Methods - Extension Points
-
-    /// <summary>
-    /// When overridden in a derived class, populates additional properties from the reader
-    /// that are not part of DataModelBase.
-    /// </summary>
-    /// <param name="reader">The data reader with current row.</param>
-    /// <param name="dataModel">The data model to populate.</param>
-    /// <param name="mapper">The data model mapper.</param>
-    /// <remarks>
-    /// This is an extension point for edge cases where properties need special handling
-    /// beyond the automatic mapping. In most cases, the mapper's ColumnMapDictionary
-    /// handles all properties automatically via PopulateDataModelBaseFromReader.
-    /// </remarks>
-    [ExcludeFromCodeCoverage(Justification = "Metodo virtual vazio - extension point para classes derivadas, depende de NpgsqlDataReader sealed")]
-    protected virtual void PopulateAdditionalProperties(
-        NpgsqlDataReader reader,
-        TDataModel dataModel,
-        IDataModelMapper<TDataModel> mapper)
-    {
-        // Default implementation does nothing.
-        // Derived classes can override to populate additional properties.
-    }
-
-    /// <summary>
-    /// When overridden in a derived class, configures additional command parameters
-    /// that are not part of DataModelBase.
-    /// </summary>
-    /// <param name="command">The command to configure.</param>
-    /// <param name="dataModel">The data model with values.</param>
-    /// <remarks>
-    /// This is an extension point for edge cases where parameters need special handling
-    /// beyond the automatic mapping. In most cases, the mapper's ColumnMapDictionary
-    /// handles all properties automatically via ConfigureCommandFromDataModelBase.
-    /// </remarks>
-    [ExcludeFromCodeCoverage(Justification = "Metodo virtual vazio - extension point para classes derivadas, depende de NpgsqlCommand sealed")]
-    protected virtual void ConfigureAdditionalParameters(
-        NpgsqlCommand command,
-        TDataModel dataModel)
-    {
-        // Default implementation does nothing.
-        // Derived classes can override to add additional parameters.
-    }
 }
