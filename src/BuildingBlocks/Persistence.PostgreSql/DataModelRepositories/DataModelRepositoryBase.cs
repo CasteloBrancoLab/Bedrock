@@ -3,15 +3,15 @@ using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Observability.ExtensionMethods;
 using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories;
+using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModelRepositories.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Models;
-using Bedrock.BuildingBlocks.Persistence.PostgreSql.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.UnitOfWork.Interfaces;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
-namespace Bedrock.BuildingBlocks.Persistence.PostgreSql.Repositories;
+namespace Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModelRepositories;
 
 /*
 ═══════════════════════════════════════════════════════════════════════════════

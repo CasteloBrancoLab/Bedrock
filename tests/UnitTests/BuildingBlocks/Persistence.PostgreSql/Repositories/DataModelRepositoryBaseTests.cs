@@ -1,6 +1,6 @@
+using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModelRepositories;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
-using Bedrock.BuildingBlocks.Persistence.PostgreSql.Repositories;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.UnitOfWork.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;

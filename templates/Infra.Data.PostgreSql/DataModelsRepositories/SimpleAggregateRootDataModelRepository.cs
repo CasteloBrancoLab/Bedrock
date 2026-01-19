@@ -1,11 +1,11 @@
+using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModelRepositories;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
-using Bedrock.BuildingBlocks.Persistence.PostgreSql.Repositories;
 using Microsoft.Extensions.Logging;
 using Templates.Infra.Data.PostgreSql.DataModels;
-using Templates.Infra.Data.PostgreSql.Repositories.Interfaces;
+using Templates.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
 using Templates.Infra.Data.PostgreSql.UnitOfWork.Interfaces;
 
-namespace Templates.Infra.Data.PostgreSql.Repositories;
+namespace Templates.Infra.Data.PostgreSql.DataModelsRepositories;
 
 /// <summary>
 /// Repository implementation for SimpleAggregateRootDataModel persistence operations.
