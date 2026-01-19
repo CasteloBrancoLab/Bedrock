@@ -283,24 +283,34 @@ public abstract class DataModelRepositoryBase<TDataModel>
     // Stryker restore all
 
     /// <summary>
-    /// Updates an existing data model using optimistic locking.
+    /// Updates an existing data model using optimistic concurrency control.
     /// </summary>
     /// <remarks>
     /// Cannot be unit tested - requires active NpgsqlConnection for ExecuteNonQueryAsync.
-    /// The UPDATE command includes version check for optimistic locking.
+    /// The UPDATE command includes version check for optimistic concurrency.
+    /// If the expectedVersion doesn't match the current version in the database,
+    /// no rows are affected and the method returns false.
     /// </remarks>
     // Stryker disable all : NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao")]
     public async Task<bool> UpdateAsync(
         ExecutionContext executionContext,
         TDataModel dataModel,
+        long expectedVersion,
         CancellationToken cancellationToken)
     {
         try
         {
-            using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(_mapper.UpdateCommand);
+            // Generate UPDATE command with EntityVersion check for optimistic concurrency
+            WhereClause versionClause = _mapper.Where(x => x.EntityVersion);
+            string commandText = _mapper.GenerateUpdateCommand(versionClause);
+
+            using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
             _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
             ConfigureAdditionalParameters(command, dataModel);
+
+            // Add the expected version parameter for the WHERE clause
+            _mapper.AddParameterForCommand(command, x => x.EntityVersion, expectedVersion);
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 
@@ -316,26 +326,34 @@ public abstract class DataModelRepositoryBase<TDataModel>
     // Stryker restore all
 
     /// <summary>
-    /// Deletes a data model by its unique identifier.
+    /// Deletes a data model by its unique identifier using optimistic concurrency control.
     /// </summary>
     /// <remarks>
     /// Cannot be unit tested - requires active NpgsqlConnection for ExecuteNonQueryAsync.
+    /// The DELETE command includes version check for optimistic concurrency.
+    /// If the expectedVersion doesn't match the current version in the database,
+    /// no rows are affected and the method returns false.
     /// </remarks>
     // Stryker disable all : NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao
     [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao")]
     public async Task<bool> DeleteAsync(
         ExecutionContext executionContext,
         Guid id,
+        long expectedVersion,
         CancellationToken cancellationToken)
     {
         try
         {
-            WhereClause whereClause = _mapper.Where(x => x.Id);
-            string commandText = _mapper.GenerateDeleteCommand(whereClause);
+            // Generate DELETE command with Id and EntityVersion check for optimistic concurrency
+            WhereClause idClause = _mapper.Where(x => x.Id);
+            WhereClause versionClause = _mapper.Where(x => x.EntityVersion);
+            WhereClause combinedClause = idClause & versionClause;
+            string commandText = _mapper.GenerateDeleteCommand(combinedClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
             _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
             _mapper.AddParameterForCommand(command, x => x.Id, id);
+            _mapper.AddParameterForCommand(command, x => x.EntityVersion, expectedVersion);
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
 

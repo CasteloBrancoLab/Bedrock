@@ -85,22 +85,36 @@ public interface IDataModelRepository<TDataModel> : IDataModelRepository
     Task<bool> InsertAsync(ExecutionContext executionContext, TDataModel dataModel, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Updates an existing data model.
+    /// Updates an existing data model using optimistic concurrency control.
     /// </summary>
     /// <param name="executionContext">The execution context containing tenant and correlation information.</param>
     /// <param name="dataModel">The data model to update.</param>
+    /// <param name="expectedVersion">The expected entity version for optimistic concurrency.
+    /// The update will only succeed if the current version in the database matches this value.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>True if the update was successful; otherwise, false.</returns>
-    Task<bool> UpdateAsync(ExecutionContext executionContext, TDataModel dataModel, CancellationToken cancellationToken);
+    /// <returns>True if the update was successful; false if the version mismatch or an error occurred.</returns>
+    /// <remarks>
+    /// Uses optimistic concurrency control to prevent lost updates.
+    /// If the expectedVersion doesn't match the current version in the database,
+    /// the update will fail and return false (no rows affected).
+    /// </remarks>
+    Task<bool> UpdateAsync(ExecutionContext executionContext, TDataModel dataModel, long expectedVersion, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Deletes a data model by its unique identifier.
+    /// Deletes a data model by its unique identifier using optimistic concurrency control.
     /// </summary>
     /// <param name="executionContext">The execution context containing tenant and correlation information.</param>
     /// <param name="id">The unique identifier of the data model.</param>
+    /// <param name="expectedVersion">The expected entity version for optimistic concurrency.
+    /// The delete will only succeed if the current version in the database matches this value.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>True if the delete was successful; otherwise, false.</returns>
-    Task<bool> DeleteAsync(ExecutionContext executionContext, Guid id, CancellationToken cancellationToken);
+    /// <returns>True if the delete was successful; false if the version mismatch or an error occurred.</returns>
+    /// <remarks>
+    /// Uses optimistic concurrency control to prevent deleting a record that was modified
+    /// by another process. If the expectedVersion doesn't match the current version in the database,
+    /// the delete will fail and return false (no rows affected).
+    /// </remarks>
+    Task<bool> DeleteAsync(ExecutionContext executionContext, Guid id, long expectedVersion, CancellationToken cancellationToken);
 
     /// <summary>
     /// Enumerates data models modified since a specific timestamp, calling the handler for each item.
