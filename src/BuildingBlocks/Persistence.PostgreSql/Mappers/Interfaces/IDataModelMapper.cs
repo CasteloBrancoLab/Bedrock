@@ -68,6 +68,6 @@ public interface IDataModelMapper<TDataModel>
     // Data model handling
     public void ConfigureCommandToProperty(string propertyName, TDataModel dataModel, NpgsqlCommand npgsqlCommand);
     public NpgsqlCommand ConfigureCommandFromDataModelBase(NpgsqlCommand command, IDataModelMapper<TDataModel> mapper, TDataModel dataModel);
-    public void PopulateDataModelBaseFromReader(NpgsqlDataReader reader, TDataModel dataModel, Action<NpgsqlDataReader, TDataModel, IDataModelMapper<TDataModel>>? additionalMap);
+    public void PopulateDataModelBaseFromReader(NpgsqlDataReader reader, TDataModel dataModel);
     public void MapBinaryImporter(NpgsqlBinaryImporter importer, TDataModel model);
 }

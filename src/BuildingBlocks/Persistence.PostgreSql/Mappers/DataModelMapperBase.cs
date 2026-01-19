@@ -414,9 +414,7 @@ public abstract class DataModelMapperBase<TDataModel>
     [ExcludeFromCodeCoverage(Justification = "NpgsqlDataReader e sealed e nao pode ser mockado - requer testes de integracao")]
     public void PopulateDataModelBaseFromReader(
         NpgsqlDataReader reader,
-        TDataModel dataModel,
-        Action<NpgsqlDataReader, TDataModel, IDataModelMapper<TDataModel>>? additionalMap
-    )
+        TDataModel dataModel)
     {
         foreach (KeyValuePair<string, ColumnMap> columnMap in ColumnMapDictionary)
         {
@@ -434,8 +432,6 @@ public abstract class DataModelMapperBase<TDataModel>
             _propertyInfoDictionary[_dataModelType][columnMap.Key]
                 .SetValue(dataModel, value);
         }
-
-        additionalMap?.Invoke(reader, dataModel, this);
     }
     // Stryker restore all
 
