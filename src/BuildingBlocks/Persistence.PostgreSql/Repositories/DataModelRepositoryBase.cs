@@ -428,6 +428,12 @@ public abstract class DataModelRepositoryBase<TDataModel>
     /// <param name="reader">The data reader with current row.</param>
     /// <param name="dataModel">The data model to populate.</param>
     /// <param name="mapper">The data model mapper.</param>
+    /// <remarks>
+    /// This is an extension point for edge cases where properties need special handling
+    /// beyond the automatic mapping. In most cases, the mapper's ColumnMapDictionary
+    /// handles all properties automatically via PopulateDataModelBaseFromReader.
+    /// </remarks>
+    [ExcludeFromCodeCoverage(Justification = "Metodo virtual vazio - extension point para classes derivadas, depende de NpgsqlDataReader sealed")]
     protected virtual void PopulateAdditionalProperties(
         NpgsqlDataReader reader,
         TDataModel dataModel,
@@ -443,6 +449,12 @@ public abstract class DataModelRepositoryBase<TDataModel>
     /// </summary>
     /// <param name="command">The command to configure.</param>
     /// <param name="dataModel">The data model with values.</param>
+    /// <remarks>
+    /// This is an extension point for edge cases where parameters need special handling
+    /// beyond the automatic mapping. In most cases, the mapper's ColumnMapDictionary
+    /// handles all properties automatically via ConfigureCommandFromDataModelBase.
+    /// </remarks>
+    [ExcludeFromCodeCoverage(Justification = "Metodo virtual vazio - extension point para classes derivadas, depende de NpgsqlCommand sealed")]
     protected virtual void ConfigureAdditionalParameters(
         NpgsqlCommand command,
         TDataModel dataModel)
