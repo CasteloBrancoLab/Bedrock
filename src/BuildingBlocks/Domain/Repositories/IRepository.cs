@@ -68,6 +68,64 @@ public delegate Task<bool> ItemHandler<in T>(
     T item,
     CancellationToken cancellationToken);
 
+/// <summary>
+/// Handler delegate for processing items during paginated enumeration.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This delegate is called for each item during
+/// <see cref="IRepository{TAggregateRoot}.EnumerateAllAsync"/> operations.
+/// </para>
+/// <para>
+/// The handler receives the execution context, the pagination info used in the query,
+/// the current item, and a cancellation token. It should return <c>true</c> to continue
+/// processing the next item, or <c>false</c> to stop enumeration early (without error).
+/// </para>
+/// </remarks>
+/// <typeparam name="T">The type of item being processed.</typeparam>
+/// <param name="executionContext">The execution context for multi-tenancy and audit.</param>
+/// <param name="item">The current item being processed.</param>
+/// <param name="paginationInfo">The pagination info used in the query.</param>
+/// <param name="cancellationToken">A token to cancel the operation.</param>
+/// <returns>
+/// <c>true</c> to continue processing the next item; <c>false</c> to stop enumeration.
+/// </returns>
+public delegate Task<bool> EnumerateAllItemHandler<in T>(
+    ExecutionContext executionContext,
+    T item,
+    PaginationInfo paginationInfo,
+    CancellationToken cancellationToken);
+
+/// <summary>
+/// Handler delegate for processing items during modified-since enumeration.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This delegate is called for each item during
+/// <see cref="IRepository{TAggregateRoot}.EnumerateModifiedSinceAsync"/> operations.
+/// </para>
+/// <para>
+/// The handler receives the execution context, the time provider, the since timestamp,
+/// the current item, and a cancellation token. It should return <c>true</c> to continue
+/// processing the next item, or <c>false</c> to stop enumeration early (without error).
+/// </para>
+/// </remarks>
+/// <typeparam name="T">The type of item being processed.</typeparam>
+/// <param name="executionContext">The execution context for multi-tenancy and audit.</param>
+/// <param name="item">The current item being processed.</param>
+/// <param name="timeProvider">The time provider used for the query.</param>
+/// <param name="since">The timestamp used to filter modifications.</param>
+/// <param name="cancellationToken">A token to cancel the operation.</param>
+/// <returns>
+/// <c>true</c> to continue processing the next item; <c>false</c> to stop enumeration.
+/// </returns>
+public delegate Task<bool> EnumerateModifiedSinceItemHandler<in T>(
+    ExecutionContext executionContext,
+    T item,
+    TimeProvider timeProvider,
+    DateTimeOffset since,
+    CancellationToken cancellationToken);
+
 /*
 ═══════════════════════════════════════════════════════════════════════════════
 LLM_GUIDANCE: Separação Entre BuildingBlocks.Domain.Entities e BuildingBlocks.Domain
@@ -292,7 +350,7 @@ public interface IRepository<TAggregateRoot>
       var success = await repository.EnumerateAllAsync(
           context,
           PaginationInfo.All,
-          async (ctx, item, ct) => { Process(item); return true; },
+          async (ctx, item, pagination, ct) => { Process(item); return true; },
           cancellationToken);
 
     ───────────────────────────────────────────────────────────────────────────────
@@ -342,7 +400,7 @@ public interface IRepository<TAggregateRoot>
     Task<bool> EnumerateAllAsync(
         ExecutionContext executionContext,
         PaginationInfo paginationInfo,
-        ItemHandler<TAggregateRoot> handler,
+        EnumerateAllItemHandler<TAggregateRoot> handler,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -416,7 +474,7 @@ public interface IRepository<TAggregateRoot>
         ExecutionContext executionContext,
         TimeProvider timeProvider,
         DateTimeOffset since,
-        ItemHandler<TAggregateRoot> handler,
+        EnumerateModifiedSinceItemHandler<TAggregateRoot> handler,
         CancellationToken cancellationToken);
 
     /*

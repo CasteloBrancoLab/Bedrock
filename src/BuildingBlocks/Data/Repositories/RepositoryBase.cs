@@ -109,14 +109,14 @@ public abstract class RepositoryBase<TAggregateRoot>
     public async Task<bool> EnumerateAllAsync(
         ExecutionContext executionContext,
         PaginationInfo paginationInfo,
-        ItemHandler<TAggregateRoot> handler,
+        EnumerateAllItemHandler<TAggregateRoot> handler,
         CancellationToken cancellationToken)
     {
         try
         {
             await foreach (var item in GetAllInternalAsync(paginationInfo, cancellationToken))
             {
-                var shouldContinue = await handler(executionContext, item, cancellationToken);
+                var shouldContinue = await handler(executionContext, item, paginationInfo, cancellationToken);
                 if (!shouldContinue)
                     break;
             }
@@ -202,14 +202,14 @@ public abstract class RepositoryBase<TAggregateRoot>
         ExecutionContext executionContext,
         TimeProvider timeProvider,
         DateTimeOffset since,
-        ItemHandler<TAggregateRoot> handler,
+        EnumerateModifiedSinceItemHandler<TAggregateRoot> handler,
         CancellationToken cancellationToken)
     {
         try
         {
             await foreach (var item in GetModifiedSinceInternalAsync(executionContext, timeProvider, since, cancellationToken))
             {
-                var shouldContinue = await handler(executionContext, item, cancellationToken);
+                var shouldContinue = await handler(executionContext, item, timeProvider, since, cancellationToken);
                 if (!shouldContinue)
                     break;
             }
