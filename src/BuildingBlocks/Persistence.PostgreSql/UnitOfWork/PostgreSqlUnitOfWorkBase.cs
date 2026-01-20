@@ -171,11 +171,7 @@ public abstract class PostgreSqlUnitOfWorkBase
     [ExcludeFromCodeCoverage(Justification = "Depende de TryCloseConnectionAsync que requer conexao ativa")]
     public async Task<bool> CloseConnectionAsync(ExecutionContext executionContext, CancellationToken cancellationToken)
     {
-        if (_currentTransaction is not null)
-        {
-            await _currentTransaction.DisposeAsync().ConfigureAwait(false);
-            _currentTransaction = null;
-        }
+        await DisposeTransactionIfExistsAsync().ConfigureAwait(false);
 
         return await _postgreSqlConnection.TryCloseConnectionAsync(executionContext, cancellationToken).ConfigureAwait(false);
     }
@@ -230,6 +226,22 @@ public abstract class PostgreSqlUnitOfWorkBase
     private bool _disposedValue;
 
     /// <summary>
+    /// Disposes the current transaction asynchronously if it exists.
+    /// Shared helper method used by both CloseConnectionAsync and DisposeAsync.
+    /// </summary>
+    // Stryker disable all : Helper method para dispose de transacao - requer conexao ativa
+    [ExcludeFromCodeCoverage(Justification = "Helper method para dispose de transacao - requer conexao ativa")]
+    private async ValueTask DisposeTransactionIfExistsAsync()
+    {
+        if (_currentTransaction is not null)
+        {
+            await _currentTransaction.DisposeAsync().ConfigureAwait(false);
+            _currentTransaction = null;
+        }
+    }
+    // Stryker restore all
+
+    /// <summary>
     /// Disposes the unit of work resources.
     /// </summary>
     /// <remarks>
@@ -243,8 +255,8 @@ public abstract class PostgreSqlUnitOfWorkBase
         {
             if (disposing)
             {
-                _postgreSqlConnection?.Dispose();
                 _currentTransaction?.Dispose();
+                _postgreSqlConnection.Dispose();
             }
 
             _disposedValue = true;
@@ -273,12 +285,7 @@ public abstract class PostgreSqlUnitOfWorkBase
     {
         if (!_disposedValue)
         {
-            if (_currentTransaction is not null)
-            {
-                await _currentTransaction.DisposeAsync().ConfigureAwait(false);
-                _currentTransaction = null;
-            }
-
+            await DisposeTransactionIfExistsAsync().ConfigureAwait(false);
             await _postgreSqlConnection.DisposeAsync().ConfigureAwait(false);
 
             _disposedValue = true;
