@@ -66,6 +66,31 @@ Todos os métodos:
 4. Adicionam exceções ao ExecutionContext via AddException
 5. Retornam false/null em caso de erro
 
+───────────────────────────────────────────────────────────────────────────────
+LLM_RULE: Evitar Closures - Expression Trees vs Delegates
+───────────────────────────────────────────────────────────────────────────────
+
+As lambdas usadas com _mapper.Where() e _mapper.OrderByAscending() são
+EXPRESSION TREES (Expression<Func<T, object>>), NÃO delegates comuns.
+
+✅ CORRETO - Expression tree, sem closure:
+   _mapper.Where(x => x.Id)
+   _mapper.OrderByAscending(x => x.LastChangedAt)
+
+❌ INCORRETO - Captura de variável criaria closure:
+   var propertyName = "Id";
+   _mapper.Where(x => GetProperty(x, propertyName))  // closure!
+
+Por que evitar closures em código de infraestrutura:
+1. Closures alocam objetos no heap (classe gerada pelo compilador)
+2. Em hot paths (loops de leitura), isso causa pressão no GC
+3. Expression trees com member access são analisadas em compile-time
+4. O mapper extrai o nome da propriedade da expression, não executa a lambda
+
+Padrão seguro para adicionar parâmetros:
+   _mapper.AddParameterForCommand(command, x => x.Id, id)
+   // A lambda é expression tree, 'id' é passado como argumento separado
+
 ═══════════════════════════════════════════════════════════════════════════════
 */
 
@@ -122,6 +147,33 @@ public abstract class DataModelRepositoryBase<TDataModel>
     /// </summary>
     protected IDataModelMapper<TDataModel> Mapper => _mapper;
 
+    // Private Helper Methods
+
+    /// <summary>
+    /// Executes the reader loop and calls the handler for each data model.
+    /// Shared helper method used by enumeration methods to avoid code duplication.
+    /// </summary>
+    // Stryker disable all : NpgsqlDataReader e sealed e nao pode ser mockado - requer testes de integracao
+    [ExcludeFromCodeCoverage(Justification = "NpgsqlDataReader e sealed e nao pode ser mockado - requer testes de integracao")]
+    private async Task ExecuteReaderWithHandlerAsync(
+        NpgsqlDataReader reader,
+        DataModelItemHandler<TDataModel> handler,
+        CancellationToken cancellationToken)
+    {
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            TDataModel dataModel = new();
+            _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
+
+            bool shouldContinue = await handler(dataModel, cancellationToken).ConfigureAwait(false);
+            if (!shouldContinue)
+            {
+                break;
+            }
+        }
+    }
+    // Stryker restore all
+
     // Public Methods - IDataModelRepository Implementation
 
     /// <summary>
@@ -146,9 +198,9 @@ public abstract class DataModelRepositoryBase<TDataModel>
             _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
             _mapper.AddParameterForCommand(command, x => x.Id, id);
 
-            await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
 
-            if (!await reader.ReadAsync(cancellationToken))
+            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 return null;
             }
@@ -190,19 +242,8 @@ public abstract class DataModelRepositoryBase<TDataModel>
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
             _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
 
-            await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
-
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                TDataModel dataModel = new();
-                _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
-
-                bool shouldContinue = await handler(dataModel, cancellationToken);
-                if (!shouldContinue)
-                {
-                    break;
-                }
-            }
+            await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            await ExecuteReaderWithHandlerAsync(reader, handler, cancellationToken).ConfigureAwait(false);
 
             return true;
         }
@@ -237,7 +278,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
             _mapper.AddParameterForCommand(command, x => x.Id, id);
 
-            object? result = await command.ExecuteScalarAsync(cancellationToken);
+            object? result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
 
             return result is bool exists && exists;
         }
@@ -268,7 +309,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(_mapper.InsertCommand);
             _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
 
-            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
             return rowsAffected > 0;
         }
@@ -310,7 +351,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             // Add the expected version parameter for the WHERE clause
             _mapper.AddParameterForCommand(command, x => x.EntityVersion, expectedVersion);
 
-            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
             return rowsAffected > 0;
         }
@@ -353,7 +394,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             _mapper.AddParameterForCommand(command, x => x.Id, id);
             _mapper.AddParameterForCommand(command, x => x.EntityVersion, expectedVersion);
 
-            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
             return rowsAffected > 0;
         }
@@ -392,19 +433,8 @@ public abstract class DataModelRepositoryBase<TDataModel>
             _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
             _mapper.AddParameterForCommand(command, x => x.LastChangedAt, since);
 
-            await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
-
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                TDataModel dataModel = new();
-                _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
-
-                bool shouldContinue = await handler(dataModel, cancellationToken);
-                if (!shouldContinue)
-                {
-                    break;
-                }
-            }
+            await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            await ExecuteReaderWithHandlerAsync(reader, handler, cancellationToken).ConfigureAwait(false);
 
             return true;
         }
