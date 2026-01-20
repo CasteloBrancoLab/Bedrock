@@ -147,6 +147,33 @@ public abstract class DataModelRepositoryBase<TDataModel>
     /// </summary>
     protected IDataModelMapper<TDataModel> Mapper => _mapper;
 
+    // Private Helper Methods
+
+    /// <summary>
+    /// Executes the reader loop and calls the handler for each data model.
+    /// Shared helper method used by enumeration methods to avoid code duplication.
+    /// </summary>
+    // Stryker disable all : NpgsqlDataReader e sealed e nao pode ser mockado - requer testes de integracao
+    [ExcludeFromCodeCoverage(Justification = "NpgsqlDataReader e sealed e nao pode ser mockado - requer testes de integracao")]
+    private async Task ExecuteReaderWithHandlerAsync(
+        NpgsqlDataReader reader,
+        DataModelItemHandler<TDataModel> handler,
+        CancellationToken cancellationToken)
+    {
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            TDataModel dataModel = new();
+            _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
+
+            bool shouldContinue = await handler(dataModel, cancellationToken).ConfigureAwait(false);
+            if (!shouldContinue)
+            {
+                break;
+            }
+        }
+    }
+    // Stryker restore all
+
     // Public Methods - IDataModelRepository Implementation
 
     /// <summary>
@@ -216,18 +243,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
 
             await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                TDataModel dataModel = new();
-                _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
-
-                bool shouldContinue = await handler(dataModel, cancellationToken).ConfigureAwait(false);
-                if (!shouldContinue)
-                {
-                    break;
-                }
-            }
+            await ExecuteReaderWithHandlerAsync(reader, handler, cancellationToken).ConfigureAwait(false);
 
             return true;
         }
@@ -418,18 +434,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             _mapper.AddParameterForCommand(command, x => x.LastChangedAt, since);
 
             await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                TDataModel dataModel = new();
-                _mapper.PopulateDataModelBaseFromReader(reader, dataModel);
-
-                bool shouldContinue = await handler(dataModel, cancellationToken).ConfigureAwait(false);
-                if (!shouldContinue)
-                {
-                    break;
-                }
-            }
+            await ExecuteReaderWithHandlerAsync(reader, handler, cancellationToken).ConfigureAwait(false);
 
             return true;
         }
