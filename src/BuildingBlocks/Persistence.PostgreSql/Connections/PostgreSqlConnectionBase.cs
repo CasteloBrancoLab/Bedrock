@@ -62,7 +62,7 @@ public abstract class PostgreSqlConnectionBase
         try
         {
             // OpenAsync é executado fora do lock para não bloquear threads durante I/O de rede
-            await newConnection.OpenAsync(cancellationToken);
+            await newConnection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
             // Troca atômica usando Interlocked.Exchange garante atribuição thread-safe
             // e retorna o valor anterior para dispose adequado
@@ -71,7 +71,7 @@ public abstract class PostgreSqlConnectionBase
             // Faz dispose da conexão antiga para evitar memory leak e devolvê-la ao pool do Npgsql
             if (oldConnection is not null)
             {
-                await oldConnection.DisposeAsync();
+                await oldConnection.DisposeAsync().ConfigureAwait(false);
             }
 
             return true;
@@ -80,7 +80,7 @@ public abstract class PostgreSqlConnectionBase
         {
             // Se OpenAsync falhar, faz dispose da nova conexão para evitar vazamento de recursos
             // e relança a exceção para o chamador tratar
-            await newConnection.DisposeAsync();
+            await newConnection.DisposeAsync().ConfigureAwait(false);
             throw;
         }
     }
@@ -104,7 +104,7 @@ public abstract class PostgreSqlConnectionBase
             return true;
         }
 
-        await connection.DisposeAsync();
+        await connection.DisposeAsync().ConfigureAwait(false);
 
         return true;
     }
@@ -171,7 +171,7 @@ public abstract class PostgreSqlConnectionBase
         {
             if (_npgsqlConnection is not null)
             {
-                await _npgsqlConnection.DisposeAsync();
+                await _npgsqlConnection.DisposeAsync().ConfigureAwait(false);
                 _npgsqlConnection = null;
             }
 
