@@ -2,11 +2,13 @@ namespace Bedrock.BuildingBlocks.Core.ExecutionContexts;
 
 public class ExecutionContextAccessor : IExecutionContextAccessor
 {
-    public ExecutionContext? Current { get; private set; }
+    private volatile ExecutionContext? _current;
+
+    public ExecutionContext? Current => _current;
 
     public void SetCurrent(ExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        Current = context;
+        _current = context;
     }
 }
