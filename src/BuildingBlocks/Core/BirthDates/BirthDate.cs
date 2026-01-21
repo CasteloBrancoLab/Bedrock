@@ -1,7 +1,9 @@
+using System.Globalization;
+
 namespace Bedrock.BuildingBlocks.Core.BirthDates;
 
 public readonly struct BirthDate
-    : IEquatable<BirthDate>, IComparable<BirthDate>
+    : IEquatable<BirthDate>, IComparable<BirthDate>, IFormattable, ISpanFormattable
 {
     public DateTimeOffset Value { get; }
 
@@ -58,6 +60,23 @@ public readonly struct BirthDate
     public int CompareTo(BirthDate other)
     {
         return Value.CompareTo(other.Value);
+    }
+
+    public override string ToString()
+    {
+        return Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return Value.ToString(format ?? "yyyy-MM-dd", formatProvider ?? CultureInfo.InvariantCulture);
+    }
+
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        return Value.TryFormat(destination, out charsWritten,
+            format.IsEmpty ? "yyyy-MM-dd" : format,
+            provider ?? CultureInfo.InvariantCulture);
     }
 
     public static implicit operator DateTimeOffset(BirthDate birthDate)
