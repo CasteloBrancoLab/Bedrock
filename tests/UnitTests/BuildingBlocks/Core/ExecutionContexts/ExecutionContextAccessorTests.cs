@@ -199,4 +199,52 @@ public class ExecutionContextAccessorTests : TestBase
         accessor.Current.ShouldBe(context);
         LogInfo("Interface methods work correctly");
     }
+
+    [Fact]
+    public void SetCurrent_ConcurrentAccess_ShouldBeThreadSafe()
+    {
+        // Arrange
+        LogArrange("Creating accessor for concurrent access test");
+        var accessor = new ExecutionContextAccessor();
+        var contexts = Enumerable.Range(0, 100)
+            .Select(_ => CreateContext())
+            .ToList();
+
+        // Act
+        LogAct("Setting contexts from multiple threads concurrently");
+        Parallel.ForEach(contexts, context =>
+        {
+            accessor.SetCurrent(context);
+            _ = accessor.Current;
+        });
+
+        // Assert
+        LogAssert("Verifying accessor is in valid state after concurrent access");
+        accessor.Current.ShouldNotBeNull();
+        contexts.ShouldContain(accessor.Current);
+        LogInfo("Accessor remained thread-safe during concurrent access");
+    }
+
+    [Fact]
+    public void Current_ConcurrentReads_ShouldBeThreadSafe()
+    {
+        // Arrange
+        LogArrange("Creating accessor with context for concurrent read test");
+        var accessor = new ExecutionContextAccessor();
+        var context = CreateContext();
+        accessor.SetCurrent(context);
+
+        // Act
+        LogAct("Reading Current from multiple threads concurrently");
+        var results = new System.Collections.Concurrent.ConcurrentBag<ExecutionContext?>();
+        Parallel.For(0, 100, _ =>
+        {
+            results.Add(accessor.Current);
+        });
+
+        // Assert
+        LogAssert("Verifying all reads returned the same context");
+        results.ShouldAllBe(c => c == context);
+        LogInfo("All concurrent reads returned the same context instance");
+    }
 }
