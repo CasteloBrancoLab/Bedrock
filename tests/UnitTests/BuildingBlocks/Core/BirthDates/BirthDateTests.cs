@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bedrock.BuildingBlocks.Core.BirthDates;
 using Bedrock.BuildingBlocks.Testing;
 using Shouldly;
@@ -428,6 +429,132 @@ public class BirthDateTests : TestBase
         age.ShouldBeLessThan(0);
         age.ShouldBe(-10);
         LogInfo("Age before birth: {0} years", age);
+    }
+
+    [Fact]
+    public void ToString_ShouldReturnIsoDateFormat()
+    {
+        // Arrange
+        LogArrange("Creating a BirthDate");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 10, 30, 0, TimeSpan.Zero));
+
+        // Act
+        LogAct("Converting BirthDate to string");
+        var result = birthDate.ToString();
+
+        // Assert
+        LogAssert("Verifying ISO date format yyyy-MM-dd");
+        result.ShouldBe("1990-05-15");
+        LogInfo("ToString result: {0}", result);
+    }
+
+    [Fact]
+    public void ToString_WithCustomFormat_ShouldUseProvidedFormat()
+    {
+        // Arrange
+        LogArrange("Creating a BirthDate");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 0, 0, 0, TimeSpan.Zero));
+
+        // Act
+        LogAct("Converting BirthDate to string with custom format");
+        var result = birthDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+        // Assert
+        LogAssert("Verifying custom format is used");
+        result.ShouldBe("15/05/1990");
+        LogInfo("ToString with custom format: {0}", result);
+    }
+
+    [Fact]
+    public void ToString_WithNullFormat_ShouldUseDefaultFormat()
+    {
+        // Arrange
+        LogArrange("Creating a BirthDate");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 0, 0, 0, TimeSpan.Zero));
+
+        // Act
+        LogAct("Converting BirthDate to string with null format");
+        var result = birthDate.ToString(null, null);
+
+        // Assert
+        LogAssert("Verifying default format is used");
+        result.ShouldBe("1990-05-15");
+        LogInfo("ToString with null format: {0}", result);
+    }
+
+    [Fact]
+    public void ToString_WithCultureInfo_ShouldUseCulture()
+    {
+        // Arrange
+        LogArrange("Creating a BirthDate");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 0, 0, 0, TimeSpan.Zero));
+        var germanCulture = new CultureInfo("de-DE");
+
+        // Act
+        LogAct("Converting BirthDate to string with German culture");
+        var result = birthDate.ToString("d MMMM yyyy", germanCulture);
+
+        // Assert
+        LogAssert("Verifying German culture formatting");
+        result.ShouldBe("15 Mai 1990");
+        LogInfo("ToString with German culture: {0}", result);
+    }
+
+    [Fact]
+    public void TryFormat_WithSufficientBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating a BirthDate and buffer");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 0, 0, 0, TimeSpan.Zero));
+        Span<char> buffer = stackalloc char[20];
+
+        // Act
+        LogAct("Formatting BirthDate into Span<char>");
+        var success = birthDate.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying successful formatting");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(10);
+        buffer[..charsWritten].ToString().ShouldBe("1990-05-15");
+        LogInfo("TryFormat result: {0}", buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating a BirthDate and small buffer");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 0, 0, 0, TimeSpan.Zero));
+        Span<char> buffer = stackalloc char[5];
+
+        // Act
+        LogAct("Attempting to format BirthDate into insufficient buffer");
+        var success = birthDate.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying formatting failed");
+        success.ShouldBeFalse();
+        LogInfo("TryFormat with small buffer returned false as expected");
+    }
+
+    [Fact]
+    public void TryFormat_WithCustomFormat_ShouldUseProvidedFormat()
+    {
+        // Arrange
+        LogArrange("Creating a BirthDate and buffer");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 0, 0, 0, TimeSpan.Zero));
+        Span<char> buffer = stackalloc char[20];
+
+        // Act
+        LogAct("Formatting BirthDate with custom format");
+        var success = birthDate.TryFormat(buffer, out int charsWritten, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+        // Assert
+        LogAssert("Verifying custom format is used");
+        success.ShouldBeTrue();
+        buffer[..charsWritten].ToString().ShouldBe("15/05/1990");
+        LogInfo("TryFormat with custom format: {0}", buffer[..charsWritten].ToString());
     }
 
     private class FixedTimeProvider : TimeProvider
