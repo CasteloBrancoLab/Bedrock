@@ -557,6 +557,28 @@ public class BirthDateTests : TestBase
         LogInfo("TryFormat with custom format: {0}", buffer[..charsWritten].ToString());
     }
 
+    [Fact]
+    public void TryFormat_WithSpecificCulture_ShouldUseCultureForFormatting()
+    {
+        // Arrange - This test kills the mutant at line 79 (provider ?? CultureInfo.InvariantCulture)
+        // by verifying that a non-null provider is actually used
+        LogArrange("Creating a BirthDate and buffer with German culture");
+        var birthDate = BirthDate.CreateNew(new DateTimeOffset(1990, 5, 15, 0, 0, 0, TimeSpan.Zero));
+        Span<char> buffer = stackalloc char[30];
+        var germanCulture = new CultureInfo("de-DE");
+
+        // Act
+        LogAct("Formatting BirthDate with German culture and month name format");
+        var success = birthDate.TryFormat(buffer, out int charsWritten, "d MMMM yyyy", germanCulture);
+
+        // Assert
+        LogAssert("Verifying German culture formatting is used");
+        success.ShouldBeTrue();
+        var result = buffer[..charsWritten].ToString();
+        result.ShouldBe("15 Mai 1990"); // German month name proves culture was used
+        LogInfo("TryFormat with German culture: {0}", result);
+    }
+
     private class FixedTimeProvider : TimeProvider
     {
         private readonly DateTimeOffset _fixedTime;
