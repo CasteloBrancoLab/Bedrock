@@ -1,7 +1,7 @@
 namespace Bedrock.BuildingBlocks.Core.EmailAddresses;
 
 public readonly struct EmailAddress
-    : IEquatable<EmailAddress>
+    : IEquatable<EmailAddress>, IFormattable, ISpanFormattable
 {
     public string Value { get; }
 
@@ -35,6 +35,30 @@ public readonly struct EmailAddress
     public override string ToString()
     {
         return Value;
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return Value;
+    }
+
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        if (Value is null)
+        {
+            charsWritten = 0;
+            return true;
+        }
+
+        if (destination.Length < Value.Length)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        Value.AsSpan().CopyTo(destination);
+        charsWritten = Value.Length;
+        return true;
     }
 
     public override int GetHashCode()

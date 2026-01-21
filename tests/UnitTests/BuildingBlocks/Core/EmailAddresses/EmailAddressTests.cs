@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Testing;
 using Shouldly;
@@ -574,5 +575,121 @@ public class EmailAddressTests : TestBase
         domain.ShouldBe("x");
         domain.Length.ShouldBe(1);
         LogInfo("Domain: '{0}'", domain);
+    }
+
+    [Fact]
+    public void ToString_WithFormatAndProvider_ShouldReturnValue()
+    {
+        // Arrange
+        LogArrange("Creating email address");
+        const string emailValue = "test@example.com";
+        var email = EmailAddress.CreateNew(emailValue);
+
+        // Act
+        LogAct("Calling ToString with format and provider");
+        var result = email.ToString("G", CultureInfo.InvariantCulture);
+
+        // Assert
+        LogAssert("Verifying ToString returns value regardless of format");
+        result.ShouldBe(emailValue);
+        LogInfo("ToString with format result: {0}", result);
+    }
+
+    [Fact]
+    public void ToString_WithNullFormatAndProvider_ShouldReturnValue()
+    {
+        // Arrange
+        LogArrange("Creating email address");
+        const string emailValue = "test@example.com";
+        var email = EmailAddress.CreateNew(emailValue);
+
+        // Act
+        LogAct("Calling ToString with null format and provider");
+        var result = email.ToString(null, null);
+
+        // Assert
+        LogAssert("Verifying ToString returns value");
+        result.ShouldBe(emailValue);
+        LogInfo("ToString with null format: {0}", result);
+    }
+
+    [Fact]
+    public void TryFormat_WithSufficientBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating email address and buffer");
+        const string emailValue = "test@example.com";
+        var email = EmailAddress.CreateNew(emailValue);
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Formatting EmailAddress into Span<char>");
+        var success = email.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying successful formatting");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(emailValue.Length);
+        buffer[..charsWritten].ToString().ShouldBe(emailValue);
+        LogInfo("TryFormat result: {0}", buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating email address and small buffer");
+        var email = EmailAddress.CreateNew("test@example.com");
+        Span<char> buffer = stackalloc char[5];
+
+        // Act
+        LogAct("Attempting to format EmailAddress into insufficient buffer");
+        var success = email.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying formatting failed");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat with small buffer returned false as expected");
+    }
+
+    [Fact]
+    public void TryFormat_WithExactSizeBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating email address and exact-size buffer");
+        const string emailValue = "a@b.c";
+        var email = EmailAddress.CreateNew(emailValue);
+        Span<char> buffer = stackalloc char[emailValue.Length];
+
+        // Act
+        LogAct("Formatting EmailAddress into exact-size buffer");
+        var success = email.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying successful formatting with exact buffer size");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(emailValue.Length);
+        buffer.ToString().ShouldBe(emailValue);
+        LogInfo("TryFormat with exact buffer: {0}", buffer.ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithNullValue_ShouldSucceedWithZeroChars()
+    {
+        // Arrange
+        LogArrange("Creating EmailAddress with null value");
+        var email = EmailAddress.CreateNew(null!);
+        Span<char> buffer = stackalloc char[10];
+
+        // Act
+        LogAct("Formatting null EmailAddress into buffer");
+        var success = email.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying null value formats successfully with 0 chars");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat with null value succeeded with 0 chars");
     }
 }
