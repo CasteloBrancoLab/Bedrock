@@ -397,6 +397,90 @@ public class StringExtensionsTests : TestBase
         result.Count(c => c == '-').ShouldBe(1);
     }
 
+    [Fact]
+    public void ToKebabCase_LargeString_ShouldUseArrayPoolPath()
+    {
+        // Arrange - string > 128 chars to trigger ArrayPool path (maxLength = length * 2 > 256)
+        LogArrange("Preparing large string (>128 chars to ensure maxLength > 256)");
+        string input = new string('a', 100) + "HelloWorld" + new string('b', 30);
+
+        // Act
+        LogAct("Calling ToKebabCase on large string");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying conversion worked via ArrayPool path");
+        result.ShouldContain("hello-world");
+        // HelloWorld becomes hello-world (adds 1 separator between Hello and World)
+        // But since it's all lowercase 'a' and 'b' around it, only 1 separator is added
+        result.Length.ShouldBe(input.Length + 2); // two separators: a...a-hello-world-b...b
+    }
+
+    [Fact]
+    public void ToKebabCase_LargeStringAllLowercase_ShouldReturnCorrectly()
+    {
+        // Arrange - large string with no uppercase
+        LogArrange("Preparing large lowercase string");
+        string input = new string('a', 150);
+
+        // Act
+        LogAct("Calling ToKebabCase on large lowercase string");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying no change for all lowercase");
+        result.ShouldBe(input);
+    }
+
+    [Fact]
+    public void ToKebabCase_LargeStringWithTrailingSeparator_ShouldTrimIt()
+    {
+        // Arrange - large string ending with special char
+        LogArrange("Preparing large string with trailing special char");
+        string input = new string('a', 150) + "-";
+
+        // Act
+        LogAct("Calling ToKebabCase on large string with trailing separator");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying trailing separator removed");
+        result.ShouldBe(new string('a', 150));
+        result.ShouldNotEndWith("-");
+    }
+
+    [Fact]
+    public void ToKebabCase_ExactlyAtThreshold_ShouldUseStackAlloc()
+    {
+        // Arrange - exactly at threshold boundary (128 chars * 2 = 256 = threshold)
+        LogArrange("Preparing string at exact threshold boundary");
+        string input = new string('a', 128);
+
+        // Act
+        LogAct("Calling ToKebabCase at threshold");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying correct conversion at threshold");
+        result.ShouldBe(input);
+    }
+
+    [Fact]
+    public void ToKebabCase_JustAboveThreshold_ShouldUseArrayPool()
+    {
+        // Arrange - just above threshold (129 chars * 2 = 258 > 256)
+        LogArrange("Preparing string just above threshold");
+        string input = new string('a', 129);
+
+        // Act
+        LogAct("Calling ToKebabCase just above threshold");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying correct conversion above threshold");
+        result.ShouldBe(input);
+    }
+
     #endregion
 
     #region ToSnakeCase Tests
