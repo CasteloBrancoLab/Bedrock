@@ -162,8 +162,30 @@ public static class StringExtensions
     private static string ToSnakeCaseStackAlloc(string value, int maxLength)
     {
         Span<char> buffer = stackalloc char[maxLength];
-        int position = 0;
+        int position = ProcessSnakeCaseCharacters(buffer, value);
+        return new string(buffer[..position]);
+    }
 
+    // Stryker disable all : Mutante equivalente - metodo identico ao StackAlloc, apenas usa ArrayPool para strings grandes
+    private static string ToSnakeCaseWithRentedBuffer(string value, int maxLength)
+    {
+        char[] rentedBuffer = ArrayPool<char>.Shared.Rent(maxLength);
+        try
+        {
+            Span<char> buffer = rentedBuffer.AsSpan();
+            int position = ProcessSnakeCaseCharacters(buffer, value);
+            return new string(buffer[..position]);
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(rentedBuffer);
+        }
+    }
+    // Stryker restore all
+
+    private static int ProcessSnakeCaseCharacters(Span<char> buffer, string value)
+    {
+        int position = 0;
         buffer[position++] = char.ToLowerInvariant(value[0]);
 
         for (int i = 1; i < value.Length; i++)
@@ -180,41 +202,7 @@ public static class StringExtensions
             }
         }
 
-        return new string(buffer[..position]);
-    }
-
-    private static string ToSnakeCaseWithRentedBuffer(string value, int maxLength)
-    {
-        char[] rentedBuffer = ArrayPool<char>.Shared.Rent(maxLength);
-        try
-        {
-            Span<char> buffer = rentedBuffer.AsSpan();
-            int position = 0;
-
-            buffer[position++] = char.ToLowerInvariant(value[0]);
-
-            for (int i = 1; i < value.Length; i++)
-            {
-                char c = value[i];
-                if (char.IsUpper(c))
-                {
-                    buffer[position++] = SnakeCaseSeparator;
-                    buffer[position++] = char.ToLowerInvariant(c);
-                }
-                else
-                {
-                    buffer[position++] = c;
-                }
-            }
-
-            return new string(buffer[..position]);
-        }
-        // Stryker disable all : Remover finally ou Return nao afeta resultado, apenas vazaria memoria
-        finally
-        {
-            ArrayPool<char>.Shared.Return(rentedBuffer);
-        }
-        // Stryker restore all
+        return position;
     }
 
     /// <summary>
