@@ -1060,6 +1060,210 @@ public class IdTests : TestBase
         LogInfo("TimestampLow correto: id1=0x{0:X4}, id2=0x{1:X4}", b1, b2);
     }
 
+    #region ISpanFormattable Tests
+
+    [Fact]
+    public void ToString_ShouldReturnGuidString()
+    {
+        // Arrange
+        LogArrange("Creating an Id");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+
+        // Act
+        LogAct("Calling ToString()");
+        var result = id.ToString();
+
+        // Assert
+        LogAssert("Verifying ToString returns correct Guid string");
+        result.ShouldBe(guid.ToString());
+        LogInfo("ToString result: {0}", result);
+    }
+
+    [Fact]
+    public void ToString_WithFormat_ShouldReturnFormattedGuidString()
+    {
+        // Arrange
+        LogArrange("Creating an Id");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+
+        // Act & Assert
+        LogAct("Testing various format specifiers");
+        id.ToString("N", null).ShouldBe(guid.ToString("N"));
+        id.ToString("D", null).ShouldBe(guid.ToString("D"));
+        id.ToString("B", null).ShouldBe(guid.ToString("B"));
+        id.ToString("P", null).ShouldBe(guid.ToString("P"));
+        id.ToString("X", null).ShouldBe(guid.ToString("X"));
+        LogAssert("All format specifiers work correctly");
+    }
+
+    [Fact]
+    public void TryFormat_WithSufficientBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating Id and buffer");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Formatting Id into Span<char>");
+        var success = id.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying successful formatting");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(36); // Standard GUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        buffer[..charsWritten].ToString().ShouldBe(guid.ToString());
+        LogInfo("TryFormat result: {0}", buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating Id and small buffer");
+        var id = Id.GenerateNewId();
+        Span<char> buffer = stackalloc char[10];
+
+        // Act
+        LogAct("Attempting to format Id into insufficient buffer");
+        var success = id.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying formatting failed");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat with small buffer returned false as expected");
+    }
+
+    [Fact]
+    public void TryFormat_WithExactSizeBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating Id and exact-size buffer (36 chars for default format)");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+        Span<char> buffer = stackalloc char[36];
+
+        // Act
+        LogAct("Formatting Id into exact-size buffer");
+        var success = id.TryFormat(buffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying successful formatting with exact buffer size");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(36);
+        buffer.ToString().ShouldBe(guid.ToString());
+        LogInfo("TryFormat with exact buffer: {0}", buffer.ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithNFormat_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating Id and buffer for N format (32 chars, no hyphens)");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+        Span<char> buffer = stackalloc char[32];
+
+        // Act
+        LogAct("Formatting Id with N format");
+        var success = id.TryFormat(buffer, out int charsWritten, "N", null);
+
+        // Assert
+        LogAssert("Verifying N format succeeded");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(32);
+        buffer.ToString().ShouldBe(guid.ToString("N"));
+        LogInfo("TryFormat with N format: {0}", buffer.ToString());
+    }
+
+    [Fact]
+    public void TryFormat_Utf8_WithSufficientBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating Id and UTF-8 buffer");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+        Span<byte> buffer = stackalloc byte[50];
+
+        // Act
+        LogAct("Formatting Id into Span<byte> (UTF-8)");
+        var success = id.TryFormat(buffer, out int bytesWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying successful UTF-8 formatting");
+        success.ShouldBeTrue();
+        bytesWritten.ShouldBe(36);
+        System.Text.Encoding.UTF8.GetString(buffer[..bytesWritten]).ShouldBe(guid.ToString());
+        LogInfo("TryFormat UTF-8 result: {0}", System.Text.Encoding.UTF8.GetString(buffer[..bytesWritten]));
+    }
+
+    [Fact]
+    public void TryFormat_Utf8_WithInsufficientBuffer_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating Id and small UTF-8 buffer");
+        var id = Id.GenerateNewId();
+        Span<byte> buffer = stackalloc byte[10];
+
+        // Act
+        LogAct("Attempting to format Id into insufficient UTF-8 buffer");
+        var success = id.TryFormat(buffer, out int bytesWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying UTF-8 formatting failed");
+        success.ShouldBeFalse();
+        bytesWritten.ShouldBe(0);
+        LogInfo("TryFormat UTF-8 with small buffer returned false as expected");
+    }
+
+    [Fact]
+    public void TryFormat_Utf8_WithExactSizeBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating Id and exact-size UTF-8 buffer");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+        Span<byte> buffer = stackalloc byte[36];
+
+        // Act
+        LogAct("Formatting Id into exact-size UTF-8 buffer");
+        var success = id.TryFormat(buffer, out int bytesWritten, ReadOnlySpan<char>.Empty, null);
+
+        // Assert
+        LogAssert("Verifying successful UTF-8 formatting with exact buffer size");
+        success.ShouldBeTrue();
+        bytesWritten.ShouldBe(36);
+        System.Text.Encoding.UTF8.GetString(buffer).ShouldBe(guid.ToString());
+        LogInfo("TryFormat UTF-8 with exact buffer: {0}", System.Text.Encoding.UTF8.GetString(buffer));
+    }
+
+    [Fact]
+    public void TryFormat_Utf8_WithNFormat_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating Id and UTF-8 buffer for N format");
+        var guid = Guid.NewGuid();
+        var id = Id.CreateFromExistingInfo(guid);
+        Span<byte> buffer = stackalloc byte[32];
+
+        // Act
+        LogAct("Formatting Id with N format in UTF-8");
+        var success = id.TryFormat(buffer, out int bytesWritten, "N", null);
+
+        // Assert
+        LogAssert("Verifying N format succeeded in UTF-8");
+        success.ShouldBeTrue();
+        bytesWritten.ShouldBe(32);
+        System.Text.Encoding.UTF8.GetString(buffer).ShouldBe(guid.ToString("N"));
+        LogInfo("TryFormat UTF-8 with N format: {0}", System.Text.Encoding.UTF8.GetString(buffer));
+    }
+
+    #endregion
+
     private static int ExtractCounter(Id id)
     {
         var bytes = id.Value.ToByteArray();
