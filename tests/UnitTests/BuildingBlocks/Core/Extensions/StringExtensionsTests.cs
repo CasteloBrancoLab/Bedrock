@@ -328,6 +328,75 @@ public class StringExtensionsTests : TestBase
         result.ShouldBe("a-b");
     }
 
+    [Fact]
+    public void ToKebabCase_LeadingSpecialCharFollowedByLetter_ShouldNotAddLeadingSeparator()
+    {
+        // Arrange - kills mutant on line 109 (position > 0 vs position >= 0)
+        // If mutated to >= 0, a separator would be added at position 0
+        LogArrange("Preparing input starting with special char");
+        string input = "!hello";
+
+        // Act
+        LogAct("Calling ToKebabCase");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying no leading separator");
+        result.ShouldBe("hello");
+        result.ShouldNotStartWith("-");
+    }
+
+    [Fact]
+    public void ToKebabCase_SpecialCharFollowedByUppercase_ShouldNotAddExtraSeparator()
+    {
+        // Arrange - kills mutant on line 115 (lastCharWasLowerCaseOrDigit = false vs true)
+        // If mutated to true, an extra separator would be added before uppercase after special char
+        LogArrange("Preparing special char followed by uppercase");
+        string input = "!A";
+
+        // Act
+        LogAct("Calling ToKebabCase");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying no extra separator before uppercase");
+        result.ShouldBe("a");
+    }
+
+    [Fact]
+    public void ToKebabCase_MultipleSpecialCharsFollowedByUppercase_ShouldNotAddExtraSeparator()
+    {
+        // Arrange - additional coverage for line 115 mutation
+        LogArrange("Preparing multiple special chars followed by uppercase");
+        string input = "!!!ABC";
+
+        // Act
+        LogAct("Calling ToKebabCase");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying no extra separators");
+        result.ShouldBe("abc");
+    }
+
+    [Fact]
+    public void ToKebabCase_LowercaseSpecialCharUppercase_ShouldAddOneSeparator()
+    {
+        // Arrange - ensures proper behavior: lowercase, then special, then uppercase
+        // The separator should come from the special char, not from the uppercase detection
+        LogArrange("Preparing lowercase-special-uppercase sequence");
+        string input = "a!B";
+
+        // Act
+        LogAct("Calling ToKebabCase");
+        var result = input.ToKebabCase();
+
+        // Assert
+        LogAssert("Verifying exactly one separator");
+        result.ShouldBe("a-b");
+        result.Count(c => c == '-').ShouldBe(1);
+    }
+
     #endregion
 
     #region ToSnakeCase Tests
