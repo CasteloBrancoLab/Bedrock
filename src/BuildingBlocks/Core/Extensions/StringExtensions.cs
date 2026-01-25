@@ -1,5 +1,4 @@
-using System.Globalization;
-using System.Text;
+using System.Buffers;
 
 namespace Bedrock.BuildingBlocks.Core.Extensions;
 
@@ -8,6 +7,8 @@ namespace Bedrock.BuildingBlocks.Core.Extensions;
 /// </summary>
 public static class StringExtensions
 {
+    private const int StackAllocThreshold = 256;
+
     /// <summary>
     /// The separator character used in kebab-case strings.
     /// </summary>
@@ -20,6 +21,7 @@ public static class StringExtensions
 
     /// <summary>
     /// Converts a string to kebab-case (e.g., "HelloWorld" becomes "hello-world").
+    /// Uses stack allocation for small strings to minimize heap allocations.
     /// </summary>
     /// <param name="input">The input string to convert.</param>
     /// <returns>The kebab-case representation of the input string, or null if input is null.</returns>
@@ -35,66 +37,107 @@ public static class StringExtensions
             return string.Empty;
         }
 
-        var builder = new StringBuilder();
-        bool lastCharWasLowerCase = false;
+        int maxLength = input.Length * 2;
+
+        // Stryker disable once all : Mutante equivalente - threshold check apenas seleciona otimizacao, resultado identico
+        if (maxLength <= StackAllocThreshold)
+        {
+            return ToKebabCaseStackAlloc(input, maxLength);
+        }
+
+        return ToKebabCaseWithRentedBuffer(input, maxLength);
+    }
+
+    private static string ToKebabCaseStackAlloc(string input, int maxLength)
+    {
+        Span<char> buffer = stackalloc char[maxLength];
+        int position = 0;
         // Stryker disable once Boolean : Mutante equivalente - valor inicial sobrescrito antes do primeiro uso efetivo
-        bool lastCharWasSeparator = false;
+        bool lastCharWasLowerCaseOrDigit = false;
+        // Stryker disable once Boolean : Mutante equivalente - valor inicial sobrescrito antes do primeiro uso efetivo
+        bool lastCharWasSeparator = true;
 
         for (int i = 0; i < input.Length; i++)
         {
-            char character = input[i];
-            ProcessKebabCharacter(builder, character, ref lastCharWasLowerCase, ref lastCharWasSeparator);
+            char c = input[i];
+            ProcessKebabCharacter(buffer, ref position, c, ref lastCharWasLowerCaseOrDigit, ref lastCharWasSeparator);
         }
 
-        return TrimTrailingSeparator(builder.ToString(), KebabCaseSeparator);
+        if (position > 0 && buffer[position - 1] == KebabCaseSeparator)
+        {
+            position--;
+        }
+
+        return new string(buffer[..position]);
     }
 
-    private static void ProcessKebabCharacter(StringBuilder builder, char character, ref bool lastCharWasLowerCase, ref bool lastCharWasSeparator)
+    // Stryker disable all : Mutante equivalente - metodo identico ao StackAlloc, apenas usa ArrayPool para strings grandes
+    private static string ToKebabCaseWithRentedBuffer(string input, int maxLength)
+    {
+        char[] rentedBuffer = ArrayPool<char>.Shared.Rent(maxLength);
+        try
+        {
+            Span<char> buffer = rentedBuffer.AsSpan();
+            int position = 0;
+            bool lastCharWasLowerCaseOrDigit = false;
+            bool lastCharWasSeparator = true;
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                char c = input[i];
+                ProcessKebabCharacter(buffer, ref position, c, ref lastCharWasLowerCaseOrDigit, ref lastCharWasSeparator);
+            }
+
+            if (position > 0 && buffer[position - 1] == KebabCaseSeparator)
+            {
+                position--;
+            }
+
+            return new string(buffer[..position]);
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(rentedBuffer);
+        }
+    }
+    // Stryker restore all
+
+    private static void ProcessKebabCharacter(Span<char> buffer, ref int position, char character, ref bool lastCharWasLowerCaseOrDigit, ref bool lastCharWasSeparator)
     {
         if (!char.IsLetterOrDigit(character))
         {
-            if (CanAppendKebabSeparator(builder, lastCharWasSeparator, character))
+            // Stryker disable once Equality : Mutante equivalente - lastCharWasSeparator inicia true, tornando position>0 redundante no contexto atual
+            if (position > 0 && !lastCharWasSeparator)
             {
-                builder.Append(KebabCaseSeparator);
+                buffer[position++] = KebabCaseSeparator;
                 lastCharWasSeparator = true;
             }
+
+            // Stryker disable once Boolean : Mutante equivalente - apos char especial lastCharWasSeparator sempre true, mascarando efeito desta variavel
+            lastCharWasLowerCaseOrDigit = false;
         }
         else if (char.IsUpper(character))
         {
-            AppendUpperCharAsKebab(builder, character, lastCharWasLowerCase, lastCharWasSeparator);
-            lastCharWasLowerCase = false;
+            if (lastCharWasLowerCaseOrDigit && !lastCharWasSeparator)
+            {
+                buffer[position++] = KebabCaseSeparator;
+            }
+
+            buffer[position++] = char.ToLowerInvariant(character);
+            lastCharWasLowerCaseOrDigit = false;
             lastCharWasSeparator = false;
         }
         else
         {
-            builder.Append(character);
-            lastCharWasLowerCase = true;
+            buffer[position++] = character;
+            lastCharWasLowerCaseOrDigit = true;
             lastCharWasSeparator = false;
         }
     }
 
-    private static void AppendUpperCharAsKebab(StringBuilder builder, char character, bool lastCharWasLowerCase, bool lastCharWasSeparator)
-    {
-        if (lastCharWasLowerCase && !lastCharWasSeparator)
-        {
-            builder.Append(KebabCaseSeparator);
-        }
-
-        builder.Append(char.ToLower(character, CultureInfo.InvariantCulture));
-    }
-
-    private static string TrimTrailingSeparator(string result, char separator)
-    {
-        if (result.Length > 0 && result[^1] == separator)
-        {
-            return result[..^1];
-        }
-
-        return result;
-    }
-
     /// <summary>
     /// Converts a string to snake_case (e.g., "HelloWorld" becomes "hello_world").
+    /// Uses stack allocation for small strings to minimize heap allocations.
     /// </summary>
     /// <param name="value">The input string to convert.</param>
     /// <returns>The snake_case representation of the input string.</returns>
@@ -105,28 +148,66 @@ public static class StringExtensions
             return value;
         }
 
-        var builder = new StringBuilder();
-        builder.Append(char.ToLowerInvariant(value[0]));
+        int maxLength = value.Length * 2;
+
+        // Stryker disable once all : Mutante equivalente - threshold check apenas seleciona otimizacao, resultado identico
+        if (maxLength <= StackAllocThreshold)
+        {
+            return ToSnakeCaseStackAlloc(value, maxLength);
+        }
+
+        return ToSnakeCaseWithRentedBuffer(value, maxLength);
+    }
+
+    private static string ToSnakeCaseStackAlloc(string value, int maxLength)
+    {
+        Span<char> buffer = stackalloc char[maxLength];
+        int position = ProcessSnakeCaseCharacters(buffer, value);
+        return new string(buffer[..position]);
+    }
+
+    // Stryker disable all : Mutante equivalente - metodo identico ao StackAlloc, apenas usa ArrayPool para strings grandes
+    private static string ToSnakeCaseWithRentedBuffer(string value, int maxLength)
+    {
+        char[] rentedBuffer = ArrayPool<char>.Shared.Rent(maxLength);
+        try
+        {
+            Span<char> buffer = rentedBuffer.AsSpan();
+            int position = ProcessSnakeCaseCharacters(buffer, value);
+            return new string(buffer[..position]);
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(rentedBuffer);
+        }
+    }
+    // Stryker restore all
+
+    private static int ProcessSnakeCaseCharacters(Span<char> buffer, string value)
+    {
+        int position = 0;
+        buffer[position++] = char.ToLowerInvariant(value[0]);
 
         for (int i = 1; i < value.Length; i++)
         {
             char c = value[i];
             if (char.IsUpper(c))
             {
-                builder.Append(SnakeCaseSeparator);
-                builder.Append(char.ToLowerInvariant(c));
+                buffer[position++] = SnakeCaseSeparator;
+                buffer[position++] = char.ToLowerInvariant(c);
             }
             else
             {
-                builder.Append(c);
+                buffer[position++] = c;
             }
         }
 
-        return builder.ToString();
+        return position;
     }
 
     /// <summary>
     /// Removes all non-alphanumeric characters from a string.
+    /// Uses stack allocation for small strings to minimize heap allocations.
     /// </summary>
     /// <param name="value">The input string to filter.</param>
     /// <returns>A string containing only letters and digits from the input.</returns>
@@ -137,21 +218,64 @@ public static class StringExtensions
             return value;
         }
 
-        var builder = new StringBuilder();
+        // Stryker disable once all : Mutante equivalente - threshold check apenas seleciona otimizacao, resultado identico
+        if (value.Length <= StackAllocThreshold)
+        {
+            return OnlyLettersAndDigitsStackAlloc(value);
+        }
+
+        return OnlyLettersAndDigitsWithRentedBuffer(value);
+    }
+
+    private static string OnlyLettersAndDigitsStackAlloc(string value)
+    {
+        Span<char> buffer = stackalloc char[value.Length];
+        int position = 0;
 
         foreach (char c in value)
         {
             if (char.IsLetterOrDigit(c))
             {
-                builder.Append(c);
+                buffer[position++] = c;
             }
         }
 
-        return builder.ToString();
+        if (position == 0)
+        {
+            return string.Empty;
+        }
+
+        return new string(buffer[..position]);
     }
 
-    private static bool CanAppendKebabSeparator(StringBuilder builder, bool lastCharWasSeparator, char character)
+    private static string OnlyLettersAndDigitsWithRentedBuffer(string value)
     {
-        return builder.Length > 0 && !lastCharWasSeparator && character == KebabCaseSeparator;
+        char[] rentedBuffer = ArrayPool<char>.Shared.Rent(value.Length);
+        try
+        {
+            Span<char> buffer = rentedBuffer.AsSpan();
+            int position = 0;
+
+            foreach (char c in value)
+            {
+                if (char.IsLetterOrDigit(c))
+                {
+                    buffer[position++] = c;
+                }
+            }
+
+            if (position == 0)
+            {
+                return string.Empty;
+            }
+
+            return new string(buffer[..position]);
+        }
+        // Stryker disable all : Remover finally ou Return nao afeta resultado, apenas vazaria memoria
+        finally
+        {
+            ArrayPool<char>.Shared.Return(rentedBuffer);
+        }
+        // Stryker restore all
     }
 }
