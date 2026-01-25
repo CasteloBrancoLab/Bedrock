@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 namespace Bedrock.BuildingBlocks.Core.Ids;
 
 public readonly struct Id
-    : IEquatable<Id>, IComparable<Id>
+    : IEquatable<Id>, IComparable<Id>, ISpanFormattable, IUtf8SpanFormattable
 {
     [ThreadStatic] private static long _lastTimestamp;
     [ThreadStatic] private static long _counter;
@@ -83,6 +83,34 @@ public readonly struct Id
     public int CompareTo(Id other)
     {
         return Value.CompareTo(other.Value);
+    }
+
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return Value.ToString(format, formatProvider);
+    }
+
+    public bool TryFormat(
+        Span<char> destination,
+        out int charsWritten,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider)
+    {
+        return Value.TryFormat(destination, out charsWritten, format);
+    }
+
+    public bool TryFormat(
+        Span<byte> utf8Destination,
+        out int bytesWritten,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider)
+    {
+        return Value.TryFormat(utf8Destination, out bytesWritten, format);
     }
 
     public static implicit operator Guid(Id id)
