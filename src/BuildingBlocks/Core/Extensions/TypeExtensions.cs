@@ -16,9 +16,29 @@ public static class TypeExtensions
     {
         ArgumentNullException.ThrowIfNull(type);
 
-        return [.. type
-            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-            .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string))
-            .Select(f => (string)f.GetRawConstantValue()!)];
+        var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+
+        // First pass: count matching fields to allocate exact-size array
+        var count = 0;
+        foreach (var field in fields)
+        {
+            if (field.IsLiteral && !field.IsInitOnly && field.FieldType == typeof(string))
+            {
+                count++;
+            }
+        }
+
+        // Second pass: populate array (when count is 0, new string[0] returns Array.Empty<string>())
+        var result = new string[count];
+        var index = 0;
+        foreach (var field in fields)
+        {
+            if (field.IsLiteral && !field.IsInitOnly && field.FieldType == typeof(string))
+            {
+                result[index++] = (string)field.GetRawConstantValue()!;
+            }
+        }
+
+        return result;
     }
 }
