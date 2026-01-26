@@ -15,12 +15,10 @@ public class LoggerExtensionMethodsTests : TestBase
 {
     private readonly Mock<ILogger> _loggerMock;
     private readonly ExecutionContext _executionContext;
-    private readonly List<(LogLevel Level, string Message, object[] Args)> _capturedLogs;
 
     public LoggerExtensionMethodsTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
         _loggerMock = new Mock<ILogger>();
-        _capturedLogs = [];
 
         // Setup logger mock to capture log calls
         _loggerMock
@@ -58,9 +56,7 @@ public class LoggerExtensionMethodsTests : TestBase
         // Assert
         LogAssert("Verifying BeginScope and Log were called");
         _loggerMock.Verify(
-            x => x.BeginScope(It.Is<Dictionary<string, object?>>(d =>
-                d.ContainsKey("CorrelationId") &&
-                d.ContainsKey("ExecutionUser"))),
+            x => x.BeginScope(It.IsAny<ExecutionContextScope>()),
             Times.Once);
 
         _loggerMock.Verify(
@@ -101,14 +97,14 @@ public class LoggerExtensionMethodsTests : TestBase
     }
 
     [Fact]
-    public void LogTraceForDistributedTracing_WithArgs_ShouldPassArgsToLog()
+    public void LogTraceForDistributedTracing_WithOneArg_ShouldLogWithScope()
     {
         // Arrange
-        LogArrange("Setting up logger mock for Trace level with args");
+        LogArrange("Setting up logger mock for Trace level with one arg");
 
         // Act
-        LogAct("Calling LogTraceForDistributedTracing with args");
-        _loggerMock.Object.LogTraceForDistributedTracing(_executionContext, "Test {0} message {1}", ["arg1", 42]);
+        LogAct("Calling LogTraceForDistributedTracing with one arg");
+        _loggerMock.Object.LogTraceForDistributedTracing(_executionContext, "Test {0} message", "arg1");
 
         // Assert
         LogAssert("Verifying Log was called");
@@ -121,7 +117,79 @@ public class LoggerExtensionMethodsTests : TestBase
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
 
-        LogInfo("LogTraceForDistributedTracing with args logged successfully");
+        LogInfo("LogTraceForDistributedTracing with one arg logged successfully");
+    }
+
+    [Fact]
+    public void LogTraceForDistributedTracing_WithTwoArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Trace level with two args");
+
+        // Act
+        LogAct("Calling LogTraceForDistributedTracing with two args");
+        _loggerMock.Object.LogTraceForDistributedTracing(_executionContext, "Test {0} message {1}", "arg1", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Trace,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogTraceForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogTraceForDistributedTracing_WithThreeArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Trace level with three args");
+
+        // Act
+        LogAct("Calling LogTraceForDistributedTracing with three args");
+        _loggerMock.Object.LogTraceForDistributedTracing(_executionContext, "Test {0} {1} {2}", "arg1", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Trace,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogTraceForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogTraceForDistributedTracing_WithParamsArray_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Trace level with params array");
+
+        // Act
+        LogAct("Calling LogTraceForDistributedTracing with params array");
+        _loggerMock.Object.LogTraceForDistributedTracing(_executionContext, "Test {0} {1} {2} {3}", ["arg1", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Trace,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogTraceForDistributedTracing with params array logged successfully");
     }
 
     #endregion
@@ -141,7 +209,7 @@ public class LoggerExtensionMethodsTests : TestBase
         // Assert
         LogAssert("Verifying BeginScope and Log were called");
         _loggerMock.Verify(
-            x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()),
+            x => x.BeginScope(It.IsAny<ExecutionContextScope>()),
             Times.Once);
 
         _loggerMock.Verify(
@@ -181,6 +249,102 @@ public class LoggerExtensionMethodsTests : TestBase
         LogInfo("LogDebugForDistributedTracing correctly skipped when disabled");
     }
 
+    [Fact]
+    public void LogDebugForDistributedTracing_WithOneArg_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Debug level with one arg");
+
+        // Act
+        LogAct("Calling LogDebugForDistributedTracing with one arg");
+        _loggerMock.Object.LogDebugForDistributedTracing(_executionContext, "Debug {0}", "arg1");
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogDebugForDistributedTracing with one arg logged successfully");
+    }
+
+    [Fact]
+    public void LogDebugForDistributedTracing_WithTwoArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Debug level with two args");
+
+        // Act
+        LogAct("Calling LogDebugForDistributedTracing with two args");
+        _loggerMock.Object.LogDebugForDistributedTracing(_executionContext, "Debug {0} {1}", "arg1", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogDebugForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogDebugForDistributedTracing_WithThreeArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Debug level with three args");
+
+        // Act
+        LogAct("Calling LogDebugForDistributedTracing with three args");
+        _loggerMock.Object.LogDebugForDistributedTracing(_executionContext, "Debug {0} {1} {2}", "arg1", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogDebugForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogDebugForDistributedTracing_WithParamsArray_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Debug level with params array");
+
+        // Act
+        LogAct("Calling LogDebugForDistributedTracing with params array");
+        _loggerMock.Object.LogDebugForDistributedTracing(_executionContext, "Debug {0} {1} {2} {3}", ["arg1", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogDebugForDistributedTracing with params array logged successfully");
+    }
+
     #endregion
 
     #region LogInformationForDistributedTracing Tests
@@ -198,7 +362,7 @@ public class LoggerExtensionMethodsTests : TestBase
         // Assert
         LogAssert("Verifying BeginScope and Log were called");
         _loggerMock.Verify(
-            x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()),
+            x => x.BeginScope(It.IsAny<ExecutionContextScope>()),
             Times.Once);
 
         _loggerMock.Verify(
@@ -238,6 +402,102 @@ public class LoggerExtensionMethodsTests : TestBase
         LogInfo("LogInformationForDistributedTracing correctly skipped when disabled");
     }
 
+    [Fact]
+    public void LogInformationForDistributedTracing_WithOneArg_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Information level with one arg");
+
+        // Act
+        LogAct("Calling LogInformationForDistributedTracing with one arg");
+        _loggerMock.Object.LogInformationForDistributedTracing(_executionContext, "Info {0}", "arg1");
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogInformationForDistributedTracing with one arg logged successfully");
+    }
+
+    [Fact]
+    public void LogInformationForDistributedTracing_WithTwoArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Information level with two args");
+
+        // Act
+        LogAct("Calling LogInformationForDistributedTracing with two args");
+        _loggerMock.Object.LogInformationForDistributedTracing(_executionContext, "Info {0} {1}", "arg1", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogInformationForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogInformationForDistributedTracing_WithThreeArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Information level with three args");
+
+        // Act
+        LogAct("Calling LogInformationForDistributedTracing with three args");
+        _loggerMock.Object.LogInformationForDistributedTracing(_executionContext, "Info {0} {1} {2}", "arg1", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogInformationForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogInformationForDistributedTracing_WithParamsArray_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Information level with params array");
+
+        // Act
+        LogAct("Calling LogInformationForDistributedTracing with params array");
+        _loggerMock.Object.LogInformationForDistributedTracing(_executionContext, "Info {0} {1} {2} {3}", ["arg1", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogInformationForDistributedTracing with params array logged successfully");
+    }
+
     #endregion
 
     #region LogWarningForDistributedTracing Tests
@@ -255,7 +515,7 @@ public class LoggerExtensionMethodsTests : TestBase
         // Assert
         LogAssert("Verifying BeginScope and Log were called");
         _loggerMock.Verify(
-            x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()),
+            x => x.BeginScope(It.IsAny<ExecutionContextScope>()),
             Times.Once);
 
         _loggerMock.Verify(
@@ -295,6 +555,102 @@ public class LoggerExtensionMethodsTests : TestBase
         LogInfo("LogWarningForDistributedTracing correctly skipped when disabled");
     }
 
+    [Fact]
+    public void LogWarningForDistributedTracing_WithOneArg_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Warning level with one arg");
+
+        // Act
+        LogAct("Calling LogWarningForDistributedTracing with one arg");
+        _loggerMock.Object.LogWarningForDistributedTracing(_executionContext, "Warning {0}", "arg1");
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogWarningForDistributedTracing with one arg logged successfully");
+    }
+
+    [Fact]
+    public void LogWarningForDistributedTracing_WithTwoArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Warning level with two args");
+
+        // Act
+        LogAct("Calling LogWarningForDistributedTracing with two args");
+        _loggerMock.Object.LogWarningForDistributedTracing(_executionContext, "Warning {0} {1}", "arg1", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogWarningForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogWarningForDistributedTracing_WithThreeArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Warning level with three args");
+
+        // Act
+        LogAct("Calling LogWarningForDistributedTracing with three args");
+        _loggerMock.Object.LogWarningForDistributedTracing(_executionContext, "Warning {0} {1} {2}", "arg1", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogWarningForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogWarningForDistributedTracing_WithParamsArray_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Warning level with params array");
+
+        // Act
+        LogAct("Calling LogWarningForDistributedTracing with params array");
+        _loggerMock.Object.LogWarningForDistributedTracing(_executionContext, "Warning {0} {1} {2} {3}", ["arg1", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogWarningForDistributedTracing with params array logged successfully");
+    }
+
     #endregion
 
     #region LogErrorForDistributedTracing Tests
@@ -312,7 +668,7 @@ public class LoggerExtensionMethodsTests : TestBase
         // Assert
         LogAssert("Verifying BeginScope and Log were called");
         _loggerMock.Verify(
-            x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()),
+            x => x.BeginScope(It.IsAny<ExecutionContextScope>()),
             Times.Once);
 
         _loggerMock.Verify(
@@ -352,6 +708,102 @@ public class LoggerExtensionMethodsTests : TestBase
         LogInfo("LogErrorForDistributedTracing correctly skipped when disabled");
     }
 
+    [Fact]
+    public void LogErrorForDistributedTracing_WithOneArg_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Error level with one arg");
+
+        // Act
+        LogAct("Calling LogErrorForDistributedTracing with one arg");
+        _loggerMock.Object.LogErrorForDistributedTracing(_executionContext, "Error {0}", "arg1");
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogErrorForDistributedTracing with one arg logged successfully");
+    }
+
+    [Fact]
+    public void LogErrorForDistributedTracing_WithTwoArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Error level with two args");
+
+        // Act
+        LogAct("Calling LogErrorForDistributedTracing with two args");
+        _loggerMock.Object.LogErrorForDistributedTracing(_executionContext, "Error {0} {1}", "arg1", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogErrorForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogErrorForDistributedTracing_WithThreeArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Error level with three args");
+
+        // Act
+        LogAct("Calling LogErrorForDistributedTracing with three args");
+        _loggerMock.Object.LogErrorForDistributedTracing(_executionContext, "Error {0} {1} {2}", "arg1", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogErrorForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogErrorForDistributedTracing_WithParamsArray_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Error level with params array");
+
+        // Act
+        LogAct("Calling LogErrorForDistributedTracing with params array");
+        _loggerMock.Object.LogErrorForDistributedTracing(_executionContext, "Error {0} {1} {2} {3}", ["arg1", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogErrorForDistributedTracing with params array logged successfully");
+    }
+
     #endregion
 
     #region LogCriticalForDistributedTracing Tests
@@ -369,7 +821,7 @@ public class LoggerExtensionMethodsTests : TestBase
         // Assert
         LogAssert("Verifying BeginScope and Log were called");
         _loggerMock.Verify(
-            x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()),
+            x => x.BeginScope(It.IsAny<ExecutionContextScope>()),
             Times.Once);
 
         _loggerMock.Verify(
@@ -409,12 +861,108 @@ public class LoggerExtensionMethodsTests : TestBase
         LogInfo("LogCriticalForDistributedTracing correctly skipped when disabled");
     }
 
+    [Fact]
+    public void LogCriticalForDistributedTracing_WithOneArg_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Critical level with one arg");
+
+        // Act
+        LogAct("Calling LogCriticalForDistributedTracing with one arg");
+        _loggerMock.Object.LogCriticalForDistributedTracing(_executionContext, "Critical {0}", "arg1");
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Critical,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogCriticalForDistributedTracing with one arg logged successfully");
+    }
+
+    [Fact]
+    public void LogCriticalForDistributedTracing_WithTwoArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Critical level with two args");
+
+        // Act
+        LogAct("Calling LogCriticalForDistributedTracing with two args");
+        _loggerMock.Object.LogCriticalForDistributedTracing(_executionContext, "Critical {0} {1}", "arg1", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Critical,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogCriticalForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogCriticalForDistributedTracing_WithThreeArgs_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Critical level with three args");
+
+        // Act
+        LogAct("Calling LogCriticalForDistributedTracing with three args");
+        _loggerMock.Object.LogCriticalForDistributedTracing(_executionContext, "Critical {0} {1} {2}", "arg1", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Critical,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogCriticalForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogCriticalForDistributedTracing_WithParamsArray_ShouldLogWithScope()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for Critical level with params array");
+
+        // Act
+        LogAct("Calling LogCriticalForDistributedTracing with params array");
+        _loggerMock.Object.LogCriticalForDistributedTracing(_executionContext, "Critical {0} {1} {2} {3}", ["arg1", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Critical,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogCriticalForDistributedTracing with params array logged successfully");
+    }
+
     #endregion
 
     #region LogExceptionForDistributedTracing Tests
 
     [Fact]
-    public void LogExceptionForDistributedTracing_WithMessageAndArgs_ShouldLogWithException()
+    public void LogExceptionForDistributedTracing_WithMessage_ShouldLogWithException()
     {
         // Arrange
         LogArrange("Setting up logger mock for exception logging");
@@ -422,7 +970,7 @@ public class LoggerExtensionMethodsTests : TestBase
 
         // Act
         LogAct("Calling LogExceptionForDistributedTracing with message");
-        _loggerMock.Object.LogExceptionForDistributedTracing(_executionContext, exception, "Error occurred: {0}", ["details"]);
+        _loggerMock.Object.LogExceptionForDistributedTracing(_executionContext, exception, "Error occurred");
 
         // Assert
         LogAssert("Verifying Log was called with exception");
@@ -439,6 +987,106 @@ public class LoggerExtensionMethodsTests : TestBase
     }
 
     [Fact]
+    public void LogExceptionForDistributedTracing_WithOneArg_ShouldLogWithException()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for exception logging with one arg");
+        var exception = new InvalidOperationException("Test exception");
+
+        // Act
+        LogAct("Calling LogExceptionForDistributedTracing with one arg");
+        _loggerMock.Object.LogExceptionForDistributedTracing(_executionContext, exception, "Error {0}", "details");
+
+        // Assert
+        LogAssert("Verifying Log was called with exception");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogExceptionForDistributedTracing with one arg logged successfully");
+    }
+
+    [Fact]
+    public void LogExceptionForDistributedTracing_WithTwoArgs_ShouldLogWithException()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for exception logging with two args");
+        var exception = new InvalidOperationException("Test exception");
+
+        // Act
+        LogAct("Calling LogExceptionForDistributedTracing with two args");
+        _loggerMock.Object.LogExceptionForDistributedTracing(_executionContext, exception, "Error {0} {1}", "details", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called with exception");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogExceptionForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogExceptionForDistributedTracing_WithThreeArgs_ShouldLogWithException()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for exception logging with three args");
+        var exception = new InvalidOperationException("Test exception");
+
+        // Act
+        LogAct("Calling LogExceptionForDistributedTracing with three args");
+        _loggerMock.Object.LogExceptionForDistributedTracing(_executionContext, exception, "Error {0} {1} {2}", "details", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called with exception");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogExceptionForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogExceptionForDistributedTracing_WithParamsArray_ShouldLogWithException()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock for exception logging with params array");
+        var exception = new InvalidOperationException("Test exception");
+
+        // Act
+        LogAct("Calling LogExceptionForDistributedTracing with params array");
+        _loggerMock.Object.LogExceptionForDistributedTracing(_executionContext, exception, "Error {0} {1} {2} {3}", ["details", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called with exception");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogExceptionForDistributedTracing with params array logged successfully");
+    }
+
+    [Fact]
     public void LogExceptionForDistributedTracing_WithExceptionOnly_ShouldLogWithExceptionMessage()
     {
         // Arrange
@@ -452,7 +1100,7 @@ public class LoggerExtensionMethodsTests : TestBase
         // Assert
         LogAssert("Verifying Log was called with exception");
         _loggerMock.Verify(
-            x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()),
+            x => x.BeginScope(It.IsAny<ExecutionContextScope>()),
             Times.Once);
 
         _loggerMock.Verify(
@@ -540,41 +1188,99 @@ public class LoggerExtensionMethodsTests : TestBase
     }
 
     [Fact]
-    public void LogForDistributedTracing_ScopeContainsExecutionContextData()
+    public void LogForDistributedTracing_WithOneArg_ShouldLog()
     {
         // Arrange
-        LogArrange("Setting up logger mock to capture scope");
-        Dictionary<string, object?>? capturedScope = null;
-
-        _loggerMock
-            .Setup(x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()))
-            .Callback<Dictionary<string, object?>>(scope => capturedScope = scope)
-            .Returns(Mock.Of<IDisposable>());
+        LogArrange("Setting up logger mock");
 
         // Act
-        LogAct("Calling LogForDistributedTracing");
-        _loggerMock.Object.LogForDistributedTracing(
-            _executionContext,
-            LogLevel.Information,
-            null,
-            "Test message");
+        LogAct("Calling LogForDistributedTracing with one arg");
+        _loggerMock.Object.LogForDistributedTracing(_executionContext, LogLevel.Information, null, "Message {0}", "arg1");
 
         // Assert
-        LogAssert("Verifying scope contains execution context data");
-        capturedScope.ShouldNotBeNull();
-        capturedScope.ShouldContainKey("CorrelationId");
-        capturedScope.ShouldContainKey("TenantCode");
-        capturedScope.ShouldContainKey("TenantName");
-        capturedScope.ShouldContainKey("ExecutionUser");
-        capturedScope.ShouldContainKey("ExecutionOrigin");
-        capturedScope.ShouldContainKey("BusinessOperationCode");
-        capturedScope.ShouldContainKey("Timestamp");
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
 
-        capturedScope["ExecutionUser"].ShouldBe("test-user");
-        capturedScope["ExecutionOrigin"].ShouldBe("test-origin");
-        capturedScope["BusinessOperationCode"].ShouldBe("TEST_OP");
+        LogInfo("LogForDistributedTracing with one arg logged successfully");
+    }
 
-        LogInfo("Scope correctly contains all execution context data");
+    [Fact]
+    public void LogForDistributedTracing_WithTwoArgs_ShouldLog()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock");
+
+        // Act
+        LogAct("Calling LogForDistributedTracing with two args");
+        _loggerMock.Object.LogForDistributedTracing(_executionContext, LogLevel.Information, null, "Message {0} {1}", "arg1", 42);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogForDistributedTracing with two args logged successfully");
+    }
+
+    [Fact]
+    public void LogForDistributedTracing_WithThreeArgs_ShouldLog()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock");
+
+        // Act
+        LogAct("Calling LogForDistributedTracing with three args");
+        _loggerMock.Object.LogForDistributedTracing(_executionContext, LogLevel.Information, null, "Message {0} {1} {2}", "arg1", 42, true);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogForDistributedTracing with three args logged successfully");
+    }
+
+    [Fact]
+    public void LogForDistributedTracing_WithParamsArray_ShouldLog()
+    {
+        // Arrange
+        LogArrange("Setting up logger mock");
+
+        // Act
+        LogAct("Calling LogForDistributedTracing with params array");
+        _loggerMock.Object.LogForDistributedTracing(_executionContext, LogLevel.Information, null, "Message {0} {1} {2} {3}", ["arg1", 42, true, "extra"]);
+
+        // Assert
+        LogAssert("Verifying Log was called");
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+
+        LogInfo("LogForDistributedTracing with params array logged successfully");
     }
 
     [Theory]
@@ -643,7 +1349,7 @@ public class LoggerExtensionMethodsTests : TestBase
         LogArrange("Setting up logger mock with disposable scope");
         var disposableMock = new Mock<IDisposable>();
         _loggerMock
-            .Setup(x => x.BeginScope(It.IsAny<Dictionary<string, object?>>()))
+            .Setup(x => x.BeginScope(It.IsAny<ExecutionContextScope>()))
             .Returns(disposableMock.Object);
 
         // Act
