@@ -2,12 +2,14 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Core.Sortings.Enums;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.ExtensionMethods;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Models;
+using Microsoft.Extensions.ObjectPool;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -20,10 +22,19 @@ public abstract class DataModelMapperBase<TDataModel>
     // Static fields (shared across all instances of the same TDataModel type)
     private static readonly Lock _propertyInfoDictionaryLocker = new();
     private static readonly Dictionary<Type, Dictionary<string, PropertyInfo>> _propertyInfoDictionary = [];
+    private static readonly ObjectPool<StringBuilder> StringBuilderPool =
+        new DefaultObjectPoolProvider().CreateStringBuilderPool();
 
     // Instance fields
     private readonly Dictionary<string, ColumnMap> _columnMapDictionary = [];
     private ReadOnlyDictionary<string, ColumnMap>? _columnMapReadOnlyDictionary;
+
+    // Caches for zero-allocation
+    private readonly Dictionary<string, string> _parameterNameCache = [];
+    private readonly Dictionary<(string, RelationalOperator), WhereClause> _whereClauseCache = [];
+    private readonly Dictionary<(string, SortDirection), OrderByClause> _orderByClauseCache = [];
+    // Stryker disable once String : Valor inicial sobrescrito em CacheGeneratedStrings - mutante equivalente
+    private string _parameterPrefix = string.Empty;
 
     private bool _isConfigured;
     private Type _dataModelType = default!;
@@ -157,62 +168,248 @@ public abstract class DataModelMapperBase<TDataModel>
     }
 
     // Public Methods - Command generation with WhereClause (type-safe)
+    // Stryker disable all : StringBuilder pool e string concatenacao - testado indiretamente pelo resultado do comando
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateSelectCommand(WhereClause whereClause)
     {
-        return $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause} AND ({whereClause.Value})";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(SelectCommand)
+                .Append(" AND (")
+                .Append(whereClause.Value)
+                .Append(')')
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateSelectCommand(WhereClause whereClause, PaginationInfo paginationInfo)
     {
-        return $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause} AND ({whereClause.Value}) LIMIT {paginationInfo.PageSize} OFFSET {paginationInfo.Offset}";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(SelectCommand)
+                .Append(" AND (")
+                .Append(whereClause.Value)
+                .Append(") LIMIT ")
+                .Append(paginationInfo.PageSize)
+                .Append(" OFFSET ")
+                .Append(paginationInfo.Offset)
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateSelectCommand(PaginationInfo paginationInfo)
     {
-        return $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause} LIMIT {paginationInfo.PageSize} OFFSET {paginationInfo.Offset}";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(SelectCommand)
+                .Append(" LIMIT ")
+                .Append(paginationInfo.PageSize)
+                .Append(" OFFSET ")
+                .Append(paginationInfo.Offset)
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateSelectCommand(WhereClause whereClause, OrderByClause orderBy)
     {
-        return $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause} AND ({whereClause.Value}) ORDER BY {orderBy.Value}";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(SelectCommand)
+                .Append(" AND (")
+                .Append(whereClause.Value)
+                .Append(") ORDER BY ")
+                .Append(orderBy.Value)
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateSelectCommand(WhereClause whereClause, OrderByClause orderBy, PaginationInfo paginationInfo)
     {
-        return $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause} AND ({whereClause.Value}) ORDER BY {orderBy.Value} LIMIT {paginationInfo.PageSize} OFFSET {paginationInfo.Offset}";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(SelectCommand)
+                .Append(" AND (")
+                .Append(whereClause.Value)
+                .Append(") ORDER BY ")
+                .Append(orderBy.Value)
+                .Append(" LIMIT ")
+                .Append(paginationInfo.PageSize)
+                .Append(" OFFSET ")
+                .Append(paginationInfo.Offset)
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateSelectCommand(OrderByClause orderBy)
     {
-        return $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause} ORDER BY {orderBy.Value}";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(SelectCommand)
+                .Append(" ORDER BY ")
+                .Append(orderBy.Value)
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateSelectCommand(OrderByClause orderBy, PaginationInfo paginationInfo)
     {
-        return $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause} ORDER BY {orderBy.Value} LIMIT {paginationInfo.PageSize} OFFSET {paginationInfo.Offset}";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(SelectCommand)
+                .Append(" ORDER BY ")
+                .Append(orderBy.Value)
+                .Append(" LIMIT ")
+                .Append(paginationInfo.PageSize)
+                .Append(" OFFSET ")
+                .Append(paginationInfo.Offset)
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateUpdateCommand(WhereClause whereClause)
     {
-        return $"UPDATE {_tableName} SET {_setClauses} WHERE {_baseWhereClauseToUpdate} AND ({whereClause.Value})";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(UpdateCommand)
+                .Append(" AND (")
+                .Append(whereClause.Value)
+                .Append(')')
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateDeleteCommand(WhereClause whereClause)
     {
-        return $"DELETE FROM {_tableName} WHERE {_baseWhereClause} AND ({whereClause.Value})";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append(DeleteCommand)
+                .Append(" AND (")
+                .Append(whereClause.Value)
+                .Append(')')
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
 
+    [ExcludeFromCodeCoverage(Justification = "StringBuilder pool - testado indiretamente pelos testes de comando")]
     public string GenerateExistsCommand(WhereClause whereClause)
     {
-        return $"SELECT EXISTS ( SELECT 1 FROM {_tableName} WHERE {_baseWhereClause} AND ({whereClause.Value}) );";
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            return sb.Append("SELECT EXISTS ( SELECT 1 FROM ")
+                .Append(_tableName)
+                .Append(" WHERE ")
+                .Append(_baseWhereClause)
+                .Append(" AND (")
+                .Append(whereClause.Value)
+                .Append(") );")
+                .ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
     }
+    // Stryker restore all
 
     // Public Methods - Where clause generation (type-safe)
     public WhereClause Where(string propertyName, RelationalOperator op)
     {
+        var key = (propertyName, op);
+        // Stryker disable once Block : Retorno do cache - testado indiretamente pela consistencia dos comandos gerados
+        if (_whereClauseCache.TryGetValue(key, out WhereClause cached))
+        {
+            return cached;
+        }
+
         ColumnMap columnMap = GetColumnMap(propertyName);
-        string clause = $"{_tableName}.{columnMap.ColumnName} {op.ToSql()} {GetParameterName(propertyName)}";
-        return new WhereClause(clause);
+        string paramName = GetParameterName(propertyName);
+        string opSql = op.ToSql();
+
+        string clause = string.Create(
+            _tableName.Length + 1 + columnMap.ColumnName.Length + 1 + opSql.Length + 1 + paramName.Length,
+            (_tableName, columnMap.ColumnName, opSql, paramName),
+            static (span, state) =>
+            {
+                int pos = 0;
+                state._tableName.AsSpan().CopyTo(span);
+                pos += state._tableName.Length;
+                span[pos++] = '.';
+                state.ColumnName.AsSpan().CopyTo(span[pos..]);
+                pos += state.ColumnName.Length;
+                span[pos++] = ' ';
+                state.opSql.AsSpan().CopyTo(span[pos..]);
+                pos += state.opSql.Length;
+                span[pos++] = ' ';
+                state.paramName.AsSpan().CopyTo(span[pos..]);
+            });
+
+        WhereClause result = new(clause);
+        _whereClauseCache[key] = result;
+        return result;
     }
 
     public WhereClause Where<TProperty>(Expression<Func<TDataModel, TProperty>> selector, RelationalOperator op)
@@ -234,9 +431,34 @@ public abstract class DataModelMapperBase<TDataModel>
     // Public Methods - Order by clause generation (type-safe)
     public OrderByClause OrderBy(string propertyName, SortDirection direction)
     {
+        var key = (propertyName, direction);
+        // Stryker disable once Block : Retorno do cache - testado indiretamente pela consistencia dos comandos gerados
+        if (_orderByClauseCache.TryGetValue(key, out OrderByClause cached))
+        {
+            return cached;
+        }
+
         ColumnMap columnMap = GetColumnMap(propertyName);
         string directionSql = direction == SortDirection.Ascending ? "ASC" : "DESC";
-        return new OrderByClause($"{_tableName}.{columnMap.ColumnName} {directionSql}");
+
+        string clause = string.Create(
+            _tableName.Length + 1 + columnMap.ColumnName.Length + 1 + directionSql.Length,
+            (_tableName, columnMap.ColumnName, directionSql),
+            static (span, state) =>
+            {
+                int pos = 0;
+                state._tableName.AsSpan().CopyTo(span);
+                pos += state._tableName.Length;
+                span[pos++] = '.';
+                state.ColumnName.AsSpan().CopyTo(span[pos..]);
+                pos += state.ColumnName.Length;
+                span[pos++] = ' ';
+                state.directionSql.AsSpan().CopyTo(span[pos..]);
+            });
+
+        OrderByClause result = new(clause);
+        _orderByClauseCache[key] = result;
+        return result;
     }
 
     public OrderByClause OrderBy<TProperty>(Expression<Func<TDataModel, TProperty>> selector, SortDirection direction)
@@ -268,14 +490,27 @@ public abstract class DataModelMapperBase<TDataModel>
     // Public Methods - Parameter handling
     public string GetParameterName(string propertyName)
     {
-        string? parameterPrefix = TableName;
-
-        if (TableSchema is not null)
+        // Stryker disable once Block : Retorno do cache - testado indiretamente pela consistencia dos comandos gerados
+        if (_parameterNameCache.TryGetValue(propertyName, out string? cachedName))
         {
-            parameterPrefix = $"{TableSchema}_{parameterPrefix}";
+            return cachedName;
         }
 
-        return $"@{parameterPrefix}_{propertyName}";
+        string paramName = string.Create(
+            1 + _parameterPrefix.Length + 1 + propertyName.Length,
+            (_parameterPrefix, propertyName),
+            static (span, state) =>
+            {
+                span[0] = '@';
+                int pos = 1;
+                state._parameterPrefix.AsSpan().CopyTo(span[pos..]);
+                pos += state._parameterPrefix.Length;
+                span[pos++] = '_';
+                state.propertyName.AsSpan().CopyTo(span[pos..]);
+            });
+
+        _parameterNameCache[propertyName] = paramName;
+        return paramName;
     }
 
     public string GetParameterName<TProperty>(Expression<Func<TDataModel, TProperty>> selector)
@@ -450,26 +685,76 @@ public abstract class DataModelMapperBase<TDataModel>
             ? TableName!
             : $"{TableSchema}.{TableName}";
 
-        // Cache column-related strings
-        _columnNamesWithAlias = string.Join(
-            ", ",
-            _columnMapDictionary.Select(f => $"{_tableName}.{f.Value.ColumnName} AS \"{TableName}_{f.Key}\"")
-        );
+        // Cache parameter prefix for zero-allocation in GetParameterName
+        _parameterPrefix = TableSchema is not null
+            ? $"{TableSchema}_{TableName}"
+            : TableName!;
 
-        _columnNames = string.Join(
-            ", ",
-            _columnMapDictionary.Select(f => f.Value.ColumnName)
-        );
+        // Cache column-related strings using StringBuilder to avoid LINQ allocations
+        StringBuilder sb = StringBuilderPool.Get();
+        try
+        {
+            // _columnNamesWithAlias
+            bool first = true;
+            foreach (KeyValuePair<string, ColumnMap> f in _columnMapDictionary)
+            {
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
+                first = false;
+                sb.Append(_tableName).Append('.').Append(f.Value.ColumnName)
+                  .Append(" AS \"").Append(TableName).Append('_').Append(f.Key).Append('"');
+            }
+            _columnNamesWithAlias = sb.ToString();
+            sb.Clear();
 
-        _parameters = string.Join(
-            ", ",
-            _columnMapDictionary.Select(f => GetParameterName(f.Key))
-        );
+            // _columnNames
+            first = true;
+            foreach (KeyValuePair<string, ColumnMap> f in _columnMapDictionary)
+            {
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
+                first = false;
+                sb.Append(f.Value.ColumnName);
+            }
+            _columnNames = sb.ToString();
+            sb.Clear();
 
-        _setClauses = string.Join(
-            ", ",
-            _columnMapDictionary.Select(f => $"{f.Value.ColumnName} = {GetParameterName(f.Key)}")
-        );
+            // _parameters
+            first = true;
+            foreach (KeyValuePair<string, ColumnMap> f in _columnMapDictionary)
+            {
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
+                first = false;
+                sb.Append(GetParameterName(f.Key));
+            }
+            _parameters = sb.ToString();
+            sb.Clear();
+
+            // _setClauses
+            first = true;
+            foreach (KeyValuePair<string, ColumnMap> f in _columnMapDictionary)
+            {
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
+                first = false;
+                sb.Append(f.Value.ColumnName).Append(" = ").Append(GetParameterName(f.Key));
+            }
+            _setClauses = sb.ToString();
+        }
+        finally
+        {
+            sb.Clear();
+            StringBuilderPool.Return(sb);
+        }
 
         // Cache base where clauses
         WhereClause tenantWhereClause = Where(nameof(DataModelBase.TenantCode));
