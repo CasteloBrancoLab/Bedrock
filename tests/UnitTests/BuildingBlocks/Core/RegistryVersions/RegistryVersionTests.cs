@@ -666,6 +666,145 @@ public class RegistryVersionTests : TestBase
         LogInfo("CreateFromExistingInfo nao afeta estado de geracao");
     }
 
+    [Fact]
+    public void ToString_WithFormat_ShouldFormatCorrectly()
+    {
+        // Arrange
+        LogArrange("Creating a version with known value");
+        long value = 638500000000000000L;
+        var version = RegistryVersion.CreateFromExistingInfo(value);
+
+        // Act
+        LogAct("Formatting with different formats");
+        var decimalFormat = version.ToString("D", null);
+        var hexFormat = version.ToString("X", null);
+
+        // Assert
+        LogAssert("Verifying formatted outputs");
+        decimalFormat.ShouldBe(value.ToString("D", null));
+        hexFormat.ShouldBe(value.ToString("X", null));
+        LogInfo("ToString with format works correctly");
+    }
+
+    [Fact]
+    public void ToString_WithFormatProvider_ShouldUseProvider()
+    {
+        // Arrange
+        LogArrange("Creating a version with known value");
+        long value = 638500000000000000L;
+        var version = RegistryVersion.CreateFromExistingInfo(value);
+
+        // Act
+        LogAct("Formatting with InvariantCulture provider");
+        var result = version.ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+
+        // Assert
+        LogAssert("Verifying formatted output uses provider");
+        result.ShouldBe("638500000000000000");
+        LogInfo("ToString with format provider works correctly");
+    }
+
+    [Fact]
+    public void TryFormat_WithSufficientBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating a version and buffer");
+        long value = 638500000000000000L;
+        var version = RegistryVersion.CreateFromExistingInfo(value);
+        Span<char> buffer = stackalloc char[32];
+
+        // Act
+        LogAct("Formatting into span buffer");
+        var success = version.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying TryFormat succeeded");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(18);
+        buffer[..charsWritten].ToString().ShouldBe("638500000000000000");
+        LogInfo("TryFormat wrote {0} characters", charsWritten);
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating a version and small buffer");
+        long value = 638500000000000000L;
+        var version = RegistryVersion.CreateFromExistingInfo(value);
+        Span<char> buffer = stackalloc char[5]; // Too small for 18 digits
+
+        // Act
+        LogAct("Attempting to format into insufficient buffer");
+        var success = version.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying TryFormat failed gracefully");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly returned false for insufficient buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithHexFormat_ShouldFormatCorrectly()
+    {
+        // Arrange
+        LogArrange("Creating a version for hex formatting");
+        long value = 638500000000000000L;
+        var version = RegistryVersion.CreateFromExistingInfo(value);
+        Span<char> buffer = stackalloc char[32];
+
+        // Act
+        LogAct("Formatting as hexadecimal");
+        var success = version.TryFormat(buffer, out int charsWritten, "X", null);
+
+        // Assert
+        LogAssert("Verifying hex format");
+        success.ShouldBeTrue();
+        buffer[..charsWritten].ToString().ShouldBe(value.ToString("X", null));
+        LogInfo("TryFormat with hex format: {0}", buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithFormatProvider_ShouldUseProvider()
+    {
+        // Arrange
+        LogArrange("Creating a version for formatted output");
+        long value = 638500000000000000L;
+        var version = RegistryVersion.CreateFromExistingInfo(value);
+        Span<char> buffer = stackalloc char[32];
+
+        // Act
+        LogAct("Formatting with InvariantCulture");
+        var success = version.TryFormat(buffer, out int charsWritten, default, System.Globalization.CultureInfo.InvariantCulture);
+
+        // Assert
+        LogAssert("Verifying format with provider");
+        success.ShouldBeTrue();
+        buffer[..charsWritten].ToString().ShouldBe("638500000000000000");
+        LogInfo("TryFormat with provider works correctly");
+    }
+
+    [Fact]
+    public void TryFormat_ZeroAllocation_ShouldNotAllocateStrings()
+    {
+        // Arrange
+        LogArrange("Creating version for zero-allocation test");
+        var version = RegistryVersion.CreateFromExistingInfo(12345L);
+        Span<char> buffer = stackalloc char[32];
+
+        // Act
+        LogAct("Formatting using stackalloc buffer (zero heap allocation)");
+        var success = version.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying successful formatting without string allocation");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(5);
+        buffer[..charsWritten].ToString().ShouldBe("12345");
+        LogInfo("Zero-allocation formatting verified");
+    }
+
     private class FixedTimeProvider : TimeProvider
     {
         private readonly DateTimeOffset _fixedTime;
