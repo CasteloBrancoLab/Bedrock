@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Bedrock.BuildingBlocks.Core.Filterings;
 using Bedrock.BuildingBlocks.Core.Sortings;
 
@@ -48,8 +49,10 @@ namespace Bedrock.BuildingBlocks.Core.Paginations;
 /// - Os campos em Sorts e Filters devem ser validados contra uma whitelist
 ///   na camada Infra.Data antes de serem usados em queries
 /// </remarks>
-public readonly struct PaginationInfo : IEquatable<PaginationInfo>
+public readonly struct PaginationInfo : IEquatable<PaginationInfo>, ISpanFormattable
 {
+    private static readonly PaginationInfo _all = new(1, int.MaxValue, null, null);
+
     /// <summary>
     /// Número da página (1-indexed).
     /// Sempre maior que zero.
@@ -154,7 +157,7 @@ public readonly struct PaginationInfo : IEquatable<PaginationInfo>
     ///
     /// ATENÇÃO: Use com cuidado em coleções grandes para evitar problemas de memória.
     /// </remarks>
-    public static PaginationInfo All => CreateAll();
+    public static PaginationInfo All => _all;
 
     /// <summary>
     /// Cria uma instância de PaginationInfo para recuperar todos os registros,
@@ -277,25 +280,74 @@ public readonly struct PaginationInfo : IEquatable<PaginationInfo>
 
     public override string ToString()
     {
-        var parts = new List<string>
-        {
-            $"Page: {Page}",
-            $"PageSize: {PageSize}",
-            $"Index: {Index}",
-            $"Offset: {Offset}"
-        };
+        var handler = new DefaultInterpolatedStringHandler(64, 6, null, stackalloc char[256]);
+        handler.AppendLiteral("Page: ");
+        handler.AppendFormatted(Page);
+        handler.AppendLiteral(", PageSize: ");
+        handler.AppendFormatted(PageSize);
+        handler.AppendLiteral(", Index: ");
+        handler.AppendFormatted(Index);
+        handler.AppendLiteral(", Offset: ");
+        handler.AppendFormatted(Offset);
 
         if (HasSort)
         {
-            parts.Add($"SortCollection: [{string.Join(", ", SortCollection!)}]");
+            handler.AppendLiteral(", SortCollection: [");
+            handler.AppendFormatted(string.Join(", ", SortCollection!));
+            handler.AppendLiteral("]");
         }
 
         if (HasFilter)
         {
-            parts.Add($"FilterCollection: [{string.Join(", ", FilterCollection!)}]");
+            handler.AppendLiteral(", FilterCollection: [");
+            handler.AppendFormatted(string.Join(", ", FilterCollection!));
+            handler.AppendLiteral("]");
         }
 
-        return string.Join(", ", parts);
+        return handler.ToStringAndClear();
+    }
+
+    /// <summary>
+    /// Retorna a representação string formatada.
+    /// </summary>
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return ToString();
+    }
+
+    /// <summary>
+    /// Tenta formatar o valor em um span de caracteres.
+    /// </summary>
+    /// <remarks>
+    /// Formata apenas as propriedades básicas (Page, PageSize, Index, Offset).
+    /// SortCollection e FilterCollection são omitidos para manter a formatação simples e zero-allocation.
+    /// </remarks>
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        // Usar stackalloc para buffer intermediario para garantir que destination
+        // seja preenchido apenas via CopyTo e nao pelo handler diretamente
+        Span<char> buffer = stackalloc char[128];
+        var handler = new DefaultInterpolatedStringHandler(64, 4, provider, buffer);
+        handler.AppendLiteral("Page: ");
+        handler.AppendFormatted(Page);
+        handler.AppendLiteral(", PageSize: ");
+        handler.AppendFormatted(PageSize);
+        handler.AppendLiteral(", Index: ");
+        handler.AppendFormatted(Index);
+        handler.AppendLiteral(", Offset: ");
+        handler.AppendFormatted(Offset);
+
+        var result = handler.ToStringAndClear();
+
+        if (result.Length > destination.Length)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        result.AsSpan().CopyTo(destination);
+        charsWritten = result.Length;
+        return true;
     }
 
     public static bool operator ==(PaginationInfo left, PaginationInfo right)

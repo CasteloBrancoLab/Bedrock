@@ -858,4 +858,165 @@ public class PaginationInfoTests : TestBase
     }
 
     #endregion
+
+    #region ISpanFormattable Tests
+
+    [Fact]
+    public void TryFormat_WithSufficientBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating pagination for TryFormat");
+        var pagination = PaginationInfo.Create(3, 10);
+        var buffer = new char[128];
+        Array.Fill(buffer, 'X'); // Preencher com caracteres para detectar se CopyTo foi chamado
+        var expectedOutput = "Page: 3, PageSize: 10, Index: 2, Offset: 20";
+
+        // Act
+        LogAct("Calling TryFormat");
+        var success = pagination.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying TryFormat succeeded");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(expectedOutput.Length);
+        var result = new string(buffer, 0, charsWritten);
+        result.ShouldBe(expectedOutput);
+        // Verificar que o primeiro caractere foi realmente escrito (nao e 'X')
+        buffer[0].ShouldBe('P');
+        LogInfo("TryFormat result: {0}", result);
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating pagination with small buffer");
+        var pagination = PaginationInfo.Create(3, 10);
+        Span<char> buffer = stackalloc char[5]; // Too small
+
+        // Act
+        LogAct("Calling TryFormat with insufficient buffer");
+        var success = pagination.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying TryFormat failed");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+    }
+
+    [Fact]
+    public void TryFormat_ShouldMatchBasicToStringContent()
+    {
+        // Arrange
+        LogArrange("Creating pagination for comparison");
+        var pagination = PaginationInfo.Create(2, 15);
+        Span<char> buffer = stackalloc char[128];
+
+        // Act
+        LogAct("Comparing TryFormat with ToString");
+        var success = pagination.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying content matches");
+        success.ShouldBeTrue();
+        var tryFormatResult = buffer[..charsWritten].ToString();
+        // TryFormat omite collections, entao deve conter apenas informacoes basicas
+        tryFormatResult.ShouldBe("Page: 2, PageSize: 15, Index: 1, Offset: 15");
+    }
+
+    [Fact]
+    public void ToString_WithFormatAndProvider_ShouldReturnSameAsToString()
+    {
+        // Arrange
+        LogArrange("Creating pagination");
+        var pagination = PaginationInfo.Create(2, 15);
+
+        // Act
+        LogAct("Calling ToString with format and provider");
+        var resultWithParams = pagination.ToString(null, null);
+        var resultWithoutParams = pagination.ToString();
+
+        // Assert
+        LogAssert("Verifying both return same result");
+        resultWithParams.ShouldBe(resultWithoutParams);
+    }
+
+    [Fact]
+    public void TryFormat_WithExactSizeBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating pagination to measure exact size");
+        var pagination = PaginationInfo.Create(1, 10);
+        var expected = "Page: 1, PageSize: 10, Index: 0, Offset: 0";
+        Span<char> buffer = stackalloc char[expected.Length];
+
+        // Act
+        LogAct("Calling TryFormat with exact size buffer");
+        var success = pagination.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying exact fit");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(expected.Length);
+        buffer[..charsWritten].ToString().ShouldBe(expected);
+    }
+
+    [Fact]
+    public void TryFormat_WithBufferOneLessThanRequired_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating pagination for boundary test");
+        var pagination = PaginationInfo.Create(1, 10);
+        var expected = "Page: 1, PageSize: 10, Index: 0, Offset: 0";
+        Span<char> buffer = stackalloc char[expected.Length - 1]; // One char short
+
+        // Act
+        LogAct("Calling TryFormat with one-less buffer");
+        var success = pagination.TryFormat(buffer, out int charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure for insufficient space");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+    }
+
+    [Fact]
+    public void ISpanFormattable_CanBeUsedInInterpolation()
+    {
+        // Arrange
+        LogArrange("Creating pagination for interpolation test");
+        var pagination = PaginationInfo.Create(2, 20);
+
+        // Act
+        LogAct("Using pagination in string interpolation");
+        var result = $"Info: {pagination}";
+
+        // Assert
+        LogAssert("Verifying interpolation works");
+        result.ShouldContain("Page: 2");
+        result.ShouldContain("PageSize: 20");
+        result.ShouldContain("Index: 1");
+        result.ShouldContain("Offset: 20");
+    }
+
+    #endregion
+
+    #region All Property Caching Tests
+
+    [Fact]
+    public void All_ShouldReturnSameInstance()
+    {
+        // Arrange & Act
+        LogAct("Accessing All property multiple times");
+        var all1 = PaginationInfo.All;
+        var all2 = PaginationInfo.All;
+
+        // Assert
+        LogAssert("Verifying same values returned (struct equality)");
+        all1.ShouldBe(all2);
+        all1.Page.ShouldBe(1);
+        all1.PageSize.ShouldBe(int.MaxValue);
+    }
+
+    #endregion
 }
