@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using Avro;
@@ -17,6 +18,7 @@ public abstract class AvroSerializerBase
     : IAvroSerializer
 {
     private static readonly ConcurrentDictionary<Type, (RecordSchema Schema, PropertyInfo[] Properties)> _schemaCache = new();
+    private static readonly ConcurrentDictionary<Type, Func<object>> _activatorCache = new();
 
     public Options Options { get; }
 
@@ -100,7 +102,9 @@ public abstract class AvroSerializerBase
         if (input is null || input.Length == 0)
             return default;
 
-        using var ms = new MemoryStream(input, writable: false);
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream();
+        ms.Write(input, 0, input.Length);
+        ms.Position = 0;
         return DeserializeFromStreamInternal<TResult>(ms, typeof(TResult));
     }
 
@@ -110,7 +114,9 @@ public abstract class AvroSerializerBase
         if (input is null || input.Length == 0)
             return default;
 
-        using var ms = new MemoryStream(input, writable: false);
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream();
+        ms.Write(input, 0, input.Length);
+        ms.Position = 0;
         return DeserializeFromStreamInternal<TResult>(ms, type);
     }
 
@@ -120,7 +126,9 @@ public abstract class AvroSerializerBase
         if (input is null || input.Length == 0)
             return default;
 
-        using var ms = new MemoryStream(input, writable: false);
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream();
+        ms.Write(input, 0, input.Length);
+        ms.Position = 0;
         return DeserializeFromStreamInternal(ms, type);
     }
     // Stryker restore all
@@ -210,7 +218,7 @@ public abstract class AvroSerializerBase
         var decoder = new BinaryDecoder(source);
         GenericRecord record = reader.Read(null!, decoder);
 
-        object instance = Activator.CreateInstance(type)!;
+        object instance = CreateInstance(type);
 
         foreach (PropertyInfo prop in properties)
         {
@@ -291,6 +299,32 @@ public abstract class AvroSerializerBase
     }
 
     private static bool IsNullable(Type type) => SerializerInfrastructure.IsNullable(type);
+
+    /// <summary>
+    /// Creates an instance of the specified type using a cached compiled factory.
+    /// </summary>
+    /// <remarks>
+    /// Uses Expression compilation to eliminate reflection overhead on subsequent calls.
+    /// The factory is compiled once per type and cached for zero-allocation instance creation.
+    /// </remarks>
+    [ExcludeFromCodeCoverage(Justification = "Criacao de instancia via Expression - testado indiretamente atraves de round-trips de desserializacao")]
+    private static object CreateInstance(Type type)
+    {
+        Func<object> factory = _activatorCache.GetOrAdd(type, static t =>
+        {
+            ConstructorInfo? ctor = t.GetConstructor(Type.EmptyTypes);
+            if (ctor is null)
+            {
+                throw new InvalidOperationException(
+                    $"Type '{t.FullName}' must have a public parameterless constructor for Avro deserialization.");
+            }
+
+            NewExpression newExpr = Expression.New(ctor);
+            return Expression.Lambda<Func<object>>(newExpr).Compile();
+        });
+
+        return factory();
+    }
 
     [ExcludeFromCodeCoverage(Justification = "Conversao de valores CLR para Avro - cada branch requer tipo especifico, impraticavel testar todas as combinacoes")]
     private static object? ConvertToAvroValue(object? value, Type propertyType)
