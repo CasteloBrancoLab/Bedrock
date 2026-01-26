@@ -2,7 +2,10 @@ namespace Bedrock.BuildingBlocks.Core.TenantInfos;
 
 public readonly struct TenantInfo
     : IEquatable<TenantInfo>
+    , ISpanFormattable
 {
+    private const int GuidLength = 36;
+
     public Guid Code { get; }
     public string? Name { get; }
 
@@ -24,7 +27,49 @@ public readonly struct TenantInfo
 
     public override string ToString()
     {
-        return Name is not null ? $"{Name} ({Code})" : Code.ToString();
+        return ToString(null, null);
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return Name is not null
+            ? string.Concat(Name, " (", Code.ToString(), ")")
+            : Code.ToString();
+    }
+
+    public bool TryFormat(
+        Span<char> destination,
+        out int charsWritten,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider)
+    {
+        if (Name is null)
+        {
+            return Code.TryFormat(destination, out charsWritten);
+        }
+
+        var nameSpan = Name.AsSpan();
+        var requiredLength = nameSpan.Length + 3 + GuidLength;
+
+        if (destination.Length < requiredLength)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        nameSpan.CopyTo(destination);
+        var position = nameSpan.Length;
+
+        destination[position++] = ' ';
+        destination[position++] = '(';
+
+        Code.TryFormat(destination.Slice(position), out var guidCharsWritten);
+        position += guidCharsWritten;
+
+        destination[position++] = ')';
+
+        charsWritten = position;
+        return true;
     }
 
     public override int GetHashCode()
