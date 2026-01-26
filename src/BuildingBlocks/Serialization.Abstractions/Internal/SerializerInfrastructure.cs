@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.IO;
@@ -40,6 +41,12 @@ public static class SerializerInfrastructure
     public const BindingFlags PropertyBindingFlags = BindingFlags.Instance | BindingFlags.Public;
 
     /// <summary>
+    /// Cache for serializable properties by type.
+    /// Types are immutable, so their properties never change - safe to cache indefinitely.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> s_propertyCache = new();
+
+    /// <summary>
     /// Determines whether a type is nullable (reference type or Nullable&lt;T&gt;).
     /// </summary>
     /// <param name="type">The type to check.</param>
@@ -54,11 +61,48 @@ public static class SerializerInfrastructure
     /// </summary>
     /// <param name="type">The type to get properties from.</param>
     /// <returns>An array of serializable properties ordered by name.</returns>
+    /// <remarks>
+    /// Results are cached per type for zero-allocation on subsequent calls.
+    /// Properties are filtered to include only readable and writable non-indexed properties.
+    /// </remarks>
     public static PropertyInfo[] GetSerializableProperties(Type type)
     {
-        return [.. type
-            .GetProperties(PropertyBindingFlags)
-            .Where(p => p.CanRead && p.CanWrite && p.GetIndexParameters().Length == 0)
-            .OrderBy(p => p.Name, StringComparer.Ordinal)];
+        return s_propertyCache.GetOrAdd(type, static t => BuildSerializablePropertiesArray(t));
+    }
+
+    private static PropertyInfo[] BuildSerializablePropertiesArray(Type type)
+    {
+        var properties = type.GetProperties(PropertyBindingFlags);
+        var count = 0;
+
+        // First pass: count valid properties
+        foreach (var prop in properties)
+        {
+            if (prop.CanRead && prop.CanWrite && prop.GetIndexParameters().Length == 0)
+            {
+                count++;
+            }
+        }
+
+        if (count == 0)
+        {
+            return [];
+        }
+
+        // Second pass: collect valid properties
+        var result = new PropertyInfo[count];
+        var index = 0;
+        foreach (var prop in properties)
+        {
+            if (prop.CanRead && prop.CanWrite && prop.GetIndexParameters().Length == 0)
+            {
+                result[index++] = prop;
+            }
+        }
+
+        // Sort in-place by name
+        Array.Sort(result, static (a, b) => StringComparer.Ordinal.Compare(a.Name, b.Name));
+
+        return result;
     }
 }
