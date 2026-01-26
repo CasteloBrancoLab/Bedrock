@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Bedrock.BuildingBlocks.Core.Validations.Enums;
 using ExecutionContext = Bedrock.BuildingBlocks.Core.ExecutionContexts.ExecutionContext;
 
@@ -26,9 +27,21 @@ namespace Bedrock.BuildingBlocks.Core.Validations;
 /// NOTA SOBRE NULL:
 /// - ValidateIsRequired: null é considerado inválido quando isRequired=true
 /// - ValidateMinLength/MaxLength: null é considerado válido (use IsRequired para obrigatoriedade)
+///
+/// PERFORMANCE:
+/// - Códigos de erro são cacheados para evitar alocações repetidas em hot paths
+/// - EqualityComparer&lt;T&gt;.Default é usado para evitar boxing em value types
 /// </remarks>
 public static class ValidationUtils
 {
+    private static readonly ConcurrentDictionary<(string PropertyName, ValidationType Type), string> CodeCache = new();
+
+    private static string GetCachedCode(string propertyName, ValidationType validationType)
+    {
+        return CodeCache.GetOrAdd(
+            (propertyName, validationType),
+            static key => $"{key.PropertyName}.{key.Type}");
+    }
     /// <summary>
     /// Valida se um valor obrigatório está preenchido.
     /// </summary>
@@ -55,10 +68,13 @@ public static class ValidationUtils
         bool isRequired,
         TValue? value)
     {
-        if (isRequired && (value is null || value.Equals(default(TValue))))
+        if (!isRequired)
+            return true;
+
+        if (value is null || EqualityComparer<TValue>.Default.Equals(value, default!))
         {
             executionContext.AddErrorMessage(
-                code: $"{propertyName}.{ValidationType.IsRequired}");
+                code: GetCachedCode(propertyName, ValidationType.IsRequired));
 
             return false;
         }
@@ -101,7 +117,7 @@ public static class ValidationUtils
         if (value.CompareTo(minLength) < 0)
         {
             executionContext.AddErrorMessage(
-                code: $"{propertyName}.{ValidationType.MinLength}");
+                code: GetCachedCode(propertyName, ValidationType.MinLength));
 
             return false;
         }
@@ -144,7 +160,7 @@ public static class ValidationUtils
         if (value.CompareTo(maxLength) > 0)
         {
             executionContext.AddErrorMessage(
-                code: $"{propertyName}.{ValidationType.MaxLength}");
+                code: GetCachedCode(propertyName, ValidationType.MaxLength));
 
             return false;
         }
