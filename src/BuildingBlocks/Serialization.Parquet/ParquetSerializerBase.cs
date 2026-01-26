@@ -16,6 +16,7 @@ public abstract class ParquetSerializerBase
     : IParquetSerializer
 {
     private static readonly ConcurrentDictionary<Type, (Schema Schema, PropertyInfo[] Properties)> _schemaCache = new();
+    private static readonly Decimal128Type s_decimal128Type = new(38, 18);
 
     public Options Options { get; }
 
@@ -153,24 +154,24 @@ public abstract class ParquetSerializerBase
     }
     // Stryker restore all
 
-    // Stryker disable all : Deserialization with LINQ methods - tested through round-trip tests
-    [ExcludeFromCodeCoverage(Justification = "Desserializacao com metodos LINQ - testado atraves de round-trips")]
+    // Stryker disable all : Deserialization methods - tested through round-trip tests
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao - testado atraves de round-trips")]
     public TResult? Deserialize<TResult>(byte[]? input)
     {
         if (input is null || input.Length == 0)
             return default;
 
-        IEnumerable<TResult>? collection = DeserializeCollection<TResult>(input);
-        return collection is not null ? collection.FirstOrDefault() : default;
+        List<TResult>? collection = DeserializeCollectionAsList<TResult>(input);
+        return collection is { Count: > 0 } ? collection[0] : default;
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Desserializacao com metodos LINQ - testado atraves de round-trips")]
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao - testado atraves de round-trips")]
     public TResult? Deserialize<TResult>(byte[]? input, Type type)
     {
         return Deserialize<TResult>(input);
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Desserializacao com metodos LINQ - testado atraves de round-trips")]
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao - testado atraves de round-trips")]
     public object? Deserialize(byte[]? input, Type type)
     {
         if (input is null || input.Length == 0)
@@ -178,7 +179,7 @@ public abstract class ParquetSerializerBase
 
         using var ms = new MemoryStream(input, writable: false);
         List<object>? collection = DeserializeCollectionFromStreamInternal(ms, type);
-        return collection?.Cast<object>().FirstOrDefault();
+        return collection is { Count: > 0 } ? collection[0] : default;
     }
     // Stryker restore all
 
@@ -197,27 +198,27 @@ public abstract class ParquetSerializerBase
         return Task.FromResult(Deserialize(input, type));
     }
 
-    // Stryker disable all : Deserialization with LINQ methods and guard clauses - tested through round-trip tests
-    [ExcludeFromCodeCoverage(Justification = "Desserializacao com metodos LINQ - testado atraves de round-trips")]
+    // Stryker disable all : Deserialization methods with guard clauses - tested through round-trip tests
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao - testado atraves de round-trips")]
     public TResult? DeserializeFromStream<TResult>(Stream source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        IEnumerable<TResult>? collection = DeserializeCollectionFromStream<TResult>(source);
-        return collection is not null ? collection.FirstOrDefault() : default;
+        List<TResult>? collection = DeserializeCollectionFromStreamAsList<TResult>(source);
+        return collection is { Count: > 0 } ? collection[0] : default;
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Desserializacao com metodos LINQ - testado atraves de round-trips")]
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao - testado atraves de round-trips")]
     public TResult? DeserializeFromStream<TResult>(Stream source, Type type)
     {
         return DeserializeFromStream<TResult>(source);
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Desserializacao com metodos LINQ - testado atraves de round-trips")]
+    [ExcludeFromCodeCoverage(Justification = "Desserializacao - testado atraves de round-trips")]
     public object? DeserializeFromStream(Stream source, Type type)
     {
         ArgumentNullException.ThrowIfNull(source);
         List<object>? collection = DeserializeCollectionFromStreamInternal(source, type);
-        return collection?.Cast<object>().FirstOrDefault();
+        return collection is { Count: > 0 } ? collection[0] : default;
     }
     // Stryker restore all
 
@@ -240,11 +241,7 @@ public abstract class ParquetSerializerBase
     [ExcludeFromCodeCoverage(Justification = "Metodo de desserializacao de colecao - testado atraves de round-trips")]
     public IEnumerable<TResult>? DeserializeCollection<TResult>(byte[]? input)
     {
-        if (input is null || input.Length == 0)
-            return null;
-
-        using var ms = new MemoryStream(input, writable: false);
-        return DeserializeCollectionFromStream<TResult>(ms);
+        return DeserializeCollectionAsList<TResult>(input);
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo de desserializacao de colecao - testado atraves de round-trips")]
@@ -268,9 +265,7 @@ public abstract class ParquetSerializerBase
     [ExcludeFromCodeCoverage(Justification = "Metodo de desserializacao de colecao - testado atraves de round-trips")]
     public IEnumerable<TResult>? DeserializeCollectionFromStream<TResult>(Stream source)
     {
-        ArgumentNullException.ThrowIfNull(source);
-        List<object>? collection = DeserializeCollectionFromStreamInternal(source, typeof(TResult));
-        return collection?.Cast<TResult>().ToList();
+        return DeserializeCollectionFromStreamAsList<TResult>(source);
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo de desserializacao de colecao - testado atraves de round-trips")]
@@ -290,6 +285,35 @@ public abstract class ParquetSerializerBase
     {
         return Task.FromResult(DeserializeCollectionFromStream<TResult>(source, type));
     }
+
+    // Zero-allocation helper methods for deserialization
+    [ExcludeFromCodeCoverage(Justification = "Metodo auxiliar de desserializacao - testado atraves de round-trips")]
+    private List<TResult>? DeserializeCollectionAsList<TResult>(byte[]? input)
+    {
+        if (input is null || input.Length == 0)
+            return null;
+
+        using var ms = new MemoryStream(input, writable: false);
+        return DeserializeCollectionFromStreamAsList<TResult>(ms);
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Metodo auxiliar de desserializacao - testado atraves de round-trips")]
+    private List<TResult>? DeserializeCollectionFromStreamAsList<TResult>(Stream source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        List<object>? collection = DeserializeCollectionFromStreamInternal(source, typeof(TResult));
+
+        if (collection is null)
+            return null;
+
+        // Avoid LINQ Cast<T>().ToList() - use direct loop with pre-allocated capacity
+        var result = new List<TResult>(collection.Count);
+        foreach (object item in collection)
+        {
+            result.Add((TResult)item);
+        }
+        return result;
+    }
     // Stryker restore all
 
     // Stryker disable all : Internal serialization/deserialization methods - tested through round-trip tests
@@ -298,18 +322,37 @@ public abstract class ParquetSerializerBase
     {
         (Schema? schema, PropertyInfo[]? properties) = GetOrCreateSchema(type);
 
-        var arrays = new IArrowArray[properties.Length];
+        // Use ArrayPool for schemas with many properties to reduce GC pressure
+        const int PoolThreshold = 8;
+        bool rentedFromPool = properties.Length > PoolThreshold;
+        IArrowArray[] arrays = rentedFromPool
+            ? ArrayPool<IArrowArray>.Shared.Rent(properties.Length)
+            : new IArrowArray[properties.Length];
 
-        for (int i = 0; i < properties.Length; i++)
+        try
         {
-            arrays[i] = BuildSingleItemArray(properties[i], input);
+            for (int i = 0; i < properties.Length; i++)
+            {
+                arrays[i] = BuildSingleItemArray(properties[i], input);
+            }
+
+            // Only call ToArray() when rented from pool (array is larger than needed)
+            var recordBatch = new RecordBatch(schema,
+                rentedFromPool ? arrays.AsSpan(0, properties.Length).ToArray() : arrays,
+                1);
+
+            using var writer = new ArrowStreamWriter(destination, schema, leaveOpen: true, Options.IpcWriteOptions);
+            writer.WriteRecordBatch(recordBatch);
+            writer.WriteEnd();
         }
-
-        var recordBatch = new RecordBatch(schema, arrays, 1);
-
-        using var writer = new ArrowStreamWriter(destination, schema, leaveOpen: true, Options.IpcWriteOptions);
-        writer.WriteRecordBatch(recordBatch);
-        writer.WriteEnd();
+        finally
+        {
+            if (rentedFromPool)
+            {
+                System.Array.Clear(arrays, 0, properties.Length);
+                ArrayPool<IArrowArray>.Shared.Return(arrays);
+            }
+        }
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de serializacao - testado atraves de round-trips")]
@@ -341,7 +384,10 @@ public abstract class ParquetSerializerBase
                 arrays[i] = BuildArray(properties[i], items);
             }
 
-            var recordBatch = new RecordBatch(schema, arrays.AsSpan(0, properties.Length).ToArray(), items.Count);
+            // Only call ToArray() when rented from pool (array is larger than needed)
+            var recordBatch = new RecordBatch(schema,
+                rentedFromPool ? arrays.AsSpan(0, properties.Length).ToArray() : arrays,
+                items.Count);
 
             using var writer = new ArrowStreamWriter(destination, schema, leaveOpen: true, Options.IpcWriteOptions);
             writer.WriteRecordBatch(recordBatch);
@@ -361,7 +407,10 @@ public abstract class ParquetSerializerBase
     private static List<object>? DeserializeCollectionFromStreamInternal(Stream source, Type type)
     {
         (Schema _, PropertyInfo[]? properties) = GetOrCreateSchema(type);
-        var results = new List<object>();
+
+        // Pre-allocate with reasonable initial capacity to reduce reallocations
+        const int InitialCapacity = 128;
+        var results = new List<object>(InitialCapacity);
 
         using var reader = new ArrowStreamReader(source, leaveOpen: true);
 
@@ -370,6 +419,9 @@ public abstract class ParquetSerializerBase
             RecordBatch? batch = reader.ReadNextRecordBatch();
             if (batch is null)
                 break;
+
+            // Ensure capacity for this batch to avoid multiple reallocations
+            results.EnsureCapacity(results.Count + (int)batch.Length);
 
             for (int row = 0; row < batch.Length; row++)
             {
@@ -435,7 +487,7 @@ public abstract class ParquetSerializerBase
             _ when underlyingType == typeof(ulong) => UInt64Type.Default,
             _ when underlyingType == typeof(float) => FloatType.Default,
             _ when underlyingType == typeof(double) => DoubleType.Default,
-            _ when underlyingType == typeof(decimal) => new Decimal128Type(38, 18),
+            _ when underlyingType == typeof(decimal) => s_decimal128Type,
             _ when underlyingType == typeof(string) => StringType.Default,
             _ when underlyingType == typeof(DateTime) => TimestampType.Default,
             _ when underlyingType == typeof(DateTimeOffset) => TimestampType.Default,
@@ -686,7 +738,7 @@ public abstract class ParquetSerializerBase
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
     private static Decimal128Array BuildDecimalArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
-        var builder = new Decimal128Array.Builder(new Decimal128Type(38, 18));
+        var builder = new Decimal128Array.Builder(s_decimal128Type);
         foreach (TInput? item in items)
         {
             object? value = property.GetValue(item);
@@ -999,7 +1051,7 @@ public abstract class ParquetSerializerBase
     [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
     private static Decimal128Array BuildSingleValueDecimalArray(object? value)
     {
-        var builder = new Decimal128Array.Builder(new Decimal128Type(38, 18));
+        var builder = new Decimal128Array.Builder(s_decimal128Type);
         _ = value is null ? builder.AppendNull() : builder.Append((decimal)value);
         return builder.Build();
     }
