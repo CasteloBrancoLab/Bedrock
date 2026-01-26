@@ -1,5 +1,15 @@
 # Instruções do Projeto Bedrock
 
+## Prompts Reutilizáveis
+
+Prompts padronizados em `.claude/prompts/`:
+
+| Prompt | Descrição |
+|--------|-----------|
+| [review-zero-allocation.md](.claude/prompts/review-zero-allocation.md) | Revisão de performance focada em eliminar alocações |
+
+**Uso:** Substituir variáveis `{{variavel}}` pelos valores reais e colar no chat.
+
 ## Gestão de Tarefas
 
 - Todas as tarefas são gerenciadas por **issues no GitHub**
