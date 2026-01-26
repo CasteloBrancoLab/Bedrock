@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Core.Sortings.Enums;
 
 namespace Bedrock.BuildingBlocks.Core.Sortings;
@@ -9,6 +10,7 @@ namespace Bedrock.BuildingBlocks.Core.Sortings;
 /// CARACTERÍSTICAS:
 /// - Imutável: readonly struct para performance e segurança
 /// - Validado: Field não pode ser nulo ou vazio
+/// - Zero allocation: implementa ISpanFormattable para formatação sem alocação
 ///
 /// EXEMPLO DE USO:
 ///   var sort = SortInfo.Create("FirstName", SortDirection.Ascending);
@@ -26,7 +28,7 @@ namespace Bedrock.BuildingBlocks.Core.Sortings;
 /// - O valor de Field deve ser validado contra uma whitelist (enum) na camada Infra.Data
 /// - Este struct apenas transporta a informação, não valida se o campo é permitido
 /// </remarks>
-public readonly struct SortInfo : IEquatable<SortInfo>
+public readonly struct SortInfo : IEquatable<SortInfo>, ISpanFormattable
 {
     /// <summary>
     /// Nome do campo para ordenação.
@@ -95,9 +97,69 @@ public readonly struct SortInfo : IEquatable<SortInfo>
         return Field == other.Field && Direction == other.Direction;
     }
 
+    /// <summary>
+    /// Retorna representação textual no formato "Field Direction".
+    /// </summary>
+    /// <returns>String no formato "Field Direction" (ex: "FirstName Ascending").</returns>
     public override string ToString()
     {
-        return $"{Field} {Direction}";
+        return ToString(null, null);
+    }
+
+    /// <summary>
+    /// Formata o valor usando o formato e provider especificados.
+    /// </summary>
+    /// <param name="format">Formato (ignorado, apenas default suportado).</param>
+    /// <param name="formatProvider">Provider de formatação (ignorado).</param>
+    /// <returns>String no formato "Field Direction".</returns>
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return string.Create(GetFormattedLength(), this, static (span, state) => state.FormatTo(span));
+    }
+
+    /// <summary>
+    /// Tenta formatar o valor no span de destino.
+    /// </summary>
+    /// <param name="destination">Span de destino para escrita.</param>
+    /// <param name="charsWritten">Quantidade de caracteres escritos.</param>
+    /// <param name="format">Formato (ignorado, apenas default suportado).</param>
+    /// <param name="provider">Provider de formatação (ignorado).</param>
+    /// <returns>True se formatou com sucesso, false se o destino é pequeno demais.</returns>
+    public bool TryFormat(Span<char> destination, out int charsWritten, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        var totalLength = GetFormattedLength();
+
+        if (destination.Length < totalLength)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        FormatTo(destination);
+        charsWritten = totalLength;
+        return true;
+    }
+
+    private int GetFormattedLength()
+    {
+        return Field.Length + 1 + GetDirectionLength();
+    }
+
+    private int GetDirectionLength()
+    {
+        return Direction == SortDirection.Ascending ? 9 : 10; // "Ascending" or "Descending"
+    }
+
+    private void FormatTo(Span<char> destination)
+    {
+        Field.AsSpan().CopyTo(destination);
+        destination[Field.Length] = ' ';
+        GetDirectionSpan().CopyTo(destination[(Field.Length + 1)..]);
+    }
+
+    private ReadOnlySpan<char> GetDirectionSpan()
+    {
+        return Direction == SortDirection.Ascending ? "Ascending" : "Descending";
     }
 
     public static bool operator ==(SortInfo left, SortInfo right)
