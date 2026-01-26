@@ -33,7 +33,7 @@ namespace Bedrock.BuildingBlocks.Core.RegistryVersions;
 /// - Múltiplas instâncias sem coordenação → Use Id (UUIDv7) com bytes aleatórios
 /// </remarks>
 public readonly struct RegistryVersion
-    : IEquatable<RegistryVersion>, IComparable<RegistryVersion>
+    : IEquatable<RegistryVersion>, IComparable<RegistryVersion>, ISpanFormattable
 {
     [ThreadStatic] private static long _lastTicks;
 
@@ -195,6 +195,30 @@ public readonly struct RegistryVersion
     public override string ToString()
     {
         return Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Formata o valor da versão usando o formato e provider especificados.
+    /// </summary>
+    /// <param name="format">Formato numérico (ex: "D", "X").</param>
+    /// <param name="formatProvider">Provider de formatação.</param>
+    /// <returns>String formatada.</returns>
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return Value.ToString(format, formatProvider);
+    }
+
+    /// <summary>
+    /// Tenta formatar o valor da versão em um span de caracteres sem alocação.
+    /// </summary>
+    /// <param name="destination">Buffer de destino.</param>
+    /// <param name="charsWritten">Número de caracteres escritos.</param>
+    /// <param name="format">Formato numérico.</param>
+    /// <param name="provider">Provider de formatação.</param>
+    /// <returns>True se formatou com sucesso; false se o buffer for insuficiente.</returns>
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        return Value.TryFormat(destination, out charsWritten, format, provider);
     }
 
     public static implicit operator long(RegistryVersion version)
