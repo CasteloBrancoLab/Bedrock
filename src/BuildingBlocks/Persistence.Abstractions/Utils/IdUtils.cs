@@ -42,7 +42,7 @@ public static class IdUtils
             }
         }
 
-        return Convert.ToHexString(guidBytes[..12]).ToLowerInvariant();
+        return Convert.ToHexStringLower(guidBytes[..12]);
     }
 
     private static int GetHexVal(char hex)
