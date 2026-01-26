@@ -111,7 +111,11 @@ public abstract class ProtobufSerializerBase
         if (input is null || input.Length == 0)
             return default;
 
-        using var ms = new MemoryStream(input, writable: false);
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream(
+            tag: "ProtobufDeserialize",
+            buffer: input,
+            offset: 0,
+            count: input.Length);
         return _runtimeTypeModel.Deserialize<TResult>(ms);
     }
 
@@ -121,7 +125,11 @@ public abstract class ProtobufSerializerBase
         if (input is null || input.Length == 0)
             return default;
 
-        using var ms = new MemoryStream(input, writable: false);
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream(
+            tag: "ProtobufDeserialize",
+            buffer: input,
+            offset: 0,
+            count: input.Length);
         return (TResult?)_runtimeTypeModel.Deserialize(type, ms);
     }
 
@@ -131,7 +139,11 @@ public abstract class ProtobufSerializerBase
         if (input is null || input.Length == 0)
             return default;
 
-        using var ms = new MemoryStream(input, writable: false);
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream(
+            tag: "ProtobufDeserialize",
+            buffer: input,
+            offset: 0,
+            count: input.Length);
         return _runtimeTypeModel.Deserialize(type, ms);
     }
     // Stryker restore all
@@ -208,7 +220,10 @@ public abstract class ProtobufSerializerBase
         if (options?.TypeCollection is null)
             return;
 
-        foreach (Type? type in options.TypeCollection.OrderBy(t => t.FullName, StringComparer.Ordinal))
+        Type[] types = options.TypeCollection.ToArray();
+        Array.Sort(types, static (a, b) => StringComparer.Ordinal.Compare(a.FullName, b.FullName));
+
+        foreach (Type type in types)
         {
             RegisterTypeIfNeeded(type);
         }
