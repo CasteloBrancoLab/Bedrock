@@ -378,6 +378,189 @@ public class SortInfoTests : TestBase
 
     #endregion
 
+    #region ISpanFormattable Tests
+
+    [Fact]
+    public void ToStringWithFormatProvider_ShouldReturnCorrectFormat()
+    {
+        // Arrange
+        LogArrange("Creating SortInfo for IFormattable test");
+        var sort = SortInfo.Create("Name", SortDirection.Ascending);
+
+        // Act
+        LogAct("Calling ToString with format and provider");
+        var result = sort.ToString(null, null);
+
+        // Assert
+        LogAssert("Verifying format matches");
+        result.ShouldBe("Name Ascending");
+        LogInfo("IFormattable ToString: {0}", result);
+    }
+
+    [Fact]
+    public void TryFormat_WithSufficientBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating SortInfo and buffer");
+        var sort = SortInfo.Create("Email", SortDirection.Ascending);
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat");
+        var success = sort.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying success and content");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(15); // "Email Ascending" = 15 chars
+        buffer[..charsWritten].ToString().ShouldBe("Email Ascending");
+        LogInfo("TryFormat wrote {0} chars: {1}", charsWritten, buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithDescending_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating descending SortInfo and buffer");
+        var sort = SortInfo.Create("Date", SortDirection.Descending);
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat with Descending");
+        var success = sort.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying success and content");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(15); // "Date Descending" = 15 chars
+        buffer[..charsWritten].ToString().ShouldBe("Date Descending");
+        LogInfo("TryFormat wrote {0} chars: {1}", charsWritten, buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithExactBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating SortInfo with exact buffer size");
+        var sort = SortInfo.Create("Id", SortDirection.Ascending);
+        var expectedLength = 12; // "Id Ascending" = 12 chars
+        Span<char> buffer = stackalloc char[expectedLength];
+
+        // Act
+        LogAct("Calling TryFormat with exact buffer");
+        var success = sort.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying success with exact buffer");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(expectedLength);
+        buffer.ToString().ShouldBe("Id Ascending");
+        LogInfo("TryFormat succeeded with exact buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating SortInfo with small buffer");
+        var sort = SortInfo.Create("Name", SortDirection.Ascending);
+        Span<char> buffer = stackalloc char[5]; // Too small
+
+        // Act
+        LogAct("Calling TryFormat with insufficient buffer");
+        var success = sort.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed with insufficient buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithEmptyBuffer_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating SortInfo with empty buffer");
+        var sort = SortInfo.Create("Field", SortDirection.Ascending);
+        Span<char> buffer = Span<char>.Empty;
+
+        // Act
+        LogAct("Calling TryFormat with empty buffer");
+        var success = sort.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed with empty buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithBufferOneCharShort_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating SortInfo with buffer one char short");
+        var sort = SortInfo.Create("Test", SortDirection.Ascending);
+        var requiredLength = 14; // "Test Ascending" = 14 chars
+        Span<char> buffer = stackalloc char[requiredLength - 1];
+
+        // Act
+        LogAct("Calling TryFormat with buffer one char short");
+        var success = sort.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed when buffer is one char short");
+    }
+
+    [Fact]
+    public void InterpolatedStringHandler_ShouldWorkCorrectly()
+    {
+        // Arrange
+        LogArrange("Creating SortInfo for interpolation test");
+        var sort = SortInfo.Create("Column", SortDirection.Descending);
+
+        // Act
+        LogAct("Using string interpolation");
+        var result = $"{sort}";
+
+        // Assert
+        LogAssert("Verifying interpolation result");
+        result.ShouldBe("Column Descending");
+        LogInfo("Interpolation result: {0}", result);
+    }
+
+    [Fact]
+    public void TryFormat_AscendingAndDescending_ShouldHaveCorrectLengths()
+    {
+        // Arrange
+        LogArrange("Creating ascending and descending SortInfos with same field");
+        var ascending = SortInfo.Create("X", SortDirection.Ascending);
+        var descending = SortInfo.Create("X", SortDirection.Descending);
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat for both directions");
+        ascending.TryFormat(buffer, out var ascChars, default, null);
+        var ascResult = buffer[..ascChars].ToString();
+
+        descending.TryFormat(buffer, out var descChars, default, null);
+        var descResult = buffer[..descChars].ToString();
+
+        // Assert
+        LogAssert("Verifying correct lengths for both directions");
+        ascChars.ShouldBe(11); // "X Ascending" = 11
+        descChars.ShouldBe(12); // "X Descending" = 12
+        ascResult.ShouldBe("X Ascending");
+        descResult.ShouldBe("X Descending");
+        LogInfo("Ascending: {0} ({1} chars), Descending: {2} ({3} chars)", ascResult, ascChars, descResult, descChars);
+    }
+
+    #endregion
+
     #region Mutation Killing Tests
 
     [Fact]
