@@ -656,6 +656,38 @@ public class DataModelMapperBaseTests : TestBase
         LogAct("Creating mapper with null table name");
         Should.Throw<ArgumentNullException>(() => new TestMapperNullTableName());
     }
+
+    [Fact]
+    public void Where_CalledTwice_ShouldReturnCachedResult()
+    {
+        // Arrange
+        LogArrange("Creating mapper instance");
+
+        // Act
+        LogAct("Calling Where twice with same parameters");
+        WhereClause first = _mapper.Where("CustomField", RelationalOperator.Equal);
+        WhereClause second = _mapper.Where("CustomField", RelationalOperator.Equal);
+
+        // Assert
+        LogAssert("Verifying cached result is returned");
+        first.Value.ShouldBe(second.Value);
+    }
+
+    [Fact]
+    public void OrderBy_CalledTwice_ShouldReturnCachedResult()
+    {
+        // Arrange
+        LogArrange("Creating mapper instance");
+
+        // Act
+        LogAct("Calling OrderBy twice with same parameters");
+        OrderByClause first = _mapper.OrderBy("CustomField", SortDirection.Ascending);
+        OrderByClause second = _mapper.OrderBy("CustomField", SortDirection.Ascending);
+
+        // Assert
+        LogAssert("Verifying cached result is returned");
+        first.Value.ShouldBe(second.Value);
+    }
 }
 
 /// <summary>
