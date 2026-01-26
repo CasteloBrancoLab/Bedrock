@@ -819,4 +819,112 @@ public class ValidationUtilsTests : TestBase
     }
 
     #endregion
+
+    #region Cache Consistency Tests
+
+    [Fact]
+    public void ValidateIsRequired_SamePropertyName_ShouldReturnSameErrorCode()
+    {
+        // Verifica que o cache retorna a mesma instância de string para a mesma propriedade
+
+        // Arrange
+        LogArrange("Criando dois contextos para validar cache");
+        var context1 = CreateContext();
+        var context2 = CreateContext();
+
+        // Act
+        LogAct("Validando mesma propriedade duas vezes");
+        ValidationUtils.ValidateIsRequired(context1, "CachedField", true, (string?)null);
+        ValidationUtils.ValidateIsRequired(context2, "CachedField", true, (string?)null);
+
+        // Assert
+        LogAssert("Verificando que os códigos são iguais");
+        var code1 = context1.Messages.First().Code;
+        var code2 = context2.Messages.First().Code;
+        code1.ShouldBe("CachedField.IsRequired");
+        code2.ShouldBe("CachedField.IsRequired");
+        ReferenceEquals(code1, code2).ShouldBeTrue("Códigos devem ser a mesma instância de string (cache)");
+    }
+
+    [Fact]
+    public void ValidateMinLength_SamePropertyName_ShouldReturnSameErrorCode()
+    {
+        // Verifica que o cache retorna a mesma instância de string para a mesma propriedade
+
+        // Arrange
+        LogArrange("Criando dois contextos para validar cache");
+        var context1 = CreateContext();
+        var context2 = CreateContext();
+
+        // Act
+        LogAct("Validando mesma propriedade duas vezes");
+        ValidationUtils.ValidateMinLength(context1, "CachedMinField", 10, 5);
+        ValidationUtils.ValidateMinLength(context2, "CachedMinField", 10, 5);
+
+        // Assert
+        LogAssert("Verificando que os códigos são iguais");
+        var code1 = context1.Messages.First().Code;
+        var code2 = context2.Messages.First().Code;
+        code1.ShouldBe("CachedMinField.MinLength");
+        code2.ShouldBe("CachedMinField.MinLength");
+        ReferenceEquals(code1, code2).ShouldBeTrue("Códigos devem ser a mesma instância de string (cache)");
+    }
+
+    [Fact]
+    public void ValidateMaxLength_SamePropertyName_ShouldReturnSameErrorCode()
+    {
+        // Verifica que o cache retorna a mesma instância de string para a mesma propriedade
+
+        // Arrange
+        LogArrange("Criando dois contextos para validar cache");
+        var context1 = CreateContext();
+        var context2 = CreateContext();
+
+        // Act
+        LogAct("Validando mesma propriedade duas vezes");
+        ValidationUtils.ValidateMaxLength(context1, "CachedMaxField", 10, 15);
+        ValidationUtils.ValidateMaxLength(context2, "CachedMaxField", 10, 15);
+
+        // Assert
+        LogAssert("Verificando que os códigos são iguais");
+        var code1 = context1.Messages.First().Code;
+        var code2 = context2.Messages.First().Code;
+        code1.ShouldBe("CachedMaxField.MaxLength");
+        code2.ShouldBe("CachedMaxField.MaxLength");
+        ReferenceEquals(code1, code2).ShouldBeTrue("Códigos devem ser a mesma instância de string (cache)");
+    }
+
+    [Fact]
+    public void DifferentValidationTypes_SamePropertyName_ShouldReturnDifferentCodes()
+    {
+        // Verifica que diferentes tipos de validação geram códigos diferentes
+
+        // Arrange
+        LogArrange("Criando contextos para diferentes tipos de validação");
+        var context1 = CreateContext();
+        var context2 = CreateContext();
+        var context3 = CreateContext();
+
+        // Act
+        LogAct("Validando com diferentes tipos");
+        ValidationUtils.ValidateIsRequired(context1, "MultiField", true, (string?)null);
+        ValidationUtils.ValidateMinLength(context2, "MultiField", 10, 5);
+        ValidationUtils.ValidateMaxLength(context3, "MultiField", 10, 15);
+
+        // Assert
+        LogAssert("Verificando códigos diferentes");
+        var codeRequired = context1.Messages.First().Code;
+        var codeMin = context2.Messages.First().Code;
+        var codeMax = context3.Messages.First().Code;
+
+        codeRequired.ShouldBe("MultiField.IsRequired");
+        codeMin.ShouldBe("MultiField.MinLength");
+        codeMax.ShouldBe("MultiField.MaxLength");
+
+        codeRequired.ShouldNotBe(codeMin);
+        codeRequired.ShouldNotBe(codeMax);
+        codeMin.ShouldNotBe(codeMax);
+    }
+
+    #endregion
 }
