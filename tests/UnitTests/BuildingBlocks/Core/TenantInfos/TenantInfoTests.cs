@@ -362,4 +362,232 @@ public class TenantInfoTests : TestBase
         updated.Code.ShouldBe(code);
         LogInfo("Code preserved after WithName: {0}", updated.Code);
     }
+
+    #region ISpanFormattable Tests
+
+    [Fact]
+    public void ToStringWithFormat_WithName_ShouldReturnNameAndCode()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo with name");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code, "Test Tenant");
+
+        // Act
+        LogAct("Calling ToString with format parameters");
+        var result = tenant.ToString(null, null);
+
+        // Assert
+        LogAssert("Verifying format is 'Name (Code)'");
+        result.ShouldBe($"Test Tenant ({code})");
+        LogInfo("ToString with format result: {0}", result);
+    }
+
+    [Fact]
+    public void ToStringWithFormat_WithoutName_ShouldReturnCodeOnly()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo without name");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code);
+
+        // Act
+        LogAct("Calling ToString with format parameters");
+        var result = tenant.ToString(null, null);
+
+        // Assert
+        LogAssert("Verifying returns only code");
+        result.ShouldBe(code.ToString());
+        LogInfo("ToString with format result: {0}", result);
+    }
+
+    [Fact]
+    public void TryFormat_WithName_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo with name and buffer");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code, "Acme Corp");
+        Span<char> buffer = stackalloc char[100];
+
+        // Act
+        LogAct("Calling TryFormat");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying success and content");
+        success.ShouldBeTrue();
+        var expected = $"Acme Corp ({code})";
+        charsWritten.ShouldBe(expected.Length);
+        buffer[..charsWritten].ToString().ShouldBe(expected);
+        LogInfo("TryFormat wrote {0} chars: {1}", charsWritten, buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithoutName_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo without name and buffer");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code);
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat without name");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying success and content");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(36); // Guid is always 36 chars
+        buffer[..charsWritten].ToString().ShouldBe(code.ToString());
+        LogInfo("TryFormat wrote {0} chars: {1}", charsWritten, buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithExactBuffer_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo with exact buffer size");
+        var code = Guid.NewGuid();
+        var name = "Test";
+        var tenant = TenantInfo.Create(code, name);
+        var expectedLength = name.Length + 3 + 36; // "Test (" + Guid + ")"
+        Span<char> buffer = stackalloc char[expectedLength];
+
+        // Act
+        LogAct("Calling TryFormat with exact buffer");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying success with exact buffer");
+        success.ShouldBeTrue();
+        charsWritten.ShouldBe(expectedLength);
+        buffer.ToString().ShouldBe($"Test ({code})");
+        LogInfo("TryFormat succeeded with exact buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo with small buffer");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code, "Long Tenant Name");
+        Span<char> buffer = stackalloc char[10]; // Too small
+
+        // Act
+        LogAct("Calling TryFormat with insufficient buffer");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed with insufficient buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithEmptyBuffer_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo with empty buffer");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code, "Test");
+        Span<char> buffer = Span<char>.Empty;
+
+        // Act
+        LogAct("Calling TryFormat with empty buffer");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed with empty buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithBufferOneCharShort_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo with buffer one char short");
+        var code = Guid.NewGuid();
+        var name = "Test";
+        var tenant = TenantInfo.Create(code, name);
+        var requiredLength = name.Length + 3 + 36;
+        Span<char> buffer = stackalloc char[requiredLength - 1];
+
+        // Act
+        LogAct("Calling TryFormat with buffer one char short");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed when buffer is one char short");
+    }
+
+    [Fact]
+    public void TryFormat_WithoutName_InsufficientBuffer_ShouldFail()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo without name with insufficient buffer");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code);
+        Span<char> buffer = stackalloc char[10]; // Guid needs 36 chars
+
+        // Act
+        LogAct("Calling TryFormat without name with insufficient buffer");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying failure");
+        success.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed for code-only with insufficient buffer");
+    }
+
+    [Fact]
+    public void InterpolatedStringHandler_ShouldWorkCorrectly()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo for interpolation test");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code, "Interpolation Test");
+
+        // Act
+        LogAct("Using string interpolation");
+        var result = $"{tenant}";
+
+        // Assert
+        LogAssert("Verifying interpolation result");
+        result.ShouldBe($"Interpolation Test ({code})");
+        LogInfo("Interpolation result: {0}", result);
+    }
+
+    [Fact]
+    public void TryFormat_WithEmptyName_ShouldFormatCorrectly()
+    {
+        // Arrange
+        LogArrange("Creating TenantInfo with empty name");
+        var code = Guid.NewGuid();
+        var tenant = TenantInfo.Create(code, "");
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat with empty name");
+        var success = tenant.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying success with empty name");
+        success.ShouldBeTrue();
+        var expected = $" ({code})"; // " (" + Guid + ")"
+        charsWritten.ShouldBe(expected.Length);
+        buffer[..charsWritten].ToString().ShouldBe(expected);
+        LogInfo("TryFormat with empty name: {0}", buffer[..charsWritten].ToString());
+    }
+
+    #endregion
 }
