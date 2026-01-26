@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -45,7 +46,9 @@ public abstract class ParquetSerializerBase
         if (input is null)
             return null;
 
-        return SerializeCollection([input]);
+        using RecyclableMemoryStream ms = SerializerInfrastructure.StreamManager.GetStream();
+        SerializeSingleItemToStreamInternal(input, typeof(TInput), ms);
+        return ms.ToArray();
     }
 
     public byte[]? Serialize<TInput>(TInput? input, Type type)
@@ -70,7 +73,7 @@ public abstract class ParquetSerializerBase
 
         // Stryker disable once Statement : Guard clause - downstream code also throws on null but with different exception type
         ArgumentNullException.ThrowIfNull(destination);
-        SerializeCollectionToStream([input], destination);
+        SerializeSingleItemToStreamInternal(input, typeof(TInput), destination);
     }
 
     public void SerializeToStream<TInput>(TInput? input, Type type, Stream destination)
@@ -290,11 +293,32 @@ public abstract class ParquetSerializerBase
     // Stryker restore all
 
     // Stryker disable all : Internal serialization/deserialization methods - tested through round-trip tests
+    [ExcludeFromCodeCoverage(Justification = "Metodo interno de serializacao de item unico - testado atraves de round-trips")]
+    private void SerializeSingleItemToStreamInternal<TInput>(TInput input, Type type, Stream destination)
+    {
+        (Schema? schema, PropertyInfo[]? properties) = GetOrCreateSchema(type);
+
+        var arrays = new IArrowArray[properties.Length];
+
+        for (int i = 0; i < properties.Length; i++)
+        {
+            arrays[i] = BuildSingleItemArray(properties[i], input);
+        }
+
+        var recordBatch = new RecordBatch(schema, arrays, 1);
+
+        using var writer = new ArrowStreamWriter(destination, schema, leaveOpen: true, Options.IpcWriteOptions);
+        writer.WriteRecordBatch(recordBatch);
+        writer.WriteEnd();
+    }
+
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de serializacao - testado atraves de round-trips")]
     private void SerializeCollectionToStreamInternal<TInput>(IEnumerable<TInput> input, Type type, Stream destination)
     {
         (Schema? schema, PropertyInfo[]? properties) = GetOrCreateSchema(type);
-        var items = input.ToList();
+
+        // Avoid allocation if input is already a list or array
+        IReadOnlyList<TInput> items = input as IReadOnlyList<TInput> ?? input.ToList();
 
         if (items.Count == 0)
         {
@@ -303,18 +327,34 @@ public abstract class ParquetSerializerBase
             return;
         }
 
-        var arrays = new IArrowArray[properties.Length];
+        // Use ArrayPool for schemas with many properties to reduce GC pressure
+        const int PoolThreshold = 8;
+        bool rentedFromPool = properties.Length > PoolThreshold;
+        IArrowArray[] arrays = rentedFromPool
+            ? ArrayPool<IArrowArray>.Shared.Rent(properties.Length)
+            : new IArrowArray[properties.Length];
 
-        for (int i = 0; i < properties.Length; i++)
+        try
         {
-            arrays[i] = BuildArray(properties[i], items);
+            for (int i = 0; i < properties.Length; i++)
+            {
+                arrays[i] = BuildArray(properties[i], items);
+            }
+
+            var recordBatch = new RecordBatch(schema, arrays.AsSpan(0, properties.Length).ToArray(), items.Count);
+
+            using var writer = new ArrowStreamWriter(destination, schema, leaveOpen: true, Options.IpcWriteOptions);
+            writer.WriteRecordBatch(recordBatch);
+            writer.WriteEnd();
         }
-
-        var recordBatch = new RecordBatch(schema, arrays, items.Count);
-
-        using var writer = new ArrowStreamWriter(destination, schema, leaveOpen: true, Options.IpcWriteOptions);
-        writer.WriteRecordBatch(recordBatch);
-        writer.WriteEnd();
+        finally
+        {
+            if (rentedFromPool)
+            {
+                System.Array.Clear(arrays, 0, properties.Length);
+                ArrayPool<IArrowArray>.Shared.Return(arrays);
+            }
+        }
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de desserializacao - testado atraves de round-trips")]
@@ -358,17 +398,19 @@ public abstract class ParquetSerializerBase
     [ExcludeFromCodeCoverage(Justification = "Geracao de schema Arrow - testado indiretamente atraves de round-trips de serializacao")]
     private static (Schema Schema, PropertyInfo[] Properties) GetOrCreateSchema(Type type)
     {
-        return _schemaCache.GetOrAdd(type, t =>
+        return _schemaCache.GetOrAdd(type, static t =>
         {
             PropertyInfo[] props = SerializerInfrastructure.GetSerializableProperties(t);
 
-            var fields = new List<Field>(props.Length);
+            // Use array directly instead of List<Field> to avoid allocation
+            var fields = new Field[props.Length];
 
-            foreach (PropertyInfo prop in props)
+            for (int i = 0; i < props.Length; i++)
             {
+                PropertyInfo prop = props[i];
                 IArrowType arrowType = GetArrowType(prop.PropertyType);
                 bool nullable = IsNullable(prop.PropertyType);
-                fields.Add(new Field(prop.Name, arrowType, nullable));
+                fields[i] = new Field(prop.Name, arrowType, nullable);
             }
 
             return (new Schema(fields, null), props);
@@ -408,8 +450,59 @@ public abstract class ParquetSerializerBase
 
     private static bool IsNullable(Type type) => SerializerInfrastructure.IsNullable(type);
 
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static IArrowArray BuildSingleItemArray<TInput>(PropertyInfo property, TInput item)
+    {
+        Type propType = property.PropertyType;
+        Type underlyingType = Nullable.GetUnderlyingType(propType) ?? propType;
+        object? value = property.GetValue(item);
+
+        if (underlyingType == typeof(bool))
+            return BuildSingleValueBooleanArray(value);
+        if (underlyingType == typeof(sbyte))
+            return BuildSingleValueInt8Array(value);
+        if (underlyingType == typeof(byte))
+            return BuildSingleValueUInt8Array(value);
+        if (underlyingType == typeof(short))
+            return BuildSingleValueInt16Array(value);
+        if (underlyingType == typeof(ushort))
+            return BuildSingleValueUInt16Array(value);
+        if (underlyingType == typeof(int))
+            return BuildSingleValueInt32Array(value);
+        if (underlyingType == typeof(uint))
+            return BuildSingleValueUInt32Array(value);
+        if (underlyingType == typeof(long))
+            return BuildSingleValueInt64Array(value);
+        if (underlyingType == typeof(ulong))
+            return BuildSingleValueUInt64Array(value);
+        if (underlyingType == typeof(float))
+            return BuildSingleValueFloatArray(value);
+        if (underlyingType == typeof(double))
+            return BuildSingleValueDoubleArray(value);
+        if (underlyingType == typeof(decimal))
+            return BuildSingleValueDecimalArray(value);
+        if (underlyingType == typeof(string))
+            return BuildSingleValueStringArray(value);
+        if (underlyingType == typeof(DateTime))
+            return BuildSingleValueDateTimeArray(value);
+        if (underlyingType == typeof(DateTimeOffset))
+            return BuildSingleValueDateTimeOffsetArray(value);
+        if (underlyingType == typeof(DateOnly))
+            return BuildSingleValueDateOnlyArray(value);
+        if (underlyingType == typeof(TimeOnly))
+            return BuildSingleValueTimeOnlyArray(value);
+        if (underlyingType == typeof(TimeSpan))
+            return BuildSingleValueTimeSpanArray(value);
+        if (underlyingType == typeof(Guid))
+            return BuildSingleValueGuidArray(value);
+        if (underlyingType == typeof(byte[]))
+            return BuildSingleValueBinaryArray(value);
+
+        return BuildSingleValueStringArray(value?.ToString());
+    }
+
     [ExcludeFromCodeCoverage(Justification = "Construcao de arrays Arrow - cada tipo requer DTO especifico, impraticavel testar todas as combinacoes")]
-    private static IArrowArray BuildArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static IArrowArray BuildArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         Type propType = property.PropertyType;
         Type underlyingType = Nullable.GetUnderlyingType(propType) ?? propType;
@@ -459,7 +552,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static BooleanArray BuildBooleanArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static BooleanArray BuildBooleanArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new BooleanArray.Builder();
         foreach (TInput? item in items)
@@ -471,7 +564,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static Int8Array BuildInt8Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static Int8Array BuildInt8Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new Int8Array.Builder();
         foreach (TInput? item in items)
@@ -483,7 +576,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static UInt8Array BuildUInt8Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static UInt8Array BuildUInt8Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new UInt8Array.Builder();
         foreach (TInput? item in items)
@@ -495,7 +588,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static Int16Array BuildInt16Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static Int16Array BuildInt16Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new Int16Array.Builder();
         foreach (TInput? item in items)
@@ -507,7 +600,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static UInt16Array BuildUInt16Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static UInt16Array BuildUInt16Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new UInt16Array.Builder();
         foreach (TInput? item in items)
@@ -519,7 +612,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static Int32Array BuildInt32Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static Int32Array BuildInt32Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new Int32Array.Builder();
         foreach (TInput? item in items)
@@ -531,7 +624,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static UInt32Array BuildUInt32Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static UInt32Array BuildUInt32Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new UInt32Array.Builder();
         foreach (TInput? item in items)
@@ -543,7 +636,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static Int64Array BuildInt64Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static Int64Array BuildInt64Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new Int64Array.Builder();
         foreach (TInput? item in items)
@@ -555,7 +648,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static UInt64Array BuildUInt64Array<TInput>(PropertyInfo property, List<TInput> items)
+    private static UInt64Array BuildUInt64Array<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new UInt64Array.Builder();
         foreach (TInput? item in items)
@@ -567,7 +660,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static FloatArray BuildFloatArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static FloatArray BuildFloatArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new FloatArray.Builder();
         foreach (TInput? item in items)
@@ -579,7 +672,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static DoubleArray BuildDoubleArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static DoubleArray BuildDoubleArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new DoubleArray.Builder();
         foreach (TInput? item in items)
@@ -591,7 +684,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static Decimal128Array BuildDecimalArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static Decimal128Array BuildDecimalArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new Decimal128Array.Builder(new Decimal128Type(38, 18));
         foreach (TInput? item in items)
@@ -603,7 +696,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static StringArray BuildStringArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static StringArray BuildStringArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new StringArray.Builder();
         foreach (TInput? item in items)
@@ -615,7 +708,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static TimestampArray BuildDateTimeArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static TimestampArray BuildDateTimeArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new TimestampArray.Builder(TimestampType.Default);
         foreach (TInput? item in items)
@@ -627,7 +720,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static TimestampArray BuildDateTimeOffsetArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static TimestampArray BuildDateTimeOffsetArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new TimestampArray.Builder(TimestampType.Default);
         foreach (TInput? item in items)
@@ -639,7 +732,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static Date32Array BuildDateOnlyArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static Date32Array BuildDateOnlyArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new Date32Array.Builder();
         foreach (TInput? item in items)
@@ -659,7 +752,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static Time64Array BuildTimeOnlyArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static Time64Array BuildTimeOnlyArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new Time64Array.Builder(Time64Type.Default);
         foreach (TInput? item in items)
@@ -679,7 +772,7 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static DurationArray BuildTimeSpanArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static DurationArray BuildTimeSpanArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new DurationArray.Builder(DurationType.Microsecond);
         foreach (TInput? item in items)
@@ -699,19 +792,29 @@ public abstract class ParquetSerializerBase
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static BinaryArray BuildGuidArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static BinaryArray BuildGuidArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new BinaryArray.Builder();
+        Span<byte> guidBuffer = stackalloc byte[16];
+
         foreach (TInput? item in items)
         {
             object? value = property.GetValue(item);
-            _ = value is null ? builder.AppendNull() : builder.Append(((Guid)value).ToByteArray());
+            if (value is null)
+            {
+                _ = builder.AppendNull();
+            }
+            else
+            {
+                ((Guid)value).TryWriteBytes(guidBuffer);
+                _ = builder.Append(guidBuffer);
+            }
         }
         return builder.Build();
     }
 
     [ExcludeFromCodeCoverage(Justification = "Metodo interno de construcao de array Arrow - testado indiretamente")]
-    private static BinaryArray BuildBinaryArray<TInput>(PropertyInfo property, List<TInput> items)
+    private static BinaryArray BuildBinaryArray<TInput>(PropertyInfo property, IReadOnlyList<TInput> items)
     {
         var builder = new BinaryArray.Builder();
         foreach (TInput? item in items)
@@ -749,7 +852,7 @@ public abstract class ParquetSerializerBase
             Date32Array d32a => ConvertDate32(d32a, index, underlyingType),
             Time64Array t64a => ConvertTime64(t64a, index, underlyingType),
             DurationArray dura => ConvertDuration(dura, index),
-            BinaryArray bina when underlyingType == typeof(Guid) => new Guid(bina.GetBytes(index).ToArray()),
+            BinaryArray bina when underlyingType == typeof(Guid) => new Guid(bina.GetBytes(index)),
             BinaryArray bina => bina.GetBytes(index).ToArray(),
             _ => null
         };
@@ -802,6 +905,200 @@ public abstract class ParquetSerializerBase
             return null;
 
         return TimeSpan.FromTicks(microseconds.Value * 10);
+    }
+
+    // Single-value array builders for zero-allocation single item serialization
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static BooleanArray BuildSingleValueBooleanArray(object? value)
+    {
+        var builder = new BooleanArray.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((bool)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static Int8Array BuildSingleValueInt8Array(object? value)
+    {
+        var builder = new Int8Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((sbyte)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static UInt8Array BuildSingleValueUInt8Array(object? value)
+    {
+        var builder = new UInt8Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((byte)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static Int16Array BuildSingleValueInt16Array(object? value)
+    {
+        var builder = new Int16Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((short)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static UInt16Array BuildSingleValueUInt16Array(object? value)
+    {
+        var builder = new UInt16Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((ushort)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static Int32Array BuildSingleValueInt32Array(object? value)
+    {
+        var builder = new Int32Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((int)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static UInt32Array BuildSingleValueUInt32Array(object? value)
+    {
+        var builder = new UInt32Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((uint)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static Int64Array BuildSingleValueInt64Array(object? value)
+    {
+        var builder = new Int64Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((long)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static UInt64Array BuildSingleValueUInt64Array(object? value)
+    {
+        var builder = new UInt64Array.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((ulong)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static FloatArray BuildSingleValueFloatArray(object? value)
+    {
+        var builder = new FloatArray.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((float)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static DoubleArray BuildSingleValueDoubleArray(object? value)
+    {
+        var builder = new DoubleArray.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((double)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static Decimal128Array BuildSingleValueDecimalArray(object? value)
+    {
+        var builder = new Decimal128Array.Builder(new Decimal128Type(38, 18));
+        _ = value is null ? builder.AppendNull() : builder.Append((decimal)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static StringArray BuildSingleValueStringArray(object? value)
+    {
+        var builder = new StringArray.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append(value.ToString());
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static TimestampArray BuildSingleValueDateTimeArray(object? value)
+    {
+        var builder = new TimestampArray.Builder(TimestampType.Default);
+        _ = value is null ? builder.AppendNull() : builder.Append(new DateTimeOffset((DateTime)value));
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static TimestampArray BuildSingleValueDateTimeOffsetArray(object? value)
+    {
+        var builder = new TimestampArray.Builder(TimestampType.Default);
+        _ = value is null ? builder.AppendNull() : builder.Append((DateTimeOffset)value);
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static Date32Array BuildSingleValueDateOnlyArray(object? value)
+    {
+        var builder = new Date32Array.Builder();
+        if (value is null)
+        {
+            _ = builder.AppendNull();
+        }
+        else
+        {
+            var dateOnly = (DateOnly)value;
+            _ = builder.Append(dateOnly.ToDateTime(TimeOnly.MinValue));
+        }
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static Time64Array BuildSingleValueTimeOnlyArray(object? value)
+    {
+        var builder = new Time64Array.Builder(Time64Type.Default);
+        if (value is null)
+        {
+            _ = builder.AppendNull();
+        }
+        else
+        {
+            var timeOnly = (TimeOnly)value;
+            _ = builder.Append(timeOnly.Ticks / 10);
+        }
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static DurationArray BuildSingleValueTimeSpanArray(object? value)
+    {
+        var builder = new DurationArray.Builder(DurationType.Microsecond);
+        if (value is null)
+        {
+            _ = builder.AppendNull();
+        }
+        else
+        {
+            var timeSpan = (TimeSpan)value;
+            _ = builder.Append(timeSpan.Ticks / 10);
+        }
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static BinaryArray BuildSingleValueGuidArray(object? value)
+    {
+        var builder = new BinaryArray.Builder();
+        if (value is null)
+        {
+            _ = builder.AppendNull();
+        }
+        else
+        {
+            Span<byte> guidBuffer = stackalloc byte[16];
+            ((Guid)value).TryWriteBytes(guidBuffer);
+            _ = builder.Append(guidBuffer);
+        }
+        return builder.Build();
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Construcao de array Arrow para item unico - testado indiretamente")]
+    private static BinaryArray BuildSingleValueBinaryArray(object? value)
+    {
+        var builder = new BinaryArray.Builder();
+        _ = value is null ? builder.AppendNull() : builder.Append((byte[])value);
+        return builder.Build();
     }
     // Stryker restore all
 
