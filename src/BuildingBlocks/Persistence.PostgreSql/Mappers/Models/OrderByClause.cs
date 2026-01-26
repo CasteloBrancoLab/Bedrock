@@ -18,7 +18,18 @@ public readonly struct OrderByClause
     // Operators
     public static OrderByClause operator +(OrderByClause left, OrderByClause right)
     {
-        return new OrderByClause($"{left.Value}, {right.Value}");
+        return new OrderByClause(string.Create(
+            left.Value.Length + 2 + right.Value.Length,
+            (left.Value, right.Value),
+            static (span, state) =>
+            {
+                int pos = 0;
+                state.Item1.AsSpan().CopyTo(span);
+                pos += state.Item1.Length;
+                ", ".AsSpan().CopyTo(span[pos..]);
+                pos += 2;
+                state.Item2.AsSpan().CopyTo(span[pos..]);
+            }));
     }
 
     // Methods

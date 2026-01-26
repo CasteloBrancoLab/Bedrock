@@ -10,6 +10,7 @@ public class MapperOptions<TDataModel>
 {
     // Fields
     private readonly Dictionary<string, ColumnMap> _fieldDictionary = [];
+    private ReadOnlyDictionary<string, ColumnMap>? _fieldDictionaryReadOnly;
 
     // Properties
     public string? TableSchema { get; private set; }
@@ -18,7 +19,8 @@ public class MapperOptions<TDataModel>
     {
         get
         {
-            return _fieldDictionary.AsReadOnly();
+            // Stryker disable once all : Cache null-coalescing - mutante equivalente (apenas afeta primeira chamada)
+            return _fieldDictionaryReadOnly ??= _fieldDictionary.AsReadOnly();
         }
     }
 
