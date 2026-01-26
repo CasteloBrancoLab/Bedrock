@@ -18,7 +18,7 @@ namespace Bedrock.BuildingBlocks.Core.PhoneNumbers;
 /// - Integração com serviços de SMS/WhatsApp
 /// - Validação de números de telefone
 /// </remarks>
-public readonly struct PhoneNumber : IEquatable<PhoneNumber>
+public readonly struct PhoneNumber : IEquatable<PhoneNumber>, ISpanFormattable
 {
     /// <summary>
     /// Código do país (sem o sinal +).
@@ -64,7 +64,23 @@ public readonly struct PhoneNumber : IEquatable<PhoneNumber>
     /// </summary>
     public string ToFormattedString()
     {
-        return $"+{CountryCode} ({AreaCode}) {Number}";
+        return string.Create(
+            1 + CountryCode.Length + 2 + AreaCode.Length + 2 + Number.Length,
+            (CountryCode, AreaCode, Number),
+            static (span, state) =>
+            {
+                var pos = 0;
+                span[pos++] = '+';
+                state.CountryCode.AsSpan().CopyTo(span[pos..]);
+                pos += state.CountryCode.Length;
+                span[pos++] = ' ';
+                span[pos++] = '(';
+                state.AreaCode.AsSpan().CopyTo(span[pos..]);
+                pos += state.AreaCode.Length;
+                span[pos++] = ')';
+                span[pos++] = ' ';
+                state.Number.AsSpan().CopyTo(span[pos..]);
+            });
     }
 
     /// <summary>
@@ -78,7 +94,19 @@ public readonly struct PhoneNumber : IEquatable<PhoneNumber>
     /// </remarks>
     public string ToE164String()
     {
-        return $"+{CountryCode}{AreaCode}{Number}";
+        return string.Create(
+            1 + CountryCode.Length + AreaCode.Length + Number.Length,
+            (CountryCode, AreaCode, Number),
+            static (span, state) =>
+            {
+                var pos = 0;
+                span[pos++] = '+';
+                state.CountryCode.AsSpan().CopyTo(span[pos..]);
+                pos += state.CountryCode.Length;
+                state.AreaCode.AsSpan().CopyTo(span[pos..]);
+                pos += state.AreaCode.Length;
+                state.Number.AsSpan().CopyTo(span[pos..]);
+            });
     }
 
     public override int GetHashCode()
@@ -98,9 +126,64 @@ public readonly struct PhoneNumber : IEquatable<PhoneNumber>
             && Number == other.Number;
     }
 
+    /// <inheritdoc/>
     public override string ToString()
     {
         return ToFormattedString();
+    }
+
+    /// <inheritdoc/>
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return format is "E" or "e" ? ToE164String() : ToFormattedString();
+    }
+
+    /// <inheritdoc/>
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        var useE164 = format.Length == 1 && format[0] is 'E' or 'e';
+
+        int requiredLength;
+        if (useE164)
+        {
+            requiredLength = 1 + CountryCode.Length + AreaCode.Length + Number.Length;
+        }
+        else
+        {
+            requiredLength = 1 + CountryCode.Length + 2 + AreaCode.Length + 2 + Number.Length;
+        }
+
+        if (destination.Length < requiredLength)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        var pos = 0;
+        destination[pos++] = '+';
+        CountryCode.AsSpan().CopyTo(destination[pos..]);
+        pos += CountryCode.Length;
+
+        if (!useE164)
+        {
+            destination[pos++] = ' ';
+            destination[pos++] = '(';
+        }
+
+        AreaCode.AsSpan().CopyTo(destination[pos..]);
+        pos += AreaCode.Length;
+
+        if (!useE164)
+        {
+            destination[pos++] = ')';
+            destination[pos++] = ' ';
+        }
+
+        Number.AsSpan().CopyTo(destination[pos..]);
+        pos += Number.Length;
+
+        charsWritten = pos;
+        return true;
     }
 
     public static bool operator ==(PhoneNumber left, PhoneNumber right)

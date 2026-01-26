@@ -469,4 +469,396 @@ public class PhoneNumberTests : TestBase
 
         LogAssert("Operador != corretamente nega ==");
     }
+
+    [Fact]
+    public void ToStringWithFormat_WithEFormat_ShouldReturnE164()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for format test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+
+        // Act
+        LogAct("Calling ToString with E format");
+        var resultE = phone.ToString("E", null);
+        var resultLowerE = phone.ToString("e", null);
+
+        // Assert
+        LogAssert("Verifying E format returns E.164");
+        resultE.ShouldBe("+5511999998888");
+        resultLowerE.ShouldBe("+5511999998888");
+        LogInfo("E format: {0}", resultE);
+    }
+
+    [Fact]
+    public void ToStringWithFormat_WithNullOrOtherFormat_ShouldReturnFormatted()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for format test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+
+        // Act
+        LogAct("Calling ToString with null and other formats");
+        var resultNull = phone.ToString(null, null);
+        var resultG = phone.ToString("G", null);
+        var resultOther = phone.ToString("X", null);
+
+        // Assert
+        LogAssert("Verifying non-E formats return formatted string");
+        resultNull.ShouldBe("+55 (11) 999998888");
+        resultG.ShouldBe("+55 (11) 999998888");
+        resultOther.ShouldBe("+55 (11) 999998888");
+        LogInfo("Default format: {0}", resultNull);
+    }
+
+    [Fact]
+    public void TryFormat_WithSufficientBuffer_ShouldReturnTrueAndWriteFormatted()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for TryFormat test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat with sufficient buffer");
+        var result = phone.TryFormat(buffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying TryFormat succeeds");
+        result.ShouldBeTrue();
+        charsWritten.ShouldBe(18); // "+55 (11) 999998888".Length
+        buffer[..charsWritten].ToString().ShouldBe("+55 (11) 999998888");
+        LogInfo("TryFormat result: {0}", buffer[..charsWritten].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithEFormat_ShouldReturnE164()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for TryFormat E.164 test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat with E format");
+        var resultE = phone.TryFormat(buffer, out var charsWrittenE, "E".AsSpan(), null);
+        var resultLowerE = phone.TryFormat(buffer, out var charsWrittenLowerE, "e".AsSpan(), null);
+
+        // Assert
+        LogAssert("Verifying TryFormat E format");
+        resultE.ShouldBeTrue();
+        charsWrittenE.ShouldBe(14); // "+5511999998888".Length
+        buffer[..charsWrittenE].ToString().ShouldBe("+5511999998888");
+
+        resultLowerE.ShouldBeTrue();
+        charsWrittenLowerE.ShouldBe(14);
+        buffer[..charsWrittenLowerE].ToString().ShouldBe("+5511999998888");
+        LogInfo("TryFormat E.164: {0}", buffer[..charsWrittenE].ToString());
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBuffer_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for insufficient buffer test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        Span<char> smallBuffer = stackalloc char[5];
+
+        // Act
+        LogAct("Calling TryFormat with insufficient buffer");
+        var result = phone.TryFormat(smallBuffer, out var charsWritten, default, null);
+
+        // Assert
+        LogAssert("Verifying TryFormat fails with small buffer");
+        result.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat correctly failed with insufficient buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithInsufficientBufferForE164_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for insufficient E.164 buffer test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        Span<char> smallBuffer = stackalloc char[10];
+
+        // Act
+        LogAct("Calling TryFormat with E format and insufficient buffer");
+        var result = phone.TryFormat(smallBuffer, out var charsWritten, "E".AsSpan(), null);
+
+        // Assert
+        LogAssert("Verifying TryFormat E.164 fails with small buffer");
+        result.ShouldBeFalse();
+        charsWritten.ShouldBe(0);
+        LogInfo("TryFormat E.164 correctly failed with insufficient buffer");
+    }
+
+    [Fact]
+    public void TryFormat_WithExactBufferSize_ShouldSucceed()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for exact buffer size test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        var expectedFormatted = "+55 (11) 999998888";
+        var expectedE164 = "+5511999998888";
+        Span<char> exactFormattedBuffer = stackalloc char[expectedFormatted.Length];
+        Span<char> exactE164Buffer = stackalloc char[expectedE164.Length];
+
+        // Act
+        LogAct("Calling TryFormat with exact buffer sizes");
+        var resultFormatted = phone.TryFormat(exactFormattedBuffer, out var charsWrittenFormatted, default, null);
+        var resultE164 = phone.TryFormat(exactE164Buffer, out var charsWrittenE164, "E".AsSpan(), null);
+
+        // Assert
+        LogAssert("Verifying TryFormat succeeds with exact buffer");
+        resultFormatted.ShouldBeTrue();
+        charsWrittenFormatted.ShouldBe(expectedFormatted.Length);
+        exactFormattedBuffer.ToString().ShouldBe(expectedFormatted);
+
+        resultE164.ShouldBeTrue();
+        charsWrittenE164.ShouldBe(expectedE164.Length);
+        exactE164Buffer.ToString().ShouldBe(expectedE164);
+        LogInfo("TryFormat works with exact buffer sizes");
+    }
+
+    [Fact]
+    public void TryFormat_WithEmptyStrings_ShouldWork()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber with empty strings for TryFormat");
+        var phone = PhoneNumber.CreateNew("", "", "");
+        Span<char> buffer = stackalloc char[10];
+
+        // Act
+        LogAct("Calling TryFormat with empty phone");
+        var resultFormatted = phone.TryFormat(buffer, out var charsWrittenFormatted, default, null);
+        var resultE164 = phone.TryFormat(buffer, out var charsWrittenE164, "E".AsSpan(), null);
+
+        // Assert
+        LogAssert("Verifying TryFormat with empty strings");
+        resultFormatted.ShouldBeTrue();
+        charsWrittenFormatted.ShouldBe(5); // "+ () ".Length
+        buffer[..charsWrittenFormatted].ToString().ShouldBe("+ () ");
+
+        resultE164.ShouldBeTrue();
+        charsWrittenE164.ShouldBe(1); // "+".Length
+        buffer[..charsWrittenE164].ToString().ShouldBe("+");
+        LogInfo("TryFormat works with empty strings");
+    }
+
+    [Fact]
+    public void TryFormat_ShouldWriteCorrectCharacters()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for character verification");
+        var phone = PhoneNumber.CreateNew("1", "212", "5551234");
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat and verifying each character");
+        var result = phone.TryFormat(buffer, out var charsWritten, default, null);
+        var formatted = buffer[..charsWritten].ToString();
+
+        // Assert
+        LogAssert("Verifying each character position");
+        result.ShouldBeTrue();
+        formatted.ShouldBe("+1 (212) 5551234");
+
+        // Verify specific characters to kill mutants
+        formatted[0].ShouldBe('+');
+        formatted[1].ShouldBe('1');
+        formatted[2].ShouldBe(' ');
+        formatted[3].ShouldBe('(');
+        formatted[4].ShouldBe('2');
+        formatted[5].ShouldBe('1');
+        formatted[6].ShouldBe('2');
+        formatted[7].ShouldBe(')');
+        formatted[8].ShouldBe(' ');
+        LogInfo("All characters verified: {0}", formatted);
+    }
+
+    [Fact]
+    public void TryFormat_E164_ShouldWriteCorrectCharacters()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for E.164 character verification");
+        var phone = PhoneNumber.CreateNew("1", "212", "5551234");
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Calling TryFormat E.164 and verifying");
+        var result = phone.TryFormat(buffer, out var charsWritten, "E".AsSpan(), null);
+        var e164 = buffer[..charsWritten].ToString();
+
+        // Assert
+        LogAssert("Verifying E.164 format");
+        result.ShouldBeTrue();
+        e164.ShouldBe("+12125551234");
+
+        // Verify there are no spaces or parentheses
+        e164.ShouldNotContain(" ");
+        e164.ShouldNotContain("(");
+        e164.ShouldNotContain(")");
+        LogInfo("E.164 verified: {0}", e164);
+    }
+
+    [Fact]
+    public void TryFormat_CharsWritten_ShouldMatchActualLength()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumbers for charsWritten verification");
+        var phone1 = PhoneNumber.CreateNew("55", "11", "999998888");
+        var phone2 = PhoneNumber.CreateNew("1", "2", "3");
+        Span<char> buffer = stackalloc char[50];
+
+        // Act & Assert
+        LogAct("Verifying charsWritten matches actual content");
+
+        phone1.TryFormat(buffer, out var chars1, default, null);
+        chars1.ShouldBe(buffer[..chars1].ToString().Length);
+
+        phone1.TryFormat(buffer, out var chars1E164, "E".AsSpan(), null);
+        chars1E164.ShouldBe(buffer[..chars1E164].ToString().Length);
+
+        phone2.TryFormat(buffer, out var chars2, default, null);
+        chars2.ShouldBe(buffer[..chars2].ToString().Length);
+
+        phone2.TryFormat(buffer, out var chars2E164, "E".AsSpan(), null);
+        chars2E164.ShouldBe(buffer[..chars2E164].ToString().Length);
+
+        LogAssert("charsWritten correctly reports actual length");
+    }
+
+    [Fact]
+    public void TryFormat_ShouldProduceConsistentResultWithToString()
+    {
+        // Arrange
+        LogArrange("Creating PhoneNumber for consistency test");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        Span<char> buffer = stackalloc char[50];
+
+        // Act
+        LogAct("Comparing TryFormat with ToString methods");
+        phone.TryFormat(buffer, out var charsFormatted, default, null);
+        var tryFormatResult = buffer[..charsFormatted].ToString();
+
+        phone.TryFormat(buffer, out var charsE164, "E".AsSpan(), null);
+        var tryFormatE164Result = buffer[..charsE164].ToString();
+
+        // Assert
+        LogAssert("Verifying consistency");
+        tryFormatResult.ShouldBe(phone.ToFormattedString());
+        tryFormatResult.ShouldBe(phone.ToString());
+        tryFormatE164Result.ShouldBe(phone.ToE164String());
+        tryFormatE164Result.ShouldBe(phone.ToString("E", null));
+        LogInfo("TryFormat is consistent with ToString methods");
+    }
+
+    [Fact]
+    public void TryFormat_FormatLength_ShouldOnlyAcceptSingleChar()
+    {
+        // Testa que format.Length == 1 é verificado
+        // Arrange
+        LogArrange("Testing format length validation");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        Span<char> bufferEmpty = stackalloc char[50];
+        Span<char> bufferSingle = stackalloc char[50];
+        Span<char> bufferMultiple = stackalloc char[50];
+
+        // Act
+        LogAct("Testing various format lengths");
+        phone.TryFormat(bufferEmpty, out var charsEmpty, "".AsSpan(), null);
+        phone.TryFormat(bufferSingle, out var charsSingle, "E".AsSpan(), null);
+        phone.TryFormat(bufferMultiple, out var charsMultiple, "EE".AsSpan(), null);
+
+        // Assert
+        LogAssert("Verifying format length behavior");
+        // Empty format should use default (formatted)
+        bufferEmpty[..charsEmpty].ToString().ShouldBe("+55 (11) 999998888");
+        // Single char E should use E.164
+        bufferSingle[..charsSingle].ToString().ShouldBe("+5511999998888");
+        // Multiple chars should use default (formatted)
+        bufferMultiple[..charsMultiple].ToString().ShouldBe("+55 (11) 999998888");
+        LogInfo("Format length validation works correctly");
+    }
+
+    [Fact]
+    public void TryFormat_WithOneLessThanRequired_ShouldReturnFalse()
+    {
+        // Teste para matar mutantes aritméticos na linha 153
+        // O cálculo: 1 + CountryCode.Length + 2 + AreaCode.Length + 2 + Number.Length
+        // Para "+55 (11) 999998888" = 1 + 2 + 2 + 2 + 2 + 9 = 18 caracteres
+        // Arrange
+        LogArrange("Testing buffer one char smaller than required");
+        var phone = PhoneNumber.CreateNew("55", "11", "999998888");
+        var expectedFormatted = "+55 (11) 999998888";
+        var expectedE164 = "+5511999998888";
+
+        // Buffer exatamente 1 menor que o necessário deve falhar
+        Span<char> bufferFormattedSmall = stackalloc char[expectedFormatted.Length - 1];
+        Span<char> bufferE164Small = stackalloc char[expectedE164.Length - 1];
+
+        // Act
+        LogAct("Testing with buffers one char too small");
+        var resultFormatted = phone.TryFormat(bufferFormattedSmall, out var charsFormatted, default, null);
+        var resultE164 = phone.TryFormat(bufferE164Small, out var charsE164, "E".AsSpan(), null);
+
+        // Assert
+        LogAssert("Verifying TryFormat fails with insufficient buffer");
+        resultFormatted.ShouldBeFalse("Buffer one char smaller should fail for formatted");
+        charsFormatted.ShouldBe(0);
+        resultE164.ShouldBeFalse("Buffer one char smaller should fail for E.164");
+        charsE164.ShouldBe(0);
+        LogInfo("TryFormat correctly rejects buffers one char too small");
+    }
+
+    [Fact]
+    public void TryFormat_RequiredLengthCalculation_ShouldBeExact()
+    {
+        // Teste detalhado para validar o cálculo exato de requiredLength
+        // Mata mutantes que alterem qualquer parte do cálculo aritmético
+        // Arrange
+        LogArrange("Testing exact required length calculation");
+
+        // Casos com diferentes tamanhos para verificar cada componente
+        var cases = new[]
+        {
+            (country: "1", area: "2", number: "3", expectedFormatted: 8, expectedE164: 4),      // 1+1+2+1+2+1 = 8, 1+1+1+1 = 4
+            (country: "55", area: "11", number: "9", expectedFormatted: 10, expectedE164: 6),   // 1+2+2+2+2+1 = 10, 1+2+2+1 = 6
+            (country: "1", area: "212", number: "5551234", expectedFormatted: 16, expectedE164: 12), // 1+1+2+3+2+7 = 16, 1+1+3+7 = 12
+        };
+
+        foreach (var (country, area, number, expectedFormatted, expectedE164) in cases)
+        {
+            var phone = PhoneNumber.CreateNew(country, area, number);
+
+            // Buffer exato deve funcionar
+            Span<char> exactBufferFormatted = stackalloc char[expectedFormatted];
+            Span<char> exactBufferE164 = stackalloc char[expectedE164];
+
+            // Act
+            LogAct($"Testing phone {country}/{area}/{number}");
+            var resultFormatted = phone.TryFormat(exactBufferFormatted, out var charsFormatted, default, null);
+            var resultE164 = phone.TryFormat(exactBufferE164, out var charsE164, "E".AsSpan(), null);
+
+            // Assert
+            resultFormatted.ShouldBeTrue($"Exact buffer should work for formatted ({country}/{area}/{number})");
+            charsFormatted.ShouldBe(expectedFormatted, $"Chars written should be exact for formatted ({country}/{area}/{number})");
+
+            resultE164.ShouldBeTrue($"Exact buffer should work for E.164 ({country}/{area}/{number})");
+            charsE164.ShouldBe(expectedE164, $"Chars written should be exact for E.164 ({country}/{area}/{number})");
+
+            // Buffer 1 menor deve falhar
+            Span<char> smallBufferFormatted = stackalloc char[expectedFormatted - 1];
+            Span<char> smallBufferE164 = stackalloc char[expectedE164 - 1];
+
+            var failFormatted = phone.TryFormat(smallBufferFormatted, out _, default, null);
+            var failE164 = phone.TryFormat(smallBufferE164, out _, "E".AsSpan(), null);
+
+            failFormatted.ShouldBeFalse($"Buffer -1 should fail for formatted ({country}/{area}/{number})");
+            failE164.ShouldBeFalse($"Buffer -1 should fail for E.164 ({country}/{area}/{number})");
+        }
+
+        LogAssert("Required length calculation verified for all cases");
+    }
 }
