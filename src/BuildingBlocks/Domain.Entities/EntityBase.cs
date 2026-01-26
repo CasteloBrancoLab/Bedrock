@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
@@ -471,7 +472,8 @@ public abstract class EntityBase : IEntity
 /// <typeparam name="TEntity">The entity type.</typeparam>
 public abstract class EntityBase<TEntity> : EntityBase, IEntity<TEntity>
 {
-    private readonly Type _entityType = typeof(TEntity);
+    private static readonly string EntityTypeName = typeof(TEntity).ToString();
+    private static readonly ConcurrentDictionary<string, string> MessageCodeCache = new();
 
     /// <summary>
     /// Initializes a new instance of the EntityBase class.
@@ -577,6 +579,9 @@ public abstract class EntityBase<TEntity> : EntityBase, IEntity<TEntity>
     /// <inheritdoc/>
     protected override string CreateMessageCode(string messageSuffix)
     {
-        return $"{_entityType}.{messageSuffix}";
+        return MessageCodeCache.GetOrAdd(
+            messageSuffix,
+            static (suffix, typeName) => string.Concat(typeName, ".", suffix),
+            EntityTypeName);
     }
 }
