@@ -21,6 +21,9 @@
     <PackageReference Include="Bogus" />
     <PackageReference Include="Humanizer.Core" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
 </Project>
