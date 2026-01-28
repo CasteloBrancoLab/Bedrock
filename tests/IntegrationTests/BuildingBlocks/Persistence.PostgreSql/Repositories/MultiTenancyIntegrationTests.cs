@@ -1,3 +1,4 @@
+using Bedrock.BuildingBlocks.Testing.Attributes;
 using Bedrock.BuildingBlocks.Testing.Integration;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Fixtures;
 using Shouldly;
@@ -10,6 +11,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for multi-tenancy isolation via TenantCode filtering.
 /// </summary>
 [Collection("PostgresRepository")]
+[Feature("Multi-Tenancy", "Isolamento de dados entre tenants via TenantCode")]
 public class MultiTenancyIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;

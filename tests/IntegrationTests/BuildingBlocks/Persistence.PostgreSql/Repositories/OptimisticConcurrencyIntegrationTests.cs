@@ -1,3 +1,4 @@
+using Bedrock.BuildingBlocks.Testing.Attributes;
 using Bedrock.BuildingBlocks.Testing.Integration;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Fixtures;
 using Shouldly;
@@ -10,6 +11,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for optimistic concurrency control via EntityVersion.
 /// </summary>
 [Collection("PostgresRepository")]
+[Feature("Optimistic Concurrency", "Controle de concorrência otimista via EntityVersion")]
 public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;

@@ -1,3 +1,4 @@
+using Bedrock.BuildingBlocks.Testing.Attributes;
 using Bedrock.BuildingBlocks.Testing.Integration;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Fixtures;
 using Shouldly;
@@ -10,6 +11,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for DataModelRepositoryBase CRUD operations.
 /// </summary>
 [Collection("PostgresRepository")]
+[Feature("Repository CRUD", "Operações CRUD do repositório de DataModel")]
 public class DataModelRepositoryIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;

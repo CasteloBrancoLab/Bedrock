@@ -26,4 +26,8 @@
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Reporting\Templates\integration-report.html" />
+  </ItemGroup>
+
 </Project>

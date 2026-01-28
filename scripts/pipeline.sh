@@ -77,6 +77,12 @@ if [ $MUTATION_FAILED -eq 0 ]; then
 
     INTEGRATION_END=$(date +%s%3N)
     INTEGRATION_DURATION=$((INTEGRATION_END - INTEGRATION_START))
+
+    # Generate HTML report for integration tests
+    if [ $INTEGRATION_FAILED -eq 0 ]; then
+        echo ">>> Generating Integration Test Report..."
+        "$SCRIPT_DIR/generate-integration-report.sh" || echo "Warning: Report generation failed"
+    fi
     echo ""
 else
     echo ">>> Step 5/5: Integration Tests (SKIPPED - mutation tests failed)"
@@ -147,6 +153,9 @@ echo "Duration: ${TOTAL_DURATION}ms"
 echo "Summary:  artifacts/summary.json"
 echo "Coverage: artifacts/coverage/"
 echo "Mutation: artifacts/mutation/"
+if [ -f "artifacts/integration-report/index.html" ]; then
+    echo "Report:   artifacts/integration-report/index.html"
+fi
 echo ""
 
 if [ $MUTATION_FAILED -eq 1 ]; then

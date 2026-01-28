@@ -9,6 +9,11 @@ namespace Bedrock.BuildingBlocks.Testing;
 /// </summary>
 public abstract class TestBase
 {
+    /// <summary>
+    /// Marker used to identify structured step output for report parsing.
+    /// </summary>
+    internal const string StepMarker = "##STEP##";
+
     protected ITestOutputHelper OutputHelper { get; }
 
     protected TestBase(ITestOutputHelper outputHelper)
@@ -107,32 +112,55 @@ public abstract class TestBase
     }
 
     /// <summary>
-    /// Logs the Arrange phase of AAA pattern.
+    /// Logs the Arrange phase of AAA pattern (Given in BDD).
+    /// Emits structured output for report generation.
     /// </summary>
     protected void LogArrange(string description = "Setting up test data")
     {
         WriteLog("ARRANGE", description);
+        WriteStep("Given", description);
     }
 
     /// <summary>
-    /// Logs the Act phase of AAA pattern.
+    /// Logs the Act phase of AAA pattern (When in BDD).
+    /// Emits structured output for report generation.
     /// </summary>
     protected void LogAct(string description = "Executing action")
     {
         WriteLog("ACT", description);
+        WriteStep("When", description);
     }
 
     /// <summary>
-    /// Logs the Assert phase of AAA pattern.
+    /// Logs the Assert phase of AAA pattern (Then in BDD).
+    /// Emits structured output for report generation.
     /// </summary>
     protected void LogAssert(string description = "Verifying results")
     {
         WriteLog("ASSERT", description);
+        WriteStep("Then", description);
     }
 
     private void WriteLog(string level, string message)
     {
         var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
         OutputHelper.WriteLine($"[{timestamp}] [{level,-6}] {message}");
+    }
+
+    private void WriteStep(string type, string description)
+    {
+        var escapedDescription = EscapeJson(description);
+        var timestamp = DateTime.UtcNow.ToString("O");
+        OutputHelper.WriteLine($"{StepMarker}{{\"type\":\"{type}\",\"description\":\"{escapedDescription}\",\"timestamp\":\"{timestamp}\"}}");
+    }
+
+    private static string EscapeJson(string value)
+    {
+        return value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\n", "\\n")
+            .Replace("\r", "\\r")
+            .Replace("\t", "\\t");
     }
 }

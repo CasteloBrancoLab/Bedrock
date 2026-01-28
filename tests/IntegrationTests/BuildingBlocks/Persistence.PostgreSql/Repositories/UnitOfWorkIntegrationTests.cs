@@ -1,3 +1,4 @@
+using Bedrock.BuildingBlocks.Testing.Attributes;
 using Bedrock.BuildingBlocks.Testing.Integration;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Fixtures;
 using Shouldly;
@@ -10,6 +11,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for PostgreSqlUnitOfWorkBase transaction management.
 /// </summary>
 [Collection("PostgresRepository")]
+[Feature("Unit of Work", "Gerenciamento de transações via UnitOfWork")]
 public class UnitOfWorkIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;
