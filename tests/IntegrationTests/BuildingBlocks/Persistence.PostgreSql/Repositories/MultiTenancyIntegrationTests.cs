@@ -28,6 +28,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     public async Task GetByIdAsync_TenantA_CannotSeeTenantB_Entities()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity for Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
@@ -54,6 +55,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     public async Task ExistsAsync_TenantA_CannotSeeTenantB_Entities()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity for Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
@@ -80,6 +82,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     public async Task EnumerateAllAsync_OnlyReturnsCurrentTenantEntities()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entities for Tenant A and Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
@@ -125,6 +128,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     public async Task UpdateAsync_TenantA_CannotModifyTenantB_Entities()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity for Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
@@ -165,6 +169,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     public async Task DeleteAsync_TenantA_CannotDeleteTenantB_Entities()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity for Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
@@ -195,6 +200,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     public async Task InsertAsync_Should_UseExecutionContextTenantCode()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity and setting ExecutionContext with specific TenantCode");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);

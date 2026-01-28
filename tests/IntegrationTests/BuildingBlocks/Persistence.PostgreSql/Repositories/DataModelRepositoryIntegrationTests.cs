@@ -28,6 +28,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task GetByIdAsync_Should_ReturnEntity_WhenExists()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating test entity and inserting directly");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -58,6 +59,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task GetByIdAsync_Should_ReturnNull_WhenNotExists()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up context with non-existent entity ID");
         var tenantCode = Guid.NewGuid();
         var nonExistentId = Guid.NewGuid();
@@ -81,6 +83,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task ExistsAsync_Should_ReturnTrue_WhenEntityExists()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and inserting test entity");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -106,6 +109,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task ExistsAsync_Should_ReturnFalse_WhenEntityNotExists()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up context with non-existent entity ID");
         var tenantCode = Guid.NewGuid();
         var nonExistentId = Guid.NewGuid();
@@ -129,6 +133,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task InsertAsync_Should_PersistEntity()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating test entity for insertion");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -159,6 +164,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task InsertAsync_Should_PopulateAllBaseFields()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating test entity with all fields populated");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -195,6 +201,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task InsertAsync_Should_HandleNullableFields()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating test entity with null optional fields");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -228,6 +235,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task UpdateAsync_Should_ModifyEntity_WhenVersionMatches()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and inserting test entity");
         var tenantCode = Guid.NewGuid();
         var originalVersion = 1L;
@@ -270,6 +278,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task UpdateAsync_Should_ReturnFalse_WhenVersionMismatch()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and inserting test entity with version 5");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 5);
@@ -306,6 +315,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task DeleteAsync_Should_RemoveEntity_WhenVersionMatches()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and inserting test entity");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
@@ -336,6 +346,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task DeleteAsync_Should_ReturnFalse_WhenVersionMismatch()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and inserting test entity with version 3");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 3);
@@ -366,6 +377,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     public async Task DeleteAsync_Should_ReturnFalse_WhenEntityNotExists()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up context with non-existent entity ID");
         var tenantCode = Guid.NewGuid();
         var nonExistentId = Guid.NewGuid();

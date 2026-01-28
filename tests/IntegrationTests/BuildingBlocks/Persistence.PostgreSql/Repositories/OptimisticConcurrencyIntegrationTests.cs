@@ -28,6 +28,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     public async Task UpdateAsync_Should_Succeed_WithMatchingVersion()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity with version 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
@@ -62,6 +63,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     public async Task UpdateAsync_Should_Fail_WithStaleVersion()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity with version 10");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 10);
@@ -98,6 +100,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     public async Task UpdateAsync_ConcurrentUpdates_FirstWinsSecondFails()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity with version 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
@@ -161,6 +164,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     public async Task DeleteAsync_Should_Succeed_WithMatchingVersion()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity with version 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
@@ -190,6 +194,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     public async Task DeleteAsync_Should_Fail_WithStaleVersion()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity with version 5");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 5);
@@ -220,6 +225,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     public async Task DeleteAsync_Should_Fail_WhenConcurrentUpdateOccurs()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entity with version 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
