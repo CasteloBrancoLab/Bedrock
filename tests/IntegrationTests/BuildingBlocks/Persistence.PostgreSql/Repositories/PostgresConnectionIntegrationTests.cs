@@ -1,3 +1,4 @@
+using Bedrock.BuildingBlocks.Testing.Attributes;
 using Bedrock.BuildingBlocks.Testing.Integration;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Fixtures;
 using Npgsql;
@@ -11,6 +12,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for PostgreSQL connection and basic operations.
 /// </summary>
 [Collection("PostgresRepository")]
+[Feature("PostgreSQL Connection", "Basic connection and authentication tests for PostgreSQL database")]
 public class PostgresConnectionIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;
@@ -24,6 +26,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
+    [Scenario("Deve conectar ao banco de dados com usuário admin")]
     public async Task Should_connect_to_database_with_admin_user()
     {
         // Arrange
@@ -46,6 +49,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
+    [Scenario("Deve conectar ao banco de dados com usuário app_user")]
     public async Task Should_connect_to_database_with_app_user()
     {
         // Arrange
@@ -68,6 +72,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
+    [Scenario("Deve inserir e selecionar dados com usuário app_user")]
     public async Task Should_insert_and_select_with_app_user()
     {
         // Arrange
@@ -119,6 +124,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
+    [Scenario("Deve selecionar dados com usuário readonly_user")]
     public async Task Should_select_with_readonly_user()
     {
         // Arrange
@@ -175,6 +181,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
+    [Scenario("Deve falhar ao inserir dados com usuário readonly_user")]
     public async Task Should_fail_insert_with_readonly_user()
     {
         // Arrange

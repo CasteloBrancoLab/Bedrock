@@ -1,4 +1,5 @@
 using Bedrock.BuildingBlocks.Core.Paginations;
+using Bedrock.BuildingBlocks.Testing.Attributes;
 using Bedrock.BuildingBlocks.Testing.Integration;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.DataModels;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Fixtures;
@@ -12,6 +13,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for the handler pattern used in enumeration methods.
 /// </summary>
 [Collection("PostgresRepository")]
+[Feature("Handler Pattern", "Padrão de handler para enumeração de entidades")]
 public class HandlerPatternIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;

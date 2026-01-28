@@ -1,3 +1,4 @@
+using Bedrock.BuildingBlocks.Testing.Attributes;
 using Bedrock.BuildingBlocks.Testing.Integration;
 using Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Fixtures;
 using Shouldly;
@@ -10,6 +11,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for PostgreSqlConnectionBase connection lifecycle management.
 /// </summary>
 [Collection("PostgresRepository")]
+[Feature("Connection Lifecycle", "Gerenciamento do ciclo de vida da conexão PostgreSQL")]
 public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;
