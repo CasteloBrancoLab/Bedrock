@@ -428,6 +428,71 @@ public abstract class DataModelMapperBase<TDataModel>
         return Where(selector, RelationalOperator.Equal);
     }
 
+    /// <summary>
+    /// Creates a WHERE clause with a custom parameter suffix for optimistic concurrency scenarios
+    /// where the same property needs different parameter values in SET and WHERE clauses.
+    /// </summary>
+    public WhereClause WhereWithParameterSuffix(string propertyName, string parameterSuffix, RelationalOperator op)
+    {
+        ColumnMap columnMap = GetColumnMap(propertyName);
+        string paramName = GetParameterName(propertyName) + parameterSuffix;
+        string opSql = op.ToSql();
+
+        string clause = string.Create(
+            _tableName.Length + 1 + columnMap.ColumnName.Length + 1 + opSql.Length + 1 + paramName.Length,
+            (_tableName, columnMap.ColumnName, opSql, paramName),
+            static (span, state) =>
+            {
+                int pos = 0;
+                state._tableName.AsSpan().CopyTo(span);
+                pos += state._tableName.Length;
+                span[pos++] = '.';
+                state.ColumnName.AsSpan().CopyTo(span[pos..]);
+                pos += state.ColumnName.Length;
+                span[pos++] = ' ';
+                state.opSql.AsSpan().CopyTo(span[pos..]);
+                pos += state.opSql.Length;
+                span[pos++] = ' ';
+                state.paramName.AsSpan().CopyTo(span[pos..]);
+            });
+
+        return new WhereClause(clause);
+    }
+
+    /// <summary>
+    /// Creates a WHERE clause with a custom parameter suffix using an expression selector.
+    /// </summary>
+    public WhereClause WhereWithParameterSuffix<TProperty>(
+        Expression<Func<TDataModel, TProperty>> selector,
+        string parameterSuffix,
+        RelationalOperator op)
+    {
+        PropertyInfo propertyInfo = ExpressionUtils.GetProperty(selector);
+        return WhereWithParameterSuffix(propertyInfo.Name, parameterSuffix, op);
+    }
+
+    /// <summary>
+    /// Adds a parameter to the command with a custom suffix.
+    /// Used together with WhereWithParameterSuffix for optimistic concurrency scenarios.
+    /// </summary>
+    // Stryker disable all : NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao
+    [ExcludeFromCodeCoverage(Justification = "NpgsqlCommand e sealed e nao pode ser mockado - requer testes de integracao")]
+    public void AddParameterForCommandWithSuffix<TProperty>(
+        NpgsqlCommand npgsqlCommand,
+        Expression<Func<TDataModel, TProperty>> selector,
+        string parameterSuffix,
+        object? value)
+    {
+        PropertyInfo propertyInfo = ExpressionUtils.GetProperty(selector);
+        string paramName = GetParameterName(propertyInfo.Name) + parameterSuffix;
+        _ = npgsqlCommand.Parameters.AddWithValue(
+            parameterName: paramName,
+            parameterType: GetColumnNpgsqlDbType(selector),
+            value: value.GetValueOrDbNull()
+        );
+    }
+    // Stryker restore all
+
     // Public Methods - Order by clause generation (type-safe)
     public OrderByClause OrderBy(string propertyName, SortDirection direction)
     {
@@ -653,7 +718,7 @@ public abstract class DataModelMapperBase<TDataModel>
     {
         foreach (KeyValuePair<string, ColumnMap> columnMap in ColumnMapDictionary)
         {
-            object value = reader.GetValueOrDefault($"{TableName}_{columnMap.Value.ColumnName}");
+            object value = reader.GetValueOrDefault($"{TableName}_{columnMap.Key}");
 
             bool propertyTypeIsDateTimeOffset =
                 columnMap.Value.Type == typeof(DateTimeOffset)
@@ -761,8 +826,7 @@ public abstract class DataModelMapperBase<TDataModel>
         _baseWhereClause = tenantWhereClause.Value;
 
         WhereClause idWhereClause = Where(nameof(DataModelBase.Id));
-        WhereClause versionWhereClause = Where(nameof(DataModelBase.EntityVersion), RelationalOperator.LessThan);
-        _baseWhereClauseToUpdate = (tenantWhereClause & idWhereClause & versionWhereClause).Value;
+        _baseWhereClauseToUpdate = (tenantWhereClause & idWhereClause).Value;
 
         // Cache complete commands (zero allocation on access)
         SelectCommand = $"SELECT {_columnNamesWithAlias} FROM {_tableName} WHERE {_baseWhereClause}";

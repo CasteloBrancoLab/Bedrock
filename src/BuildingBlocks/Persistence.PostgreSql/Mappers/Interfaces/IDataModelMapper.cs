@@ -50,6 +50,8 @@ public interface IDataModelMapper<TDataModel>
     public WhereClause Where<TProperty>(Expression<Func<TDataModel, TProperty>> selector, RelationalOperator op);
     public WhereClause Where(string propertyName);
     public WhereClause Where<TProperty>(Expression<Func<TDataModel, TProperty>> selector);
+    public WhereClause WhereWithParameterSuffix(string propertyName, string parameterSuffix, RelationalOperator op);
+    public WhereClause WhereWithParameterSuffix<TProperty>(Expression<Func<TDataModel, TProperty>> selector, string parameterSuffix, RelationalOperator op);
 
     // Order by clause generation (type-safe)
     public OrderByClause OrderBy(string propertyName, SortDirection direction);
@@ -64,6 +66,7 @@ public interface IDataModelMapper<TDataModel>
     public string GetParameterName<TProperty>(Expression<Func<TDataModel, TProperty>> selector);
     public void AddParameterForCommand(NpgsqlCommand npgsqlCommand, string propertyName, NpgsqlDbType npgsqlDbType, object? value);
     public void AddParameterForCommand<TProperty>(NpgsqlCommand npgsqlCommand, Expression<Func<TDataModel, TProperty>> selector, object? value);
+    public void AddParameterForCommandWithSuffix<TProperty>(NpgsqlCommand npgsqlCommand, Expression<Func<TDataModel, TProperty>> selector, string parameterSuffix, object? value);
 
     // Data model handling
     public void ConfigureCommandToProperty(string propertyName, TDataModel dataModel, NpgsqlCommand npgsqlCommand);
