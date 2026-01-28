@@ -3,6 +3,8 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Nome amigável para exibição no relatório de testes de integração -->
+    <IntegrationTestDisplayName>Persistência PostgreSQL</IntegrationTestDisplayName>
   </PropertyGroup>
 
   <ItemGroup>
