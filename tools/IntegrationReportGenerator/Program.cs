@@ -925,7 +925,7 @@ static string GenerateHtml(List<ProjectData> projects, List<TestEnvironmentData>
         """);
 
     // Chart.js config separada para evitar problemas com chaves em raw string literals
-    sb.Append($"var chartInstance=new Chart(document.getElementById('chart'),{{type:'doughnut',data:{{labels:['Passou','Falhou','Ignorado'],datasets:[{{data:[{passed},{failed},{skipped}],backgroundColor:['#10b981','#ef4444','#f59e0b'],borderWidth:0}}]}},options:{{responsive:true,plugins:{{legend:{{position:'bottom',labels:{{color:getComputedStyle(document.documentElement).getPropertyValue('--chart-legend').trim()}}}}}},cutout:'60%'}}}});");
+    sb.Append($"var chartInstance=new Chart(document.getElementById('chart'),{{type:'doughnut',data:{{labels:['Passou','Falhou','Ignorado'],datasets:[{{data:[{passed},{failed},{skipped}],backgroundColor:['#10b981','#ef4444','#f59e0b'],borderWidth:0}}]}},options:{{responsive:true,plugins:{{legend:{{position:'bottom',labels:{{color:getComputedStyle(document.body).getPropertyValue('--chart-legend').trim()}}}}}},cutout:'60%'}}}});");
 
     sb.Append("""
 
@@ -933,7 +933,7 @@ static string GenerateHtml(List<ProjectData> projects, List<TestEnvironmentData>
         document.querySelectorAll('.feature-header').forEach(h=>h.addEventListener('click',e=>{e.stopPropagation();h.closest('.feature').classList.toggle('collapsed');}));
         document.querySelectorAll('.environment-header').forEach(h=>h.addEventListener('click',()=>h.closest('.environment').classList.toggle('collapsed')));
         function toggleTheme(){document.body.classList.toggle('light-theme');localStorage.setItem('theme',document.body.classList.contains('light-theme')?'light':'dark');updateChartLegend();}
-        function updateChartLegend(){var c=getComputedStyle(document.documentElement).getPropertyValue('--chart-legend').trim();chartInstance.options.plugins.legend.labels.color=c;chartInstance.update();}
+        function updateChartLegend(){var c=getComputedStyle(document.body).getPropertyValue('--chart-legend').trim();chartInstance.options.plugins.legend.labels.color=c;chartInstance.update();}
         (function(){if(localStorage.getItem('theme')==='light')document.body.classList.add('light-theme');updateChartLegend();})();
         </script>
         </body>
