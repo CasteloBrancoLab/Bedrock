@@ -31,7 +31,8 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     {
         // Arrange
         LogArrange("Getting admin connection string");
-        var connectionString = _fixture.GetAdminConnectionString();
+        var env = UseEnvironment(_fixture.Environments["repository"]);
+        var connectionString = env.Postgres["main"].GetConnectionString("testdb");
         LogDatabaseConnection("testdb", "postgres");
 
         // Act
@@ -54,7 +55,8 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     {
         // Arrange
         LogArrange("Getting app user connection string");
-        var connectionString = _fixture.GetAppUserConnectionString();
+        var env = UseEnvironment(_fixture.Environments["repository"]);
+        var connectionString = env.Postgres["main"].GetConnectionString("testdb", user: "app_user");
         LogDatabaseConnection("testdb", "app_user");
 
         // Act
@@ -77,7 +79,8 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     {
         // Arrange
         LogArrange("Preparing test data");
-        var connectionString = _fixture.GetAppUserConnectionString();
+        var env = UseEnvironment(_fixture.Environments["repository"]);
+        var connectionString = env.Postgres["main"].GetConnectionString("testdb", user: "app_user");
         var entityId = Guid.NewGuid();
         var tenantCode = Guid.NewGuid();
         const string entityName = "Test Entity";
@@ -129,9 +132,10 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     {
         // Arrange
         LogArrange("Setting up test with admin, then reading with readonly user");
+        var env = UseEnvironment(_fixture.Environments["repository"]);
 
         // First, insert with admin
-        var adminConnectionString = _fixture.GetAdminConnectionString();
+        var adminConnectionString = env.Postgres["main"].GetConnectionString("testdb");
         var entityId = Guid.NewGuid();
         var tenantCode = Guid.NewGuid();
         const string entityName = "Readonly Test Entity";
@@ -160,7 +164,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
 
         // Act
         LogAct("Selecting with readonly user");
-        var readonlyConnectionString = _fixture.GetReadonlyUserConnectionString();
+        var readonlyConnectionString = env.Postgres["main"].GetConnectionString("testdb", user: "readonly_user");
         LogDatabaseConnection("testdb", "readonly_user");
 
         await using var connection = new NpgsqlConnection(readonlyConnectionString);
@@ -186,7 +190,8 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     {
         // Arrange
         LogArrange("Attempting insert with readonly user (should fail)");
-        var connectionString = _fixture.GetReadonlyUserConnectionString();
+        var env = UseEnvironment(_fixture.Environments["repository"]);
+        var connectionString = env.Postgres["main"].GetConnectionString("testdb", user: "readonly_user");
         LogDatabaseConnection("testdb", "readonly_user");
 
         await using var connection = new NpgsqlConnection(connectionString);

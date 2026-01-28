@@ -23,6 +23,7 @@ if (trxFiles.Length == 0)
 
 var ns = XNamespace.Get("http://microsoft.com/schemas/VisualStudio/TeamTest/2010");
 var projects = new Dictionary<string, ProjectData>();
+var environments = new Dictionary<string, TestEnvironmentData>();
 var totalDuration = TimeSpan.Zero;
 var executionTime = DateTime.UtcNow;
 
@@ -88,6 +89,7 @@ foreach (var trxFile in trxFiles)
         totalDuration += duration;
 
         var steps = new List<StepData>();
+        string? scenarioEnvironment = null;
         var output = result.Descendants(ns + "StdOut").FirstOrDefault()?.Value ?? "";
         foreach (var line in output.Split('\n'))
         {
@@ -108,6 +110,65 @@ foreach (var trxFile in trxFiles)
                     // Ignora linhas mal formatadas
                 }
             }
+            else if (line.Contains("##ENV##"))
+            {
+                var json = line[(line.IndexOf("##ENV##") + 7)..].Trim();
+                try
+                {
+                    var envObj = JsonSerializer.Deserialize<JsonElement>(json);
+                    var envName = envObj.GetProperty("name").GetString() ?? "unknown";
+                    scenarioEnvironment = envName;
+
+                    // Agregar environment se ainda não existir
+                    if (!environments.ContainsKey(envName))
+                    {
+                        var services = new List<TestServiceData>();
+                        if (envObj.TryGetProperty("services", out var servicesArr))
+                        {
+                            foreach (var svc in servicesArr.EnumerateArray())
+                            {
+                                services.Add(new TestServiceData
+                                {
+                                    Type = svc.GetProperty("type").GetString() ?? "",
+                                    Key = svc.GetProperty("key").GetString() ?? "",
+                                    Image = svc.GetProperty("image").GetString() ?? "",
+                                    Databases = svc.TryGetProperty("databases", out var dbs)
+                                        ? dbs.EnumerateArray().Select(d => d.GetString() ?? "").ToList()
+                                        : [],
+                                    Users = svc.TryGetProperty("users", out var usrs)
+                                        ? usrs.EnumerateArray().Select(u => u.GetString() ?? "").ToList()
+                                        : []
+                                });
+                            }
+                        }
+
+                        string? memory = null;
+                        double? cpu = null;
+                        if (envObj.TryGetProperty("resources", out var resources))
+                        {
+                            if (resources.TryGetProperty("memory", out var mem))
+                                memory = mem.GetString();
+                            if (resources.TryGetProperty("cpu", out var cpuVal))
+                                cpu = cpuVal.GetDouble();
+                        }
+
+                        environments[envName] = new TestEnvironmentData
+                        {
+                            Name = envName,
+                            Services = services,
+                            Memory = memory,
+                            Cpu = cpu
+                        };
+                    }
+
+                    // Incrementar contador de uso
+                    environments[envName].TestCount++;
+                }
+                catch
+                {
+                    // Ignora linhas mal formatadas
+                }
+            }
         }
 
         var scenario = new ScenarioData
@@ -117,7 +178,8 @@ foreach (var trxFile in trxFiles)
             Status = outcome.ToLower() switch { "passed" => "passed", "failed" => "failed", _ => "skipped" },
             Duration = duration,
             Steps = steps,
-            ErrorMessage = result.Descendants(ns + "ErrorInfo").FirstOrDefault()?.Element(ns + "Message")?.Value
+            ErrorMessage = result.Descendants(ns + "ErrorInfo").FirstOrDefault()?.Element(ns + "Message")?.Value,
+            Environment = scenarioEnvironment
         };
 
         feature.Scenarios.Add(scenario);
@@ -156,7 +218,7 @@ var env = new EnvData
     GitCommit = gitCommit.Length >= 7 ? gitCommit[..7] : gitCommit
 };
 
-var html = GenerateHtml(projects.Values.OrderBy(p => p.DisplayName).ToList(), env, totalDuration, passed, failed, skipped, passRate);
+var html = GenerateHtml(projects.Values.OrderBy(p => p.DisplayName).ToList(), environments.Values.OrderBy(e => e.Name).ToList(), env, totalDuration, passed, failed, skipped, passRate);
 
 // Garantir que o diretório existe
 var dir = Path.GetDirectoryName(outputFile);
@@ -343,7 +405,7 @@ static string FormatDuration(TimeSpan duration)
             : $"{duration.TotalMilliseconds:F0}ms";
 }
 
-static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan duration, int passed, int failed, int skipped, string passRate)
+static string GenerateHtml(List<ProjectData> projects, List<TestEnvironmentData> testEnvironments, EnvData env, TimeSpan duration, int passed, int failed, int skipped, string passRate)
 {
     var total = passed + failed + skipped;
     var sb = new StringBuilder();
@@ -441,7 +503,30 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
                 .scenario-header{display:flex;align-items:center;gap:.75rem}
                 .scenario-status{font-size:1.1rem}
                 .scenario-name{font-weight:500;flex:1;font-size:.9rem}
+                .scenario-env{font-size:.7rem;padding:.15rem .5rem;border-radius:9999px;background:var(--border);color:var(--muted);font-weight:500}
                 .scenario-duration{color:var(--muted);font-size:.75rem;font-family:monospace}
+
+                /* Seção de Ambientes */
+                .environments-section{margin-bottom:2rem}
+                .environment{background:var(--card);margin-bottom:.75rem;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden}
+                .environment-header{padding:1rem 1.5rem;background:var(--feature-bg);font-weight:600;display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:background .2s}
+                .environment-header:hover{filter:brightness(1.1)}
+                .environment-toggle{font-size:.75rem;color:var(--muted);transition:transform .2s}
+                .environment.collapsed .environment-toggle{transform:rotate(-90deg)}
+                .environment-name{flex:1;display:flex;align-items:center;gap:.5rem}
+                .environment-icon{font-size:1.25rem}
+                .environment-count{font-size:.75rem;padding:.25rem .5rem;border-radius:9999px;background:var(--badge-total-bg);color:var(--badge-total-text)}
+                .environment-content{max-height:2000px;overflow:hidden;transition:max-height .3s;padding:1rem 1.5rem}
+                .environment.collapsed .environment-content{max-height:0;padding:0 1.5rem}
+                .service-item{margin-bottom:1rem}
+                .service-item:last-child{margin-bottom:0}
+                .service-header{display:flex;align-items:center;gap:.5rem;font-weight:600;margin-bottom:.5rem}
+                .service-icon{font-size:1rem}
+                .service-details{display:grid;grid-template-columns:auto 1fr;gap:.25rem .75rem;font-size:.85rem;padding-left:1.5rem}
+                .service-details dt{color:var(--muted);font-size:.75rem}
+                .service-details dd{color:var(--text)}
+                .resources-section{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+                .resources-title{font-weight:600;font-size:.85rem;margin-bottom:.5rem;color:var(--muted)}
                 .steps{margin-top:.5rem;padding-left:2rem}
                 .step{display:flex;gap:.5rem;font-size:.8rem;padding:.25rem 0;color:var(--muted)}
                 .step-type{font-weight:600;min-width:45px}
@@ -603,6 +688,117 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
             </section>
         """);
 
+    // Seção de Ambientes de Teste (se houver)
+    if (testEnvironments.Count > 0)
+    {
+        sb.Append("""
+            <section class="environments-section">
+                <h2 class="summary-header">Ambientes de Teste</h2>
+        """);
+
+        foreach (var testEnv in testEnvironments)
+        {
+            sb.Append($"""
+                <article class="environment collapsed">
+                    <div class="environment-header">
+                        <span class="environment-toggle">▼</span>
+                        <span class="environment-name">
+                            <span class="environment-icon">🔧</span>
+                            {WebUtility.HtmlEncode(testEnv.Name)}
+                        </span>
+                        <span class="environment-count">{testEnv.TestCount} testes</span>
+                    </div>
+                    <div class="environment-content">
+            """);
+
+            foreach (var service in testEnv.Services)
+            {
+                var serviceIcon = service.Type.ToLower() switch
+                {
+                    "postgresql" => "🐘",
+                    "redis" => "🔴",
+                    "rabbitmq" => "🐰",
+                    "mongodb" => "🍃",
+                    "mysql" => "🐬",
+                    "sqlserver" => "📊",
+                    _ => "📦"
+                };
+
+                sb.Append($"""
+                        <div class="service-item">
+                            <div class="service-header">
+                                <span class="service-icon">{serviceIcon}</span>
+                                <span>{WebUtility.HtmlEncode(service.Type)} ({WebUtility.HtmlEncode(service.Key)})</span>
+                            </div>
+                            <dl class="service-details">
+                                <dt>Imagem</dt>
+                                <dd>{WebUtility.HtmlEncode(service.Image)}</dd>
+                """);
+
+                if (service.Databases.Count > 0)
+                {
+                    sb.Append($"""
+                                <dt>Databases</dt>
+                                <dd>{WebUtility.HtmlEncode(string.Join(", ", service.Databases))}</dd>
+                    """);
+                }
+
+                if (service.Users.Count > 0)
+                {
+                    sb.Append($"""
+                                <dt>Usuários</dt>
+                                <dd>{WebUtility.HtmlEncode(string.Join(", ", service.Users))}</dd>
+                    """);
+                }
+
+                sb.Append("""
+                            </dl>
+                        </div>
+                """);
+            }
+
+            // Recursos
+            if (testEnv.Memory is not null || testEnv.Cpu is not null)
+            {
+                sb.Append("""
+                        <div class="resources-section">
+                            <div class="resources-title">Recursos</div>
+                            <dl class="service-details">
+                """);
+
+                if (testEnv.Memory is not null)
+                {
+                    sb.Append($"""
+                                <dt>Memória</dt>
+                                <dd>{WebUtility.HtmlEncode(testEnv.Memory)}</dd>
+                    """);
+                }
+
+                if (testEnv.Cpu is not null)
+                {
+                    sb.Append($"""
+                                <dt>CPU</dt>
+                                <dd>{testEnv.Cpu:F1}</dd>
+                    """);
+                }
+
+                sb.Append("""
+                            </dl>
+                        </div>
+                """);
+            }
+
+            sb.Append("""
+                    </div>
+                </article>
+            """);
+        }
+
+        sb.Append("""
+            </section>
+        """);
+    }
+
     // Resultados detalhados por Projeto
     sb.Append("""
             <section>
@@ -674,6 +870,9 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
             {
                 var icon = scenario.Status switch { "passed" => "\u2705", "failed" => "\u274C", _ => "\u23ED\uFE0F" };
                 var dur = FormatDuration(scenario.Duration);
+                var envBadge = scenario.Environment is not null
+                    ? $"""<span class="scenario-env">{WebUtility.HtmlEncode(scenario.Environment)}</span>"""
+                    : "";
 
                 sb.Append($"""
 
@@ -681,6 +880,7 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
                                     <div class="scenario-header">
                                         <span class="scenario-status">{icon}</span>
                                         <span class="scenario-name">{WebUtility.HtmlEncode(scenario.Name)}</span>
+                                        {envBadge}
                                         <span class="scenario-duration">{dur}</span>
                                     </div>
         """);
@@ -731,6 +931,7 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
 
         document.querySelectorAll('.project-header').forEach(h=>h.addEventListener('click',()=>h.closest('.project').classList.toggle('collapsed')));
         document.querySelectorAll('.feature-header').forEach(h=>h.addEventListener('click',e=>{e.stopPropagation();h.closest('.feature').classList.toggle('collapsed');}));
+        document.querySelectorAll('.environment-header').forEach(h=>h.addEventListener('click',()=>h.closest('.environment').classList.toggle('collapsed')));
         function toggleTheme(){document.body.classList.toggle('light-theme');localStorage.setItem('theme',document.body.classList.contains('light-theme')?'light':'dark');updateChartLegend();}
         function updateChartLegend(){var c=getComputedStyle(document.documentElement).getPropertyValue('--chart-legend').trim();chartInstance.options.plugins.legend.labels.color=c;chartInstance.update();}
         (function(){if(localStorage.getItem('theme')==='light')document.body.classList.add('light-theme');updateChartLegend();})();
@@ -771,12 +972,31 @@ internal sealed class ScenarioData
     public TimeSpan Duration { get; set; }
     public List<StepData> Steps { get; set; } = [];
     public string? ErrorMessage { get; set; }
+    public string? Environment { get; set; }
 }
 
 internal sealed class StepData
 {
     public string Type { get; set; } = "";
     public string Description { get; set; } = "";
+}
+
+internal sealed class TestEnvironmentData
+{
+    public string Name { get; set; } = "";
+    public List<TestServiceData> Services { get; set; } = [];
+    public string? Memory { get; set; }
+    public double? Cpu { get; set; }
+    public int TestCount { get; set; }
+}
+
+internal sealed class TestServiceData
+{
+    public string Type { get; set; } = "";
+    public string Key { get; set; } = "";
+    public string Image { get; set; } = "";
+    public List<string> Databases { get; set; } = [];
+    public List<string> Users { get; set; } = [];
 }
 
 internal sealed class EnvData
