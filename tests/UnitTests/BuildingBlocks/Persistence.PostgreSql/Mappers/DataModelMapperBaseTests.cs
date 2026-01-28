@@ -438,6 +438,66 @@ public class DataModelMapperBaseTests : TestBase
     }
 
     [Fact]
+    public void WhereWithParameterSuffix_WithPropertyName_ShouldReturnWhereClauseWithSuffix()
+    {
+        // Act
+        LogAct("Creating where clause with parameter suffix");
+        WhereClause whereClause = _mapper.WhereWithParameterSuffix("CustomField", "_expected", RelationalOperator.Equal);
+
+        // Assert
+        LogAssert("Verifying where clause contains suffix");
+        string clause = whereClause.ToString();
+        clause.ShouldContain("custom_field =");
+        clause.ShouldContain("_expected");
+    }
+
+    [Fact]
+    public void WhereWithParameterSuffix_WithExpression_ShouldReturnWhereClauseWithSuffix()
+    {
+        // Act
+        LogAct("Creating where clause with expression and parameter suffix");
+        WhereClause whereClause = _mapper.WhereWithParameterSuffix(x => x.CustomField, "_version", RelationalOperator.GreaterThan);
+
+        // Assert
+        LogAssert("Verifying where clause contains suffix and operator");
+        string clause = whereClause.ToString();
+        clause.ShouldContain("custom_field >");
+        clause.ShouldContain("_version");
+    }
+
+    [Fact]
+    public void WhereWithParameterSuffix_WithDifferentOperators_ShouldReturnCorrectClause()
+    {
+        // Act
+        LogAct("Creating where clauses with different operators");
+        WhereClause lessThan = _mapper.WhereWithParameterSuffix("CustomField", "_lt", RelationalOperator.LessThan);
+        WhereClause greaterOrEqual = _mapper.WhereWithParameterSuffix("CustomField", "_gte", RelationalOperator.GreaterThanOrEqual);
+        WhereClause notEqual = _mapper.WhereWithParameterSuffix("CustomField", "_ne", RelationalOperator.NotEqual);
+
+        // Assert
+        LogAssert("Verifying each operator is correctly applied");
+        lessThan.ToString().ShouldContain("< @");
+        lessThan.ToString().ShouldContain("_lt");
+        greaterOrEqual.ToString().ShouldContain(">= @");
+        greaterOrEqual.ToString().ShouldContain("_gte");
+        notEqual.ToString().ShouldContain("<> @");
+        notEqual.ToString().ShouldContain("_ne");
+    }
+
+    [Fact]
+    public void WhereWithParameterSuffix_ShouldIncludeTableNameInClause()
+    {
+        // Act
+        LogAct("Creating where clause with suffix");
+        WhereClause whereClause = _mapper.WhereWithParameterSuffix(x => x.CustomField, "_test", RelationalOperator.Equal);
+
+        // Assert
+        LogAssert("Verifying table name is included in clause");
+        string clause = whereClause.ToString();
+        clause.ShouldContain("public.test_entities.custom_field");
+    }
+
+    [Fact]
     public void OrderBy_WithPropertyNameAndAscending_ShouldReturnOrderByClause()
     {
         // Act
@@ -638,15 +698,16 @@ public class DataModelMapperBaseTests : TestBase
     }
 
     [Fact]
-    public void UpdateCommand_ShouldContainBaseWhereClauseWithVersionCheck()
+    public void UpdateCommand_ShouldContainTenantAndIdInWhereClause()
     {
         // Act
         LogAct("Getting update command");
         string updateCommand = _mapper.UpdateCommand;
 
         // Assert
-        LogAssert("Verifying update command contains version check");
-        updateCommand.ShouldContain("entity_version <");
+        LogAssert("Verifying update command contains tenant and id in WHERE clause");
+        updateCommand.ShouldContain("tenant_code =");
+        updateCommand.ShouldContain("id =");
     }
 
     [Fact]

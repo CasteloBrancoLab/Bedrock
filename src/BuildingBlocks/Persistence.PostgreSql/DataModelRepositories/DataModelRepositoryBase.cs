@@ -341,15 +341,18 @@ public abstract class DataModelRepositoryBase<TDataModel>
     {
         try
         {
-            // Generate UPDATE command with EntityVersion check for optimistic concurrency
-            WhereClause versionClause = _mapper.Where(x => x.EntityVersion);
+            // Generate UPDATE command with EntityVersion check for optimistic concurrency.
+            // Use a parameter suffix to avoid conflict between SET and WHERE EntityVersion values.
+            const string ExpectedVersionSuffix = "_expected";
+            WhereClause versionClause = _mapper.WhereWithParameterSuffix(x => x.EntityVersion, ExpectedVersionSuffix, RelationalOperator.Equal);
             string commandText = _mapper.GenerateUpdateCommand(versionClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
+            // ConfigureCommandFromDataModelBase sets EntityVersion in SET clause to dataModel.EntityVersion (new version)
             _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
 
-            // Add the expected version parameter for the WHERE clause
-            _mapper.AddParameterForCommand(command, x => x.EntityVersion, expectedVersion);
+            // Add the expected version parameter for the WHERE clause with suffix
+            _mapper.AddParameterForCommandWithSuffix(command, x => x.EntityVersion, ExpectedVersionSuffix, expectedVersion);
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
