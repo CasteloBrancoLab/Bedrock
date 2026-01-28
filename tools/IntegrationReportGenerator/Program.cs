@@ -356,13 +356,24 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Bedrock - Relatório de Testes de Integração</title>
             <style>
-                :root{--passed:#10b981;--failed:#ef4444;--skipped:#f59e0b;--bg:#f9fafb;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--project-bg:#e0e7ff;--project-border:#6366f1}
+                /* Tema escuro (padrão) */
+                :root{--passed:#10b981;--failed:#ef4444;--skipped:#f59e0b;--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;--project-bg:#312e81;--project-border:#6366f1;--header-bg:linear-gradient(to right,#1e1b4b,#312e81);--feature-bg:linear-gradient(to right,#1e293b,#334155);--table-header-bg:#1e293b;--table-row-bg:#1e293b}
+                /* Tema claro */
+                .light-theme{--bg:#f9fafb;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--project-bg:#e0e7ff;--project-border:#6366f1;--header-bg:linear-gradient(to right,#eef2ff,#e0e7ff);--feature-bg:linear-gradient(to right,#f8fafc,#f1f5f9);--table-header-bg:#f8fafc;--table-row-bg:#f8fafc}
                 *{box-sizing:border-box;margin:0;padding:0}
-                body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+                body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;transition:background .3s,color .3s}
                 .container{max-width:1200px;margin:0 auto;padding:2rem}
-                .header{text-align:center;margin-bottom:2rem;border-bottom:2px solid var(--border);padding-bottom:1.5rem}
+                .header{text-align:center;margin-bottom:2rem;border-bottom:2px solid var(--border);padding-bottom:1.5rem;position:relative}
                 .header h1{font-size:2rem;font-weight:700}
                 .subtitle{color:var(--muted);font-size:.875rem}
+                /* Botão de tema */
+                .theme-toggle{position:absolute;top:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;cursor:pointer;display:flex;align-items:center;gap:.5rem;font-size:.875rem;color:var(--text);transition:all .2s}
+                .theme-toggle:hover{background:var(--border)}
+                .theme-toggle svg{width:1.25rem;height:1.25rem}
+                .theme-toggle .icon-sun{display:none}
+                .theme-toggle .icon-moon{display:block}
+                .light-theme .theme-toggle .icon-sun{display:block}
+                .light-theme .theme-toggle .icon-moon{display:none}
                 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem}
                 .card{background:var(--card);padding:1.25rem;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);text-align:center}
                 .card-value{font-size:2.5rem;font-weight:700}
@@ -383,11 +394,11 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
                 .summary-header{font-size:1.25rem;font-weight:600;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
                 .summary-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)}
                 .summary-table th,.summary-table td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border)}
-                .summary-table th{background:#f8fafc;font-weight:600;font-size:.75rem;text-transform:uppercase;color:var(--muted)}
+                .summary-table th{background:var(--table-header-bg);font-weight:600;font-size:.75rem;text-transform:uppercase;color:var(--muted)}
                 .summary-table tr:last-child td{border-bottom:none}
                 .summary-table .num{text-align:center;font-weight:600}
                 .summary-table .passed{color:var(--passed)}.summary-table .failed{color:var(--failed)}.summary-table .skipped{color:var(--skipped)}
-                .summary-table .project-row{background:#f8fafc;font-weight:600}
+                .summary-table .project-row{background:var(--table-row-bg);font-weight:600}
                 .summary-table .feature-row td:first-child{padding-left:2rem}
                 .progress-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;min-width:100px}
                 .progress-bar-fill{height:100%;background:var(--passed);transition:width .3s}
@@ -395,8 +406,8 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
                 /* Projetos e Features */
                 .results-header{font-size:1.25rem;font-weight:600;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
                 .project{margin-bottom:1.5rem}
-                .project-header{padding:1rem 1.5rem;background:linear-gradient(to right,#eef2ff,#e0e7ff);border-left:4px solid var(--project-border);border-radius:.75rem .75rem 0 0;font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer}
-                .project-header:hover{background:linear-gradient(to right,#e0e7ff,#c7d2fe)}
+                .project-header{padding:1rem 1.5rem;background:var(--header-bg);border-left:4px solid var(--project-border);border-radius:.75rem .75rem 0 0;font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:background .2s}
+                .project-header:hover{filter:brightness(1.1)}
                 .project-toggle{font-size:.75rem;color:var(--muted);transition:transform .2s}
                 .project.collapsed .project-toggle{transform:rotate(-90deg)}
                 .project-name{flex:1}
@@ -411,8 +422,8 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
 
                 .feature{background:var(--card);margin:0;border-radius:0;box-shadow:none;border-bottom:1px solid var(--border)}
                 .feature:last-child{border-bottom:none;border-radius:0 0 .75rem .75rem}
-                .feature-header{padding:.875rem 1.5rem;background:linear-gradient(to right,#f8fafc,#f1f5f9);font-weight:600;display:flex;align-items:center;gap:.75rem;cursor:pointer;font-size:.95rem}
-                .feature-header:hover{background:linear-gradient(to right,#f1f5f9,#e2e8f0)}
+                .feature-header{padding:.875rem 1.5rem;background:var(--feature-bg);font-weight:600;display:flex;align-items:center;gap:.75rem;cursor:pointer;font-size:.95rem;transition:background .2s}
+                .feature-header:hover{filter:brightness(1.1)}
                 .feature-toggle{font-size:.75rem;color:var(--muted);transition:transform .2s}
                 .feature.collapsed .feature-toggle{transform:rotate(-90deg)}
                 .feature-name{flex:1}
@@ -421,7 +432,7 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
                 .feature-stat.passed{background:#d1fae5;color:var(--passed)}
                 .feature-stat.failed{background:#fee2e2;color:var(--failed)}
                 .feature-stat.skipped{background:#fef3c7;color:var(--skipped)}
-                .feature-description{padding:.5rem 1.5rem;color:var(--muted);font-size:.85rem;font-style:italic;background:#f8fafc;border-top:1px solid var(--border)}
+                .feature-description{padding:.5rem 1.5rem;color:var(--muted);font-size:.85rem;font-style:italic;background:var(--card);border-top:1px solid var(--border)}
                 .feature-content{max-height:5000px;overflow:hidden;transition:max-height .3s}
                 .feature.collapsed .feature-content{max-height:0}
 
@@ -446,6 +457,10 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
         <body>
         <div class="container">
             <header class="header">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema claro/escuro">
+                    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.05-6.95 1.41-1.41M4.64 19.36l1.41-1.41m0-11.9L4.64 4.64m14.72 14.72-1.41-1.41"/></svg>
+                    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
                 <h1>Bedrock - Relatório de Testes de Integração</h1>
                 <p class="subtitle">Gerado em:
         """);
@@ -716,6 +731,8 @@ static string GenerateHtml(List<ProjectData> projects, EnvData env, TimeSpan dur
 
         document.querySelectorAll('.project-header').forEach(h=>h.addEventListener('click',()=>h.closest('.project').classList.toggle('collapsed')));
         document.querySelectorAll('.feature-header').forEach(h=>h.addEventListener('click',e=>{e.stopPropagation();h.closest('.feature').classList.toggle('collapsed');}));
+        function toggleTheme(){document.body.classList.toggle('light-theme');localStorage.setItem('theme',document.body.classList.contains('light-theme')?'light':'dark');}
+        (function(){if(localStorage.getItem('theme')==='light')document.body.classList.add('light-theme');})();
         </script>
         </body>
         </html>
