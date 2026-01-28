@@ -28,6 +28,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task ExecuteAsync_Should_CommitTransaction_OnSuccess()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork and Repository");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -62,6 +63,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task ExecuteAsync_Should_RollbackTransaction_OnHandlerFailure()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork and Repository");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -94,6 +96,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task ExecuteAsync_Should_RollbackTransaction_OnException()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork and Repository");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -127,6 +130,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task BeginTransactionAsync_Should_CreateTransaction()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
@@ -147,6 +151,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task BeginTransactionAsync_Should_BeIdempotent()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork with open connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
@@ -169,6 +174,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task CommitAsync_Should_PersistChanges()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork, Repository and inserting entity");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -197,6 +203,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task RollbackAsync_Should_DiscardChanges()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork, Repository and inserting entity");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
@@ -225,6 +232,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task CreateNpgsqlCommand_Should_AttachConnectionAndTransaction()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork with connection and transaction");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
@@ -247,6 +255,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task CloseConnectionAsync_Should_CloseAndDisposeTransaction()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork with open connection and transaction");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
@@ -269,6 +278,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     public async Task DisposeAsync_Should_CleanupResources()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up UnitOfWork with open connection");
         var executionContext = _fixture.CreateExecutionContext();
         var unitOfWork = _fixture.CreateAppUserUnitOfWork();

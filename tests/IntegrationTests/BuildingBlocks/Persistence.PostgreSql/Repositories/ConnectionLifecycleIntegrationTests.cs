@@ -28,6 +28,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task TryOpenConnectionAsync_Should_OpenConnection()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
@@ -48,6 +49,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task TryOpenConnectionAsync_Should_BeIdempotent()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and opening connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
@@ -70,6 +72,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task TryCloseConnectionAsync_Should_CloseConnection()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and opening connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
@@ -91,6 +94,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task TryCloseConnectionAsync_Should_BeIdempotent()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating, opening, and closing connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
@@ -112,6 +116,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public void IsOpen_Should_ReturnFalse_Initially()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating connection without opening");
         using var connection = _fixture.CreateAppUserConnection();
 
@@ -129,6 +134,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public void GetConnectionObject_Should_ReturnNull_BeforeOpen()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating connection without opening");
         using var connection = _fixture.CreateAppUserConnection();
 
@@ -146,6 +152,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task GetConnectionObject_Should_ReturnConnection_AfterOpen()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and opening connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
@@ -166,6 +173,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task DisposeAsync_Should_CloseConnection()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and opening connection");
         var executionContext = _fixture.CreateExecutionContext();
         var connection = _fixture.CreateAppUserConnection();
@@ -187,6 +195,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task Dispose_Should_CloseConnection()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and opening connection");
         var executionContext = _fixture.CreateExecutionContext();
         var connection = _fixture.CreateAppUserConnection();
@@ -207,6 +216,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task Connection_Should_ExecuteQueries_WhenOpen()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating and opening connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
@@ -229,6 +239,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     public async Task IsOpen_Should_ReflectConnectionState()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating connection");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();

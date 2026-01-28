@@ -1,3 +1,4 @@
+using Bedrock.BuildingBlocks.Testing.Integration.Environments;
 using Xunit.Abstractions;
 
 namespace Bedrock.BuildingBlocks.Testing.Integration;
@@ -8,6 +9,8 @@ namespace Bedrock.BuildingBlocks.Testing.Integration;
 /// </summary>
 public abstract class IntegrationTestBase : TestBase
 {
+    private readonly HashSet<string> _emittedEnvironments = [];
+
     /// <summary>
     /// Initializes a new instance of the <see cref="IntegrationTestBase"/> class.
     /// </summary>
@@ -15,6 +18,27 @@ public abstract class IntegrationTestBase : TestBase
     protected IntegrationTestBase(ITestOutputHelper outputHelper)
         : base(outputHelper)
     {
+    }
+
+    /// <summary>
+    /// Registers the use of an environment and emits its information to the test output.
+    /// This information is captured by the HTML report generator.
+    /// </summary>
+    /// <param name="environment">The environment being used.</param>
+    /// <returns>The same environment for fluent usage.</returns>
+    protected IIntegrationTestEnvironment UseEnvironment(IIntegrationTestEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+
+        // Only emit once per test method to avoid duplicates
+        if (_emittedEnvironments.Add(environment.Key))
+        {
+            var reportInfo = environment.GetReportInfo();
+            var json = reportInfo.ToJson();
+            OutputHelper.WriteLine($"##ENV##{json}");
+        }
+
+        return environment;
     }
 
     /// <summary>

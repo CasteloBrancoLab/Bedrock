@@ -22,4 +22,11 @@ public interface IIntegrationTestEnvironment : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task InitializeAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the report information for this environment.
+    /// Used to emit environment details to the test output for HTML report generation.
+    /// </summary>
+    /// <returns>The environment report information.</returns>
+    EnvironmentReportInfo GetReportInfo();
 }

@@ -2,25 +2,28 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 // Gerador de relatório HTML para testes de integração
-// Uso: IntegrationReportGenerator <trx-files-separados-por-;> <output-file> <git-branch> <git-commit>
+// Uso: IntegrationReportGenerator <trx-files-separados-por-;> <output-file> <git-branch> <git-commit> <root-dir>
 
 var trxFiles = args.Length > 0 ? args[0].Split(';', StringSplitOptions.RemoveEmptyEntries) : [];
 var outputFile = args.Length > 1 ? args[1] : "report.html";
 var gitBranch = args.Length > 2 ? args[2] : "unknown";
 var gitCommit = args.Length > 3 ? args[3] : "unknown";
+var rootDir = args.Length > 4 ? args[4] : Directory.GetCurrentDirectory();
 
 if (trxFiles.Length == 0)
 {
-    Console.WriteLine("Uso: IntegrationReportGenerator <trx-files> <output> <branch> <commit>");
+    Console.WriteLine("Uso: IntegrationReportGenerator <trx-files> <output> <branch> <commit> [root-dir]");
     Console.WriteLine("Nenhum arquivo TRX fornecido.");
     return 1;
 }
 
 var ns = XNamespace.Get("http://microsoft.com/schemas/VisualStudio/TeamTest/2010");
-var features = new Dictionary<string, FeatureData>();
+var projects = new Dictionary<string, ProjectData>();
+var environments = new Dictionary<string, TestEnvironmentData>();
 var totalDuration = TimeSpan.Zero;
 var executionTime = DateTime.UtcNow;
 
@@ -33,6 +36,26 @@ foreach (var trxFile in trxFiles)
     }
 
     Console.WriteLine($"Processando: {trxFile}");
+
+    // Extrair nome do projeto do arquivo TRX (formato: integration-<ProjectName>.trx)
+    var trxFileName = Path.GetFileNameWithoutExtension(trxFile);
+    var projectName = trxFileName.StartsWith("integration-")
+        ? trxFileName["integration-".Length..]
+        : trxFileName;
+
+    // Tentar encontrar o .csproj correspondente para obter o DisplayName
+    var projectDisplayName = FindProjectDisplayName(rootDir, projectName) ?? projectName;
+
+    if (!projects.TryGetValue(projectName, out var project))
+    {
+        project = new ProjectData
+        {
+            Name = projectName,
+            DisplayName = projectDisplayName
+        };
+        projects[projectName] = project;
+    }
+
     var doc = XDocument.Load(trxFile);
     var root = doc.Root!;
 
@@ -55,10 +78,10 @@ foreach (var trxFile in trxFiles)
         var className = def.ClassName;
         var methodName = def.MethodName;
 
-        if (!features.TryGetValue(className, out var feature))
+        if (!project.Features.TryGetValue(className, out var feature))
         {
             feature = new FeatureData { ClassName = className, Name = ExtractSimpleName(className) };
-            features[className] = feature;
+            project.Features[className] = feature;
         }
 
         var outcome = result.Attribute("outcome")?.Value ?? "Unknown";
@@ -66,6 +89,7 @@ foreach (var trxFile in trxFiles)
         totalDuration += duration;
 
         var steps = new List<StepData>();
+        string? scenarioEnvironment = null;
         var output = result.Descendants(ns + "StdOut").FirstOrDefault()?.Value ?? "";
         foreach (var line in output.Split('\n'))
         {
@@ -86,6 +110,65 @@ foreach (var trxFile in trxFiles)
                     // Ignora linhas mal formatadas
                 }
             }
+            else if (line.Contains("##ENV##"))
+            {
+                var json = line[(line.IndexOf("##ENV##") + 7)..].Trim();
+                try
+                {
+                    var envObj = JsonSerializer.Deserialize<JsonElement>(json);
+                    var envName = envObj.GetProperty("name").GetString() ?? "unknown";
+                    scenarioEnvironment = envName;
+
+                    // Agregar environment se ainda não existir
+                    if (!environments.ContainsKey(envName))
+                    {
+                        var services = new List<TestServiceData>();
+                        if (envObj.TryGetProperty("services", out var servicesArr))
+                        {
+                            foreach (var svc in servicesArr.EnumerateArray())
+                            {
+                                services.Add(new TestServiceData
+                                {
+                                    Type = svc.GetProperty("type").GetString() ?? "",
+                                    Key = svc.GetProperty("key").GetString() ?? "",
+                                    Image = svc.GetProperty("image").GetString() ?? "",
+                                    Databases = svc.TryGetProperty("databases", out var dbs)
+                                        ? dbs.EnumerateArray().Select(d => d.GetString() ?? "").ToList()
+                                        : [],
+                                    Users = svc.TryGetProperty("users", out var usrs)
+                                        ? usrs.EnumerateArray().Select(u => u.GetString() ?? "").ToList()
+                                        : []
+                                });
+                            }
+                        }
+
+                        string? memory = null;
+                        double? cpu = null;
+                        if (envObj.TryGetProperty("resources", out var resources))
+                        {
+                            if (resources.TryGetProperty("memory", out var mem))
+                                memory = mem.GetString();
+                            if (resources.TryGetProperty("cpu", out var cpuVal))
+                                cpu = cpuVal.GetDouble();
+                        }
+
+                        environments[envName] = new TestEnvironmentData
+                        {
+                            Name = envName,
+                            Services = services,
+                            Memory = memory,
+                            Cpu = cpu
+                        };
+                    }
+
+                    // Incrementar contador de uso
+                    environments[envName].TestCount++;
+                }
+                catch
+                {
+                    // Ignora linhas mal formatadas
+                }
+            }
         }
 
         var scenario = new ScenarioData
@@ -95,7 +178,8 @@ foreach (var trxFile in trxFiles)
             Status = outcome.ToLower() switch { "passed" => "passed", "failed" => "failed", _ => "skipped" },
             Duration = duration,
             Steps = steps,
-            ErrorMessage = result.Descendants(ns + "ErrorInfo").FirstOrDefault()?.Element(ns + "Message")?.Value
+            ErrorMessage = result.Descendants(ns + "ErrorInfo").FirstOrDefault()?.Element(ns + "Message")?.Value,
+            Environment = scenarioEnvironment
         };
 
         feature.Scenarios.Add(scenario);
@@ -106,16 +190,20 @@ foreach (var trxFile in trxFiles)
         executionTime = st.ToUniversalTime();
 }
 
-if (features.Count == 0)
+if (projects.Count == 0 || projects.Values.All(p => p.Features.Count == 0))
 {
     Console.WriteLine("Nenhum resultado de teste encontrado nos arquivos TRX.");
     return 1;
 }
 
-// Generate HTML
-var passed = features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "passed"));
-var failed = features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "failed"));
-var skipped = features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "skipped"));
+// Enriquecer features com informações dos atributos [Feature] dos arquivos .cs
+Console.WriteLine("Buscando atributos [Feature] nos arquivos de código...");
+EnrichFeaturesWithAttributes(projects, rootDir);
+
+// Calcular totais
+var passed = projects.Values.Sum(p => p.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "passed")));
+var failed = projects.Values.Sum(p => p.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "failed")));
+var skipped = projects.Values.Sum(p => p.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "skipped")));
 var total = passed + failed + skipped;
 var passRate = total > 0 ? (passed * 100.0 / total).ToString("F1", CultureInfo.InvariantCulture) : "0.0";
 
@@ -130,7 +218,7 @@ var env = new EnvData
     GitCommit = gitCommit.Length >= 7 ? gitCommit[..7] : gitCommit
 };
 
-var html = GenerateHtml(features.Values.OrderBy(f => f.Name).ToList(), env, totalDuration, passed, failed, skipped, passRate);
+var html = GenerateHtml(projects.Values.OrderBy(p => p.DisplayName).ToList(), environments.Values.OrderBy(e => e.Name).ToList(), env, totalDuration, passed, failed, skipped, passRate);
 
 // Garantir que o diretório existe
 var dir = Path.GetDirectoryName(outputFile);
@@ -139,8 +227,95 @@ if (!string.IsNullOrEmpty(dir))
 
 File.WriteAllText(outputFile, html);
 Console.WriteLine($"Relatório gerado: {outputFile}");
-Console.WriteLine($"  Total: {total} | Passou: {passed} | Falhou: {failed} | Ignorado: {skipped}");
+Console.WriteLine($"  Projetos: {projects.Count} | Total: {total} | Passou: {passed} | Falhou: {failed} | Ignorado: {skipped}");
 return 0;
+
+static string? FindProjectDisplayName(string rootDir, string projectName)
+{
+    // Procurar recursivamente por arquivos .csproj que contenham o nome do projeto
+    // Prioriza projetos de integração (em pastas IntegrationTests)
+    try
+    {
+        var csprojFiles = Directory.GetFiles(rootDir, "*.csproj", SearchOption.AllDirectories)
+            .OrderByDescending(p => p.Contains("IntegrationTests", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(p => p.Contains("tests", StringComparison.OrdinalIgnoreCase));
+
+        foreach (var csprojPath in csprojFiles)
+        {
+            var csprojName = Path.GetFileNameWithoutExtension(csprojPath);
+
+            // Verificar se o nome do projeto corresponde (parcial ou completo)
+            // O projectName vem do TRX (ex: "Persistence.PostgreSql")
+            // O csprojName é o nome do arquivo (ex: "Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql")
+            var matches = csprojName.EndsWith(projectName, StringComparison.OrdinalIgnoreCase) ||
+                csprojName.Equals(projectName, StringComparison.OrdinalIgnoreCase);
+
+            // Também verificar se o projeto de integração corresponde
+            if (!matches && csprojPath.Contains("IntegrationTests", StringComparison.OrdinalIgnoreCase))
+            {
+                matches = csprojName.Contains(projectName, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (matches)
+            {
+                var csprojContent = File.ReadAllText(csprojPath);
+                var doc = XDocument.Parse(csprojContent);
+
+                // Procurar por <IntegrationTestDisplayName> no .csproj
+                var displayName = doc.Descendants("IntegrationTestDisplayName").FirstOrDefault()?.Value;
+                if (!string.IsNullOrWhiteSpace(displayName))
+                {
+                    return displayName;
+                }
+
+                // Fallback: usar o nome do arquivo .csproj formatado
+                return FormatProjectName(csprojName);
+            }
+        }
+    }
+    catch
+    {
+        // Ignorar erros de acesso a diretórios
+    }
+
+    return FormatProjectName(projectName);
+}
+
+static string FormatProjectName(string name)
+{
+    // Remove prefixos comuns como "Bedrock.IntegrationTests.BuildingBlocks."
+    var cleanName = name;
+    var prefixes = new[] { "Bedrock.IntegrationTests.BuildingBlocks.", "Bedrock.IntegrationTests.", "IntegrationTests." };
+    foreach (var prefix in prefixes)
+    {
+        if (cleanName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            cleanName = cleanName[prefix.Length..];
+            break;
+        }
+    }
+
+    // Substituir pontos por espaços e adicionar espaços antes de maiúsculas
+    var sb = new StringBuilder();
+    foreach (var c in cleanName)
+    {
+        if (c == '.')
+        {
+            sb.Append(" - ");
+        }
+        else if (char.IsUpper(c) && sb.Length > 0 && sb[^1] != ' ' && sb[^1] != '-')
+        {
+            sb.Append(' ');
+            sb.Append(c);
+        }
+        else
+        {
+            sb.Append(c);
+        }
+    }
+
+    return sb.ToString();
+}
 
 static string ExtractSimpleName(string fullName)
 {
@@ -164,7 +339,73 @@ static string ConvertMethodName(string name)
     return sb.ToString();
 }
 
-static string GenerateHtml(List<FeatureData> features, EnvData env, TimeSpan duration, int passed, int failed, int skipped, string passRate)
+static void EnrichFeaturesWithAttributes(Dictionary<string, ProjectData> projects, string rootDir)
+{
+    // Regex para extrair o atributo [Feature("name", "description")] ou [Feature("name")]
+    var featureRegex = new Regex(
+        @"\[Feature\s*\(\s*""([^""]+)""\s*(?:,\s*""([^""]*)"")?\s*\)\]",
+        RegexOptions.Compiled);
+
+    // Regex para extrair o nome da classe
+    var classRegex = new Regex(
+        @"(?:public\s+)?(?:sealed\s+)?(?:partial\s+)?class\s+(\w+)",
+        RegexOptions.Compiled);
+
+    try
+    {
+        // Buscar arquivos .cs em pastas de IntegrationTests
+        var csFiles = Directory.GetFiles(rootDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => f.Contains("IntegrationTests", StringComparison.OrdinalIgnoreCase));
+
+        foreach (var csFile in csFiles)
+        {
+            var content = File.ReadAllText(csFile);
+
+            // Procurar atributo [Feature]
+            var featureMatch = featureRegex.Match(content);
+            if (!featureMatch.Success) continue;
+
+            var featureName = featureMatch.Groups[1].Value;
+            var featureDescription = featureMatch.Groups[2].Success ? featureMatch.Groups[2].Value : null;
+
+            // Procurar nome da classe após o atributo
+            var classMatch = classRegex.Match(content, featureMatch.Index);
+            if (!classMatch.Success) continue;
+
+            var className = classMatch.Groups[1].Value;
+
+            // Encontrar a feature correspondente em algum projeto
+            foreach (var project in projects.Values)
+            {
+                foreach (var feature in project.Features.Values)
+                {
+                    // Comparar o nome simples da classe
+                    if (feature.Name.Equals(className, StringComparison.OrdinalIgnoreCase) ||
+                        feature.ClassName.EndsWith(className, StringComparison.OrdinalIgnoreCase))
+                    {
+                        feature.DisplayName = featureName;
+                        feature.Description = string.IsNullOrWhiteSpace(featureDescription) ? null : featureDescription;
+                    }
+                }
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"  Aviso: Não foi possível buscar atributos [Feature]: {ex.Message}");
+    }
+}
+
+static string FormatDuration(TimeSpan duration)
+{
+    return duration.TotalMinutes >= 1
+        ? $"{(int)duration.TotalMinutes}m {duration.Seconds}s"
+        : duration.TotalSeconds >= 1
+            ? $"{duration.TotalSeconds:F2}s"
+            : $"{duration.TotalMilliseconds:F0}ms";
+}
+
+static string GenerateHtml(List<ProjectData> projects, List<TestEnvironmentData> testEnvironments, EnvData env, TimeSpan duration, int passed, int failed, int skipped, string passRate)
 {
     var total = passed + failed + skipped;
     var sb = new StringBuilder();
@@ -177,13 +418,24 @@ static string GenerateHtml(List<FeatureData> features, EnvData env, TimeSpan dur
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Bedrock - Relatório de Testes de Integração</title>
             <style>
-                :root{--passed:#10b981;--failed:#ef4444;--skipped:#f59e0b;--bg:#f9fafb;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb}
+                /* Tema escuro (padrão) */
+                :root{--passed:#10b981;--failed:#ef4444;--skipped:#f59e0b;--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;--project-bg:#312e81;--project-border:#6366f1;--header-bg:linear-gradient(to right,#1e1b4b,#312e81);--feature-bg:linear-gradient(to right,#1e293b,#334155);--table-header-bg:#1e293b;--table-row-bg:#1e293b;--badge-passed-bg:#065f46;--badge-passed-text:#6ee7b7;--badge-failed-bg:#7f1d1d;--badge-failed-text:#fca5a5;--badge-skipped-bg:#78350f;--badge-skipped-text:#fcd34d;--badge-total-bg:#374151;--badge-total-text:#e5e7eb;--chart-legend:#e5e7eb}
+                /* Tema claro */
+                .light-theme{--bg:#f9fafb;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--project-bg:#e0e7ff;--project-border:#6366f1;--header-bg:linear-gradient(to right,#eef2ff,#e0e7ff);--feature-bg:linear-gradient(to right,#f8fafc,#f1f5f9);--table-header-bg:#f8fafc;--table-row-bg:#f8fafc;--badge-passed-bg:#d1fae5;--badge-passed-text:#065f46;--badge-failed-bg:#fee2e2;--badge-failed-text:#991b1b;--badge-skipped-bg:#fef3c7;--badge-skipped-text:#92400e;--badge-total-bg:#e5e7eb;--badge-total-text:#1f2937;--chart-legend:#374151}
                 *{box-sizing:border-box;margin:0;padding:0}
-                body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+                body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;transition:background .3s,color .3s}
                 .container{max-width:1200px;margin:0 auto;padding:2rem}
-                .header{text-align:center;margin-bottom:2rem;border-bottom:2px solid var(--border);padding-bottom:1.5rem}
+                .header{text-align:center;margin-bottom:2rem;border-bottom:2px solid var(--border);padding-bottom:1.5rem;position:relative}
                 .header h1{font-size:2rem;font-weight:700}
                 .subtitle{color:var(--muted);font-size:.875rem}
+                /* Botão de tema */
+                .theme-toggle{position:absolute;top:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;cursor:pointer;display:flex;align-items:center;gap:.5rem;font-size:.875rem;color:var(--text);transition:all .2s}
+                .theme-toggle:hover{background:var(--border)}
+                .theme-toggle svg{width:1.25rem;height:1.25rem}
+                .theme-toggle .icon-sun{display:none}
+                .theme-toggle .icon-moon{display:block}
+                .light-theme .theme-toggle .icon-sun{display:block}
+                .light-theme .theme-toggle .icon-moon{display:none}
                 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem}
                 .card{background:var(--card);padding:1.25rem;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);text-align:center}
                 .card-value{font-size:2.5rem;font-weight:700}
@@ -198,40 +450,102 @@ static string GenerateHtml(List<FeatureData> features, EnvData env, TimeSpan dur
                 .env-info{font-size:.875rem}.env-info h3{font-size:1rem;margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:.5rem}
                 .env-info dl{display:grid;grid-template-columns:auto 1fr;gap:.5rem 1rem}
                 .env-info dt{color:var(--muted);font-size:.75rem;text-transform:uppercase}.env-info dd{font-weight:500}
-                .features-header{font-size:1.25rem;font-weight:600;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
-                .feature{background:var(--card);margin-bottom:1rem;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden}
-                .feature-header{padding:1rem 1.5rem;background:linear-gradient(to right,#f8fafc,#f1f5f9);font-weight:600;display:flex;align-items:center;gap:.75rem;cursor:pointer}
-                .feature-header:hover{background:linear-gradient(to right,#f1f5f9,#e2e8f0)}
+
+                /* Sumário por projeto */
+                .summary-section{margin-bottom:2rem}
+                .summary-header{font-size:1.25rem;font-weight:600;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
+                .summary-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+                .summary-table th,.summary-table td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border)}
+                .summary-table th{background:var(--table-header-bg);font-weight:600;font-size:.75rem;text-transform:uppercase;color:var(--muted)}
+                .summary-table tr:last-child td{border-bottom:none}
+                .summary-table .num{text-align:center;font-weight:600}
+                .summary-table .passed{color:var(--passed)}.summary-table .failed{color:var(--failed)}.summary-table .skipped{color:var(--skipped)}
+                .summary-table .project-row{background:var(--table-row-bg);font-weight:600}
+                .summary-table .feature-row td:first-child{padding-left:2rem}
+                .progress-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;min-width:100px}
+                .progress-bar-fill{height:100%;background:var(--passed);transition:width .3s}
+
+                /* Projetos e Features */
+                .results-header{font-size:1.25rem;font-weight:600;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
+                .project{margin-bottom:1.5rem}
+                .project-header{padding:1rem 1.5rem;background:var(--header-bg);border-left:4px solid var(--project-border);border-radius:.75rem .75rem 0 0;font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:background .2s}
+                .project-header:hover{filter:brightness(1.1)}
+                .project-toggle{font-size:.75rem;color:var(--muted);transition:transform .2s}
+                .project.collapsed .project-toggle{transform:rotate(-90deg)}
+                .project-name{flex:1}
+                .project-stats{display:flex;gap:.5rem;font-size:.75rem}
+                .project-stat{padding:.25rem .75rem;border-radius:9999px;font-weight:600}
+                .project-stat.passed{background:var(--badge-passed-bg);color:var(--badge-passed-text)}
+                .project-stat.failed{background:var(--badge-failed-bg);color:var(--badge-failed-text)}
+                .project-stat.skipped{background:var(--badge-skipped-bg);color:var(--badge-skipped-text)}
+                .project-stat.total{background:var(--badge-total-bg);color:var(--badge-total-text)}
+                .project-content{max-height:10000px;overflow:hidden;transition:max-height .3s}
+                .project.collapsed .project-content{max-height:0}
+
+                .feature{background:var(--card);margin:0;border-radius:0;box-shadow:none;border-bottom:1px solid var(--border)}
+                .feature:last-child{border-bottom:none;border-radius:0 0 .75rem .75rem}
+                .feature-header{padding:.875rem 1.5rem;background:var(--feature-bg);font-weight:600;display:flex;align-items:center;gap:.75rem;cursor:pointer;font-size:.95rem;transition:background .2s}
+                .feature-header:hover{filter:brightness(1.1)}
                 .feature-toggle{font-size:.75rem;color:var(--muted);transition:transform .2s}
                 .feature.collapsed .feature-toggle{transform:rotate(-90deg)}
                 .feature-name{flex:1}
                 .feature-stats{display:flex;gap:.5rem;font-size:.75rem}
                 .feature-stat{padding:.25rem .5rem;border-radius:9999px;font-weight:500}
-                .feature-stat.passed{background:#d1fae5;color:var(--passed)}
-                .feature-stat.failed{background:#fee2e2;color:var(--failed)}
-                .feature-stat.skipped{background:#fef3c7;color:var(--skipped)}
+                .feature-stat.passed{background:var(--badge-passed-bg);color:var(--badge-passed-text)}
+                .feature-stat.failed{background:var(--badge-failed-bg);color:var(--badge-failed-text)}
+                .feature-stat.skipped{background:var(--badge-skipped-bg);color:var(--badge-skipped-text)}
+                .feature-description{padding:.5rem 1.5rem;color:var(--muted);font-size:.85rem;font-style:italic;background:var(--card);border-top:1px solid var(--border)}
                 .feature-content{max-height:5000px;overflow:hidden;transition:max-height .3s}
                 .feature.collapsed .feature-content{max-height:0}
-                .scenario{padding:1rem 1.5rem;border-top:1px solid var(--border)}
+
+                .scenario{padding:.875rem 1.5rem;border-top:1px solid var(--border)}
                 .scenario:first-child{border-top:none}
                 .scenario-header{display:flex;align-items:center;gap:.75rem}
-                .scenario-status{font-size:1.25rem}
-                .scenario-name{font-weight:500;flex:1}
+                .scenario-status{font-size:1.1rem}
+                .scenario-name{font-weight:500;flex:1;font-size:.9rem}
+                .scenario-env{font-size:.7rem;padding:.15rem .5rem;border-radius:9999px;background:var(--border);color:var(--muted);font-weight:500}
                 .scenario-duration{color:var(--muted);font-size:.75rem;font-family:monospace}
-                .steps{margin-top:.75rem;padding-left:2.25rem}
-                .step{display:flex;gap:.5rem;font-size:.875rem;padding:.375rem 0;color:var(--muted)}
-                .step-type{font-weight:600;min-width:50px}
+
+                /* Seção de Ambientes */
+                .environments-section{margin-bottom:2rem}
+                .environment{background:var(--card);margin-bottom:.75rem;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden}
+                .environment-header{padding:1rem 1.5rem;background:var(--feature-bg);font-weight:600;display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:background .2s}
+                .environment-header:hover{filter:brightness(1.1)}
+                .environment-toggle{font-size:.75rem;color:var(--muted);transition:transform .2s}
+                .environment.collapsed .environment-toggle{transform:rotate(-90deg)}
+                .environment-name{flex:1;display:flex;align-items:center;gap:.5rem}
+                .environment-icon{font-size:1.25rem}
+                .environment-count{font-size:.75rem;padding:.25rem .5rem;border-radius:9999px;background:var(--badge-total-bg);color:var(--badge-total-text)}
+                .environment-content{max-height:2000px;overflow:hidden;transition:max-height .3s;padding:1rem 1.5rem}
+                .environment.collapsed .environment-content{max-height:0;padding:0 1.5rem}
+                .service-item{margin-bottom:1rem}
+                .service-item:last-child{margin-bottom:0}
+                .service-header{display:flex;align-items:center;gap:.5rem;font-weight:600;margin-bottom:.5rem}
+                .service-icon{font-size:1rem}
+                .service-details{display:grid;grid-template-columns:auto 1fr;gap:.25rem .75rem;font-size:.85rem;padding-left:1.5rem}
+                .service-details dt{color:var(--muted);font-size:.75rem}
+                .service-details dd{color:var(--text)}
+                .resources-section{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+                .resources-title{font-weight:600;font-size:.85rem;margin-bottom:.5rem;color:var(--muted)}
+                .steps{margin-top:.5rem;padding-left:2rem}
+                .step{display:flex;gap:.5rem;font-size:.8rem;padding:.25rem 0;color:var(--muted)}
+                .step-type{font-weight:600;min-width:45px}
                 .step-type.given{color:#3b82f6}.step-type.when{color:#8b5cf6}.step-type.then{color:#10b981}
-                .error-box{background:#fee2e2;border:1px solid #fecaca;border-radius:.5rem;padding:.75rem 1rem;margin-top:.75rem;margin-left:2.25rem;font-size:.875rem;color:#991b1b}
+                .error-box{background:#fee2e2;border:1px solid #fecaca;border-radius:.5rem;padding:.75rem 1rem;margin-top:.5rem;margin-left:2rem;font-size:.8rem;color:#991b1b}
                 .error-box strong{display:block;margin-bottom:.25rem}
-                .error-msg{font-family:monospace;white-space:pre-wrap;word-break:break-all}
+                .error-msg{font-family:monospace;white-space:pre-wrap;word-break:break-all;font-size:.75rem}
+
                 .footer{text-align:center;padding:2rem;color:var(--muted);font-size:.75rem;border-top:1px solid var(--border);margin-top:2rem}
-                @media print{body{background:#fff;font-size:12px}.container{max-width:none;padding:1rem}.card,.feature,.chart-section{box-shadow:none;border:1px solid var(--border)}.feature{break-inside:avoid}.feature.collapsed .feature-content{max-height:none}.feature-toggle{display:none}}
+                @media print{body{background:#fff;font-size:12px}.container{max-width:none;padding:1rem}.card,.project,.feature,.chart-section,.summary-table{box-shadow:none;border:1px solid var(--border)}.project,.feature{break-inside:avoid}.project.collapsed .project-content,.feature.collapsed .feature-content{max-height:none}.project-toggle,.feature-toggle{display:none}}
             </style>
         </head>
         <body>
         <div class="container">
             <header class="header">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema claro/escuro">
+                    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.05-6.95 1.41-1.41M4.64 19.36l1.41-1.41m0-11.9L4.64 4.64m14.72 14.72-1.41-1.41"/></svg>
+                    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
                 <h1>Bedrock - Relatório de Testes de Integração</h1>
                 <p class="subtitle">Gerado em:
         """);
@@ -308,88 +622,302 @@ static string GenerateHtml(List<FeatureData> features, EnvData env, TimeSpan dur
                     </dl>
                 </div>
             </section>
-            <section>
-                <h2 class="features-header">Resultados dos Testes</h2>
         """);
 
-    foreach (var feature in features)
+    // Sumário por Projeto e Classe
+    sb.Append("""
+            <section class="summary-section">
+                <h2 class="summary-header">Sumário por Projeto e Classe</h2>
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>Projeto / Classe</th>
+                            <th class="num">Total</th>
+                            <th class="num">Passou</th>
+                            <th class="num">Falhou</th>
+                            <th class="num">Ignorado</th>
+                            <th>Progresso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """);
+
+    foreach (var project in projects)
     {
-        var fp = feature.Scenarios.Count(s => s.Status == "passed");
-        var ff = feature.Scenarios.Count(s => s.Status == "failed");
-        var fs = feature.Scenarios.Count(s => s.Status == "skipped");
+        var pp = project.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "passed"));
+        var pf = project.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "failed"));
+        var ps = project.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "skipped"));
+        var pt = pp + pf + ps;
+        var pPct = pt > 0 ? (pp * 100.0 / pt) : 0;
 
-        sb.Append("""
-
-                <article class="feature">
-                    <div class="feature-header">
-                        <span class="feature-toggle">▼</span>
-                        <span class="feature-name">
-        """);
-        sb.Append(WebUtility.HtmlEncode(feature.Name));
-        sb.Append("""
-        </span>
-                        <div class="feature-stats">
-        """);
-        if (fp > 0) sb.Append($"""<span class="feature-stat passed">{fp} passou</span>""");
-        if (ff > 0) sb.Append($"""<span class="feature-stat failed">{ff} falhou</span>""");
-        if (fs > 0) sb.Append($"""<span class="feature-stat skipped">{fs} ignorado</span>""");
-        sb.Append("""
-        </div>
-                    </div>
-                    <div class="feature-content">
+        sb.Append($"""
+                        <tr class="project-row">
+                            <td><strong>{WebUtility.HtmlEncode(project.DisplayName)}</strong></td>
+                            <td class="num">{pt}</td>
+                            <td class="num passed">{pp}</td>
+                            <td class="num failed">{pf}</td>
+                            <td class="num skipped">{ps}</td>
+                            <td><div class="progress-bar"><div class="progress-bar-fill" style="width:{pPct:F0}%"></div></div></td>
+                        </tr>
         """);
 
-        foreach (var scenario in feature.Scenarios)
+        foreach (var feature in project.Features.Values.OrderBy(f => f.Name))
         {
-            var icon = scenario.Status switch { "passed" => "\u2705", "failed" => "\u274C", _ => "\u23ED\uFE0F" };
-            var dur = scenario.Duration.TotalMilliseconds < 1000
-                ? $"{scenario.Duration.TotalMilliseconds:F0}ms"
-                : $"{scenario.Duration.TotalSeconds:F2}s";
+            var fp = feature.Scenarios.Count(s => s.Status == "passed");
+            var ff = feature.Scenarios.Count(s => s.Status == "failed");
+            var fs = feature.Scenarios.Count(s => s.Status == "skipped");
+            var ft = fp + ff + fs;
+            var fPct = ft > 0 ? (fp * 100.0 / ft) : 0;
+
+            sb.Append($"""
+                        <tr class="feature-row">
+                            <td>{WebUtility.HtmlEncode(feature.EffectiveName)}</td>
+                            <td class="num">{ft}</td>
+                            <td class="num passed">{fp}</td>
+                            <td class="num failed">{ff}</td>
+                            <td class="num skipped">{fs}</td>
+                            <td><div class="progress-bar"><div class="progress-bar-fill" style="width:{fPct:F0}%"></div></div></td>
+                        </tr>
+        """);
+        }
+    }
+
+    sb.Append("""
+                    </tbody>
+                </table>
+            </section>
+        """);
+
+    // Seção de Ambientes de Teste (se houver)
+    if (testEnvironments.Count > 0)
+    {
+        sb.Append("""
+            <section class="environments-section">
+                <h2 class="summary-header">Ambientes de Teste</h2>
+        """);
+
+        foreach (var testEnv in testEnvironments)
+        {
+            sb.Append($"""
+                <article class="environment collapsed">
+                    <div class="environment-header">
+                        <span class="environment-toggle">▼</span>
+                        <span class="environment-name">
+                            <span class="environment-icon">🔧</span>
+                            {WebUtility.HtmlEncode(testEnv.Name)}
+                        </span>
+                        <span class="environment-count">{testEnv.TestCount} testes</span>
+                    </div>
+                    <div class="environment-content">
+            """);
+
+            foreach (var service in testEnv.Services)
+            {
+                var serviceIcon = service.Type.ToLower() switch
+                {
+                    "postgresql" => "🐘",
+                    "redis" => "🔴",
+                    "rabbitmq" => "🐰",
+                    "mongodb" => "🍃",
+                    "mysql" => "🐬",
+                    "sqlserver" => "📊",
+                    _ => "📦"
+                };
+
+                sb.Append($"""
+                        <div class="service-item">
+                            <div class="service-header">
+                                <span class="service-icon">{serviceIcon}</span>
+                                <span>{WebUtility.HtmlEncode(service.Type)} ({WebUtility.HtmlEncode(service.Key)})</span>
+                            </div>
+                            <dl class="service-details">
+                                <dt>Imagem</dt>
+                                <dd>{WebUtility.HtmlEncode(service.Image)}</dd>
+                """);
+
+                if (service.Databases.Count > 0)
+                {
+                    sb.Append($"""
+                                <dt>Databases</dt>
+                                <dd>{WebUtility.HtmlEncode(string.Join(", ", service.Databases))}</dd>
+                    """);
+                }
+
+                if (service.Users.Count > 0)
+                {
+                    sb.Append($"""
+                                <dt>Usuários</dt>
+                                <dd>{WebUtility.HtmlEncode(string.Join(", ", service.Users))}</dd>
+                    """);
+                }
+
+                sb.Append("""
+                            </dl>
+                        </div>
+                """);
+            }
+
+            // Recursos
+            if (testEnv.Memory is not null || testEnv.Cpu is not null)
+            {
+                sb.Append("""
+                        <div class="resources-section">
+                            <div class="resources-title">Recursos</div>
+                            <dl class="service-details">
+                """);
+
+                if (testEnv.Memory is not null)
+                {
+                    sb.Append($"""
+                                <dt>Memória</dt>
+                                <dd>{WebUtility.HtmlEncode(testEnv.Memory)}</dd>
+                    """);
+                }
+
+                if (testEnv.Cpu is not null)
+                {
+                    sb.Append($"""
+                                <dt>CPU</dt>
+                                <dd>{testEnv.Cpu:F1}</dd>
+                    """);
+                }
+
+                sb.Append("""
+                            </dl>
+                        </div>
+                """);
+            }
+
+            sb.Append("""
+                    </div>
+                </article>
+            """);
+        }
+
+        sb.Append("""
+            </section>
+        """);
+    }
+
+    // Resultados detalhados por Projeto
+    sb.Append("""
+            <section>
+                <h2 class="results-header">Resultados Detalhados</h2>
+        """);
+
+    foreach (var project in projects)
+    {
+        var pp = project.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "passed"));
+        var pf = project.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "failed"));
+        var ps = project.Features.Values.Sum(f => f.Scenarios.Count(s => s.Status == "skipped"));
+        var pt = pp + pf + ps;
+
+        sb.Append($"""
+
+                <article class="project">
+                    <div class="project-header">
+                        <span class="project-toggle">▼</span>
+                        <span class="project-name">{WebUtility.HtmlEncode(project.DisplayName)}</span>
+                        <div class="project-stats">
+                            <span class="project-stat total">{pt} testes</span>
+        """);
+        if (pp > 0) sb.Append($"""<span class="project-stat passed">{pp} passou</span>""");
+        if (pf > 0) sb.Append($"""<span class="project-stat failed">{pf} falhou</span>""");
+        if (ps > 0) sb.Append($"""<span class="project-stat skipped">{ps} ignorado</span>""");
+        sb.Append("""
+                        </div>
+                    </div>
+                    <div class="project-content">
+        """);
+
+        foreach (var feature in project.Features.Values.OrderBy(f => f.Name))
+        {
+            var fp = feature.Scenarios.Count(s => s.Status == "passed");
+            var ff = feature.Scenarios.Count(s => s.Status == "failed");
+            var fs = feature.Scenarios.Count(s => s.Status == "skipped");
+
+            // Usar EffectiveName (DisplayName do atributo [Feature] ou fallback para Name)
+            var featureTitle = feature.EffectiveName;
+            var hasDescription = !string.IsNullOrWhiteSpace(feature.Description);
 
             sb.Append($"""
 
-                        <div class="scenario">
-                            <div class="scenario-header">
-                                <span class="scenario-status">{icon}</span>
-                                <span class="scenario-name">{WebUtility.HtmlEncode(scenario.Name)}</span>
-                                <span class="scenario-duration">{dur}</span>
+                        <article class="feature">
+                            <div class="feature-header">
+                                <span class="feature-toggle">▼</span>
+                                <span class="feature-name">{WebUtility.HtmlEncode(featureTitle)}</span>
+                                <div class="feature-stats">
+        """);
+            if (fp > 0) sb.Append($"""<span class="feature-stat passed">{fp}</span>""");
+            if (ff > 0) sb.Append($"""<span class="feature-stat failed">{ff}</span>""");
+            if (fs > 0) sb.Append($"""<span class="feature-stat skipped">{fs}</span>""");
+            sb.Append("""
+                                </div>
                             </div>
         """);
 
-            if (scenario.Steps.Count > 0)
+            // Adicionar descrição se existir
+            if (hasDescription)
             {
-                sb.Append("""<div class="steps">""");
-                foreach (var step in scenario.Steps)
+                sb.Append($"""<div class="feature-description">{WebUtility.HtmlEncode(feature.Description!)}</div>""");
+            }
+
+            sb.Append("""
+                            <div class="feature-content">
+        """);
+
+            foreach (var scenario in feature.Scenarios)
+            {
+                var icon = scenario.Status switch { "passed" => "\u2705", "failed" => "\u274C", _ => "\u23ED\uFE0F" };
+                var dur = FormatDuration(scenario.Duration);
+                var envBadge = scenario.Environment is not null
+                    ? $"""<span class="scenario-env">{WebUtility.HtmlEncode(scenario.Environment)}</span>"""
+                    : "";
+
+                sb.Append($"""
+
+                                <div class="scenario">
+                                    <div class="scenario-header">
+                                        <span class="scenario-status">{icon}</span>
+                                        <span class="scenario-name">{WebUtility.HtmlEncode(scenario.Name)}</span>
+                                        {envBadge}
+                                        <span class="scenario-duration">{dur}</span>
+                                    </div>
+        """);
+
+                if (scenario.Steps.Count > 0)
                 {
-                    var cls = step.Type.ToLower();
-                    sb.Append($"""<div class="step"><span class="step-type {cls}">{step.Type}:</span><span>{WebUtility.HtmlEncode(step.Description)}</span></div>""");
+                    sb.Append("""<div class="steps">""");
+                    foreach (var step in scenario.Steps)
+                    {
+                        var cls = step.Type.ToLower();
+                        sb.Append($"""<div class="step"><span class="step-type {cls}">{step.Type}:</span><span>{WebUtility.HtmlEncode(step.Description)}</span></div>""");
+                    }
+                    sb.Append("</div>");
                 }
+
+                if (scenario.Status == "failed" && !string.IsNullOrEmpty(scenario.ErrorMessage))
+                {
+                    sb.Append($"""<div class="error-box"><strong>Erro</strong><div class="error-msg">{WebUtility.HtmlEncode(scenario.ErrorMessage)}</div></div>""");
+                }
+
                 sb.Append("</div>");
             }
 
-            if (scenario.Status == "failed" && !string.IsNullOrEmpty(scenario.ErrorMessage))
-            {
-                sb.Append($"""<div class="error-box"><strong>Erro</strong><div class="error-msg">{WebUtility.HtmlEncode(scenario.ErrorMessage)}</div></div>""");
-            }
-
-            sb.Append("</div>");
+            sb.Append("</div></article>");
         }
 
         sb.Append("</div></article>");
     }
 
-    var durationStr = duration.TotalMinutes >= 1
-        ? $"{(int)duration.TotalMinutes}m {duration.Seconds}s"
-        : duration.TotalSeconds >= 1
-            ? $"{duration.TotalSeconds:F2}s"
-            : $"{duration.TotalMilliseconds:F0}ms";
+    var durationStr = FormatDuration(duration);
 
     sb.Append($"""
 
             </section>
             <footer class="footer">
                 <p><strong>Bedrock Framework</strong> - Relatório de Testes de Integração</p>
-                <p>Duração Total: {durationStr}</p>
+                <p>Projetos: {projects.Count} | Duração Total: {durationStr}</p>
             </footer>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -397,11 +925,16 @@ static string GenerateHtml(List<FeatureData> features, EnvData env, TimeSpan dur
         """);
 
     // Chart.js config separada para evitar problemas com chaves em raw string literals
-    sb.Append($"new Chart(document.getElementById('chart'),{{type:'doughnut',data:{{labels:['Passou','Falhou','Ignorado'],datasets:[{{data:[{passed},{failed},{skipped}],backgroundColor:['#10b981','#ef4444','#f59e0b'],borderWidth:0}}]}},options:{{responsive:true,plugins:{{legend:{{position:'bottom'}}}},cutout:'60%'}}}});");
+    sb.Append($"var chartInstance=new Chart(document.getElementById('chart'),{{type:'doughnut',data:{{labels:['Passou','Falhou','Ignorado'],datasets:[{{data:[{passed},{failed},{skipped}],backgroundColor:['#10b981','#ef4444','#f59e0b'],borderWidth:0}}]}},options:{{responsive:true,plugins:{{legend:{{position:'bottom',labels:{{color:getComputedStyle(document.body).getPropertyValue('--chart-legend').trim()}}}}}},cutout:'60%'}}}});");
 
     sb.Append("""
 
-        document.querySelectorAll('.feature-header').forEach(h=>h.addEventListener('click',()=>h.closest('.feature').classList.toggle('collapsed')));
+        document.querySelectorAll('.project-header').forEach(h=>h.addEventListener('click',()=>h.closest('.project').classList.toggle('collapsed')));
+        document.querySelectorAll('.feature-header').forEach(h=>h.addEventListener('click',e=>{e.stopPropagation();h.closest('.feature').classList.toggle('collapsed');}));
+        document.querySelectorAll('.environment-header').forEach(h=>h.addEventListener('click',()=>h.closest('.environment').classList.toggle('collapsed')));
+        function toggleTheme(){document.body.classList.toggle('light-theme');localStorage.setItem('theme',document.body.classList.contains('light-theme')?'light':'dark');updateChartLegend();}
+        function updateChartLegend(){var c=getComputedStyle(document.body).getPropertyValue('--chart-legend').trim();chartInstance.options.plugins.legend.labels.color=c;chartInstance.update();}
+        (function(){if(localStorage.getItem('theme')==='light')document.body.classList.add('light-theme');updateChartLegend();})();
         </script>
         </body>
         </html>
@@ -410,11 +943,25 @@ static string GenerateHtml(List<FeatureData> features, EnvData env, TimeSpan dur
     return sb.ToString();
 }
 
+internal sealed class ProjectData
+{
+    public string Name { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public Dictionary<string, FeatureData> Features { get; } = [];
+}
+
 internal sealed class FeatureData
 {
     public string ClassName { get; set; } = "";
     public string Name { get; set; } = "";
+    public string? DisplayName { get; set; }
+    public string? Description { get; set; }
     public List<ScenarioData> Scenarios { get; } = [];
+
+    /// <summary>
+    /// Retorna o nome de exibição (DisplayName do atributo [Feature]) ou o Name como fallback.
+    /// </summary>
+    public string EffectiveName => DisplayName ?? Name;
 }
 
 internal sealed class ScenarioData
@@ -425,12 +972,31 @@ internal sealed class ScenarioData
     public TimeSpan Duration { get; set; }
     public List<StepData> Steps { get; set; } = [];
     public string? ErrorMessage { get; set; }
+    public string? Environment { get; set; }
 }
 
 internal sealed class StepData
 {
     public string Type { get; set; } = "";
     public string Description { get; set; } = "";
+}
+
+internal sealed class TestEnvironmentData
+{
+    public string Name { get; set; } = "";
+    public List<TestServiceData> Services { get; set; } = [];
+    public string? Memory { get; set; }
+    public double? Cpu { get; set; }
+    public int TestCount { get; set; }
+}
+
+internal sealed class TestServiceData
+{
+    public string Type { get; set; } = "";
+    public string Key { get; set; } = "";
+    public string Image { get; set; } = "";
+    public List<string> Databases { get; set; } = [];
+    public List<string> Users { get; set; } = [];
 }
 
 internal sealed class EnvData

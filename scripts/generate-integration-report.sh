@@ -36,6 +36,6 @@ GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 
 # Executar o gerador de relatório
 echo "Executando gerador de relatório..."
-dotnet run --project "$GENERATOR_PROJECT" --configuration Release -- "$TRX_FILES" "$OUTPUT_FILE" "$GIT_BRANCH" "$GIT_COMMIT"
+dotnet run --project "$GENERATOR_PROJECT" --configuration Release -- "$TRX_FILES" "$OUTPUT_FILE" "$GIT_BRANCH" "$GIT_COMMIT" "$ROOT_DIR"
 
 echo ">>> Relatório gerado: $OUTPUT_FILE"

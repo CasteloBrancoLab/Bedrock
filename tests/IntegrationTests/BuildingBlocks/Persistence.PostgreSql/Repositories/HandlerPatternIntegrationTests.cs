@@ -30,6 +30,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateAllAsync_Should_CallHandler_ForEachEntity()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating 3 test entities");
         var tenantCode = Guid.NewGuid();
         var entities = new List<TestEntityDataModel>
@@ -80,6 +81,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateAllAsync_Should_StopIteration_WhenHandlerReturnsFalse()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating 5 test entities");
         var tenantCode = Guid.NewGuid();
         for (int i = 0; i < 5; i++)
@@ -118,6 +120,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateAllAsync_Should_ApplyPagination()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating 10 test entities");
         var tenantCode = Guid.NewGuid();
         for (int i = 0; i < 10; i++)
@@ -174,6 +177,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateAllAsync_Should_ReturnTrue_OnEmptyResult()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Setting up context with no entities");
         var tenantCode = Guid.NewGuid();
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -207,6 +211,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateModifiedSinceAsync_Should_FilterByTimestamp()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entities with different LastChangedAt timestamps");
         var tenantCode = Guid.NewGuid();
         var baseTime = DateTimeOffset.UtcNow;
@@ -260,6 +265,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateModifiedSinceAsync_Should_OrderByLastChangedAt()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entities with specific LastChangedAt order");
         var tenantCode = Guid.NewGuid();
         var baseTime = DateTimeOffset.UtcNow;
@@ -314,6 +320,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateModifiedSinceAsync_Should_StopIteration_WhenHandlerReturnsFalse()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating 5 entities with recent LastChangedAt");
         var tenantCode = Guid.NewGuid();
         var baseTime = DateTimeOffset.UtcNow;
@@ -356,6 +363,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     public async Task EnumerateAllAsync_Should_FilterByTenantCode()
     {
         // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
         LogArrange("Creating entities for different tenants");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();

@@ -134,6 +134,44 @@ public sealed class IntegrationTestEnvironment : IIntegrationTestEnvironment
     }
 
     /// <inheritdoc />
+    public EnvironmentReportInfo GetReportInfo()
+    {
+        var services = new List<ServiceReportInfo>();
+        ResourcesReportInfo? resources = null;
+
+        foreach (var config in _postgresConfigs)
+        {
+            var service = new ServiceReportInfo
+            {
+                Type = "PostgreSQL",
+                Key = config.Key,
+                Image = config.Image,
+                Databases = [.. config.Databases.Keys],
+                Users = ["postgres", .. config.Users.Keys]
+            };
+
+            services.Add(service);
+
+            // Capture resource limits from the first container with limits
+            if (resources is null && (config.MemoryLimit is not null || config.CpuLimit is not null))
+            {
+                resources = new ResourcesReportInfo
+                {
+                    Memory = config.MemoryLimit,
+                    Cpu = config.CpuLimit
+                };
+            }
+        }
+
+        return new EnvironmentReportInfo
+        {
+            Name = _key,
+            Services = services,
+            Resources = resources
+        };
+    }
+
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         foreach (var container in _postgresContainers.Values)
