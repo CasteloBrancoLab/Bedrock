@@ -29,7 +29,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork and Repository");
+        LogArrange("Configurando UnitOfWork e Repository");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -37,7 +37,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Executing handler that returns true (success)");
+        LogAct("Executando handler que retorna true (sucesso)");
         var result = await unitOfWork.ExecuteAsync(
             executionContext,
             entity,
@@ -49,7 +49,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying transaction was committed and data persisted");
+        LogAssert("Verificando que a transação foi commitada e os dados persistidos");
         result.ShouldBeTrue();
         executionContext.HasExceptions.ShouldBeFalse();
 
@@ -64,7 +64,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork and Repository");
+        LogArrange("Configurando UnitOfWork e Repository");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -72,7 +72,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Executing handler that returns false (failure)");
+        LogAct("Executando handler que retorna false (falha)");
         var result = await unitOfWork.ExecuteAsync(
             executionContext,
             entity,
@@ -84,7 +84,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying transaction was rolled back and data not persisted");
+        LogAssert("Verificando que a transação foi revertida e os dados não persistidos");
         result.ShouldBeFalse();
 
         var notPersistedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
@@ -97,7 +97,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork and Repository");
+        LogArrange("Configurando UnitOfWork e Repository");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -105,7 +105,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Executing handler that throws exception");
+        LogAct("Executando handler que lança exceção");
         var result = await unitOfWork.ExecuteAsync(
             executionContext,
             entity,
@@ -117,7 +117,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying transaction was rolled back, exception logged, and data not persisted");
+        LogAssert("Verificando que a transação foi revertida, exceção registrada e dados não persistidos");
         result.ShouldBeFalse();
         executionContext.HasExceptions.ShouldBeTrue();
 
@@ -131,17 +131,17 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork");
+        LogArrange("Configurando UnitOfWork");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
 
         // Act
-        LogAct("Opening connection and beginning transaction");
+        LogAct("Abrindo conexão e iniciando transação");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying transaction was created");
+        LogAssert("Verificando que a transação foi criada");
         result.ShouldBeTrue();
         unitOfWork.GetCurrentTransaction().ShouldNotBeNull();
         LogInfo("Transaction created successfully");
@@ -152,7 +152,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork with open connection");
+        LogArrange("Configurando UnitOfWork com conexão aberta");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
@@ -160,11 +160,11 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
         var firstTransaction = unitOfWork.GetCurrentTransaction();
 
         // Act
-        LogAct("Calling BeginTransactionAsync again");
+        LogAct("Chamando BeginTransactionAsync novamente");
         var result = await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying second call returns true and same transaction");
+        LogAssert("Verificando que a segunda chamada retorna true e mesma transação");
         result.ShouldBeTrue();
         unitOfWork.GetCurrentTransaction().ShouldBe(firstTransaction);
         LogInfo("BeginTransactionAsync is idempotent");
@@ -175,7 +175,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork, Repository and inserting entity");
+        LogArrange("Configurando UnitOfWork, Repository e inserindo entidade");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -187,11 +187,11 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
         await repository.InsertAsync(executionContext, entity, CancellationToken.None);
 
         // Act
-        LogAct("Committing transaction");
+        LogAct("Commitando transação");
         var result = await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying changes were persisted after commit");
+        LogAssert("Verificando que as alterações foram persistidas após commit");
         result.ShouldBeTrue();
 
         var persistedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
@@ -204,7 +204,7 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork, Repository and inserting entity");
+        LogArrange("Configurando UnitOfWork, Repository e inserindo entidade");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -216,11 +216,11 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
         await repository.InsertAsync(executionContext, entity, CancellationToken.None);
 
         // Act
-        LogAct("Rolling back transaction");
+        LogAct("Revertendo transação");
         var result = await unitOfWork.RollbackAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying changes were discarded after rollback");
+        LogAssert("Verificando que as alterações foram descartadas após rollback");
         result.ShouldBeTrue();
 
         var notPersistedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
@@ -233,18 +233,18 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork with connection and transaction");
+        LogArrange("Configurando UnitOfWork com conexão e transação");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
 
         // Act
-        LogAct("Creating NpgsqlCommand");
+        LogAct("Criando NpgsqlCommand");
         using var command = unitOfWork.CreateNpgsqlCommand("SELECT 1");
 
         // Assert
-        LogAssert("Verifying command has connection and transaction attached");
+        LogAssert("Verificando que o comando possui conexão e transação associados");
         command.ShouldNotBeNull();
         command.Connection.ShouldBe(unitOfWork.GetCurrentConnection());
         command.Transaction.ShouldBe(unitOfWork.GetCurrentTransaction());
@@ -256,18 +256,18 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork with open connection and transaction");
+        LogArrange("Configurando UnitOfWork com conexão e transação abertas");
         var executionContext = _fixture.CreateExecutionContext();
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
 
         // Act
-        LogAct("Closing connection");
+        LogAct("Fechando conexão");
         var result = await unitOfWork.CloseConnectionAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying connection is closed and transaction disposed");
+        LogAssert("Verificando que a conexão está fechada e a transação descartada");
         result.ShouldBeTrue();
         unitOfWork.GetCurrentTransaction().ShouldBeNull();
         unitOfWork.GetCurrentConnection().ShouldBeNull();
@@ -279,18 +279,18 @@ public class UnitOfWorkIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up UnitOfWork with open connection");
+        LogArrange("Configurando UnitOfWork com conexão aberta");
         var executionContext = _fixture.CreateExecutionContext();
         var unitOfWork = _fixture.CreateAppUserUnitOfWork();
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
 
         // Act
-        LogAct("Disposing UnitOfWork");
+        LogAct("Descartando UnitOfWork");
         await unitOfWork.DisposeAsync();
 
         // Assert
-        LogAssert("Verifying resources are cleaned up");
+        LogAssert("Verificando que os recursos foram limpos");
         unitOfWork.GetCurrentTransaction().ShouldBeNull();
         unitOfWork.GetCurrentConnection().ShouldBeNull();
         LogInfo("DisposeAsync cleaned up resources correctly");

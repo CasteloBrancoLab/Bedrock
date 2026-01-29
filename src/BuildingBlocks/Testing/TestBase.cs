@@ -112,33 +112,33 @@ public abstract class TestBase
     }
 
     /// <summary>
-    /// Logs the Arrange phase of AAA pattern (Given in BDD).
+    /// Logs the Arrange phase of AAA pattern (Dado in BDD).
     /// Emits structured output for report generation.
     /// </summary>
-    protected void LogArrange(string description = "Setting up test data")
+    protected void LogArrange(string description = "Preparando dados de teste")
     {
         WriteLog("ARRANGE", description);
-        WriteStep("Given", description);
+        WriteStep("Dado", description);
     }
 
     /// <summary>
-    /// Logs the Act phase of AAA pattern (When in BDD).
+    /// Logs the Act phase of AAA pattern (Quando in BDD).
     /// Emits structured output for report generation.
     /// </summary>
-    protected void LogAct(string description = "Executing action")
+    protected void LogAct(string description = "Executando ação")
     {
         WriteLog("ACT", description);
-        WriteStep("When", description);
+        WriteStep("Quando", description);
     }
 
     /// <summary>
-    /// Logs the Assert phase of AAA pattern (Then in BDD).
+    /// Logs the Assert phase of AAA pattern (Então in BDD).
     /// Emits structured output for report generation.
     /// </summary>
-    protected void LogAssert(string description = "Verifying results")
+    protected void LogAssert(string description = "Verificando resultados")
     {
         WriteLog("ASSERT", description);
-        WriteStep("Then", description);
+        WriteStep("Então", description);
     }
 
     private void WriteLog(string level, string message)

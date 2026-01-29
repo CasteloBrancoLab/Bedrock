@@ -31,7 +31,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating 3 test entities");
+        LogArrange("Criando 3 entidades de teste");
         var tenantCode = Guid.NewGuid();
         var entities = new List<TestEntityDataModel>
         {
@@ -53,7 +53,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var enumeratedIds = new List<Guid>();
 
         // Act
-        LogAct("Enumerating all entities");
+        LogAct("Enumerando todas as entidades");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.EnumerateAllAsync(
             executionContext,
@@ -67,7 +67,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying handler was called for each entity");
+        LogAssert("Verificando que o handler foi chamado para cada entidade");
         result.ShouldBeTrue();
         handlerCallCount.ShouldBe(3);
         foreach (var entity in entities)
@@ -82,7 +82,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating 5 test entities");
+        LogArrange("Criando 5 entidades de teste");
         var tenantCode = Guid.NewGuid();
         for (int i = 0; i < 5; i++)
         {
@@ -97,7 +97,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var handlerCallCount = 0;
 
         // Act
-        LogAct("Enumerating with handler that stops after 2 entities");
+        LogAct("Enumerando com handler que para após 2 entidades");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.EnumerateAllAsync(
             executionContext,
@@ -110,7 +110,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying iteration stopped after handler returned false");
+        LogAssert("Verificando que a iteração parou após o handler retornar false");
         result.ShouldBeTrue();
         handlerCallCount.ShouldBe(2); // Handler called exactly 2 times
         LogInfo($"Iteration correctly stopped after {handlerCallCount} calls");
@@ -121,7 +121,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating 10 test entities");
+        LogArrange("Criando 10 entidades de teste");
         var tenantCode = Guid.NewGuid();
         for (int i = 0; i < 10; i++)
         {
@@ -137,7 +137,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var page2Entities = new List<Guid>();
 
         // Act
-        LogAct("Enumerating page 1 (3 items)");
+        LogAct("Enumerando página 1 (3 itens)");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await repository.EnumerateAllAsync(
             executionContext,
@@ -149,7 +149,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             },
             CancellationToken.None);
 
-        LogAct("Enumerating page 2 (3 items)");
+        LogAct("Enumerando página 2 (3 itens)");
         await repository.EnumerateAllAsync(
             executionContext,
             PaginationInfo.Create(page: 2, pageSize: 3),
@@ -161,7 +161,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying pagination applied correctly");
+        LogAssert("Verificando que a paginação foi aplicada corretamente");
         page1Entities.Count.ShouldBe(3);
         page2Entities.Count.ShouldBe(3);
 
@@ -178,7 +178,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up context with no entities");
+        LogArrange("Configurando contexto sem entidades");
         var tenantCode = Guid.NewGuid();
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
@@ -187,7 +187,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var handlerCallCount = 0;
 
         // Act
-        LogAct("Enumerating entities for empty tenant");
+        LogAct("Enumerando entidades para tenant vazio");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.EnumerateAllAsync(
             executionContext,
@@ -200,7 +200,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying returns true with zero handler calls");
+        LogAssert("Verificando que retorna true com zero chamadas ao handler");
         result.ShouldBeTrue();
         handlerCallCount.ShouldBe(0);
         executionContext.HasExceptions.ShouldBeFalse();
@@ -212,7 +212,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entities with different LastChangedAt timestamps");
+        LogArrange("Criando entidades com timestamps LastChangedAt diferentes");
         var tenantCode = Guid.NewGuid();
         var baseTime = DateTimeOffset.UtcNow;
 
@@ -239,7 +239,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var enumeratedEntities = new List<string>();
 
         // Act
-        LogAct("Enumerating entities modified since 5 days ago");
+        LogAct("Enumerando entidades modificadas desde 5 dias atrás");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.EnumerateModifiedSinceAsync(
             executionContext,
@@ -252,7 +252,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying only recent entities were enumerated");
+        LogAssert("Verificando que apenas entidades recentes foram enumeradas");
         result.ShouldBeTrue();
         enumeratedEntities.Count.ShouldBe(2);
         enumeratedEntities.ShouldContain("RecentEntity");
@@ -266,7 +266,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entities with specific LastChangedAt order");
+        LogArrange("Criando entidades com ordem específica de LastChangedAt");
         var tenantCode = Guid.NewGuid();
         var baseTime = DateTimeOffset.UtcNow;
 
@@ -294,7 +294,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var enumeratedNames = new List<string>();
 
         // Act
-        LogAct("Enumerating entities modified since 4 hours ago");
+        LogAct("Enumerando entidades modificadas desde 4 horas atrás");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.EnumerateModifiedSinceAsync(
             executionContext,
@@ -307,7 +307,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entities are in ascending order by LastChangedAt");
+        LogAssert("Verificando que as entidades estão em ordem crescente por LastChangedAt");
         result.ShouldBeTrue();
         enumeratedNames.Count.ShouldBe(3);
         enumeratedNames[0].ShouldBe("Entity1"); // -3 hours
@@ -321,7 +321,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating 5 entities with recent LastChangedAt");
+        LogArrange("Criando 5 entidades com LastChangedAt recente");
         var tenantCode = Guid.NewGuid();
         var baseTime = DateTimeOffset.UtcNow;
 
@@ -340,7 +340,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var handlerCallCount = 0;
 
         // Act
-        LogAct("Enumerating with handler that stops after 3 entities");
+        LogAct("Enumerando com handler que para após 3 entidades");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.EnumerateModifiedSinceAsync(
             executionContext,
@@ -353,7 +353,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying iteration stopped after handler returned false");
+        LogAssert("Verificando que a iteração parou após o handler retornar false");
         result.ShouldBeTrue();
         handlerCallCount.ShouldBe(3);
         LogInfo($"Iteration correctly stopped after {handlerCallCount} calls");
@@ -364,7 +364,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entities for different tenants");
+        LogArrange("Criando entidades para tenants diferentes");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
 
@@ -381,7 +381,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
         var enumeratedNames = new List<string>();
 
         // Act
-        LogAct("Tenant A enumerates entities");
+        LogAct("Tenant A enumera entidades");
         await unitOfWork.OpenConnectionAsync(executionContextA, CancellationToken.None);
         var result = await repository.EnumerateAllAsync(
             executionContextA,
@@ -394,7 +394,7 @@ public class HandlerPatternIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying only Tenant A's entities were enumerated");
+        LogAssert("Verificando que apenas as entidades do Tenant A foram enumeradas");
         result.ShouldBeTrue();
         enumeratedNames.Count.ShouldBe(1);
         enumeratedNames.ShouldContain("TenantAEntity");

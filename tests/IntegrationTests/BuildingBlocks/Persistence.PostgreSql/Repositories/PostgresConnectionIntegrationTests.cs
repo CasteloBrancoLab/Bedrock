@@ -12,7 +12,7 @@ namespace Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Reposit
 /// Integration tests for PostgreSQL connection and basic operations.
 /// </summary>
 [Collection("PostgresRepository")]
-[Feature("PostgreSQL Connection", "Basic connection and authentication tests for PostgreSQL database")]
+[Feature("PostgreSQL Connection", "Testes básicos de conexão e autenticação para banco de dados PostgreSQL")]
 public class PostgresConnectionIntegrationTests : IntegrationTestBase
 {
     private readonly PostgresRepositoryFixture _fixture;
@@ -30,13 +30,13 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     public async Task Should_connect_to_database_with_admin_user()
     {
         // Arrange
-        LogArrange("Getting admin connection string");
+        LogArrange("Obtendo string de conexão do admin");
         var env = UseEnvironment(_fixture.Environments["repository"]);
         var connectionString = env.Postgres["main"].GetConnectionString("testdb");
         LogDatabaseConnection("testdb", "postgres");
 
         // Act
-        LogAct("Opening connection and executing query");
+        LogAct("Abrindo conexão e executando query");
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
@@ -44,7 +44,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         var result = await command.ExecuteScalarAsync();
 
         // Assert
-        LogAssert("Verifying connection and query execution");
+        LogAssert("Verificando conexão e execução da query");
         result.ShouldBe(1);
         LogInfo("Successfully connected and executed query");
     }
@@ -54,13 +54,13 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     public async Task Should_connect_to_database_with_app_user()
     {
         // Arrange
-        LogArrange("Getting app user connection string");
+        LogArrange("Obtendo string de conexão do app_user");
         var env = UseEnvironment(_fixture.Environments["repository"]);
         var connectionString = env.Postgres["main"].GetConnectionString("testdb", user: "app_user");
         LogDatabaseConnection("testdb", "app_user");
 
         // Act
-        LogAct("Opening connection and executing query");
+        LogAct("Abrindo conexão e executando query");
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
@@ -68,7 +68,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         var result = await command.ExecuteScalarAsync();
 
         // Assert
-        LogAssert("Verifying connection and query execution");
+        LogAssert("Verificando conexão e execução da query");
         result.ShouldBe(1);
         LogInfo("Successfully connected as app_user");
     }
@@ -78,7 +78,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     public async Task Should_insert_and_select_with_app_user()
     {
         // Arrange
-        LogArrange("Preparing test data");
+        LogArrange("Preparando dados de teste");
         var env = UseEnvironment(_fixture.Environments["repository"]);
         var connectionString = env.Postgres["main"].GetConnectionString("testdb", user: "app_user");
         var entityId = Guid.NewGuid();
@@ -88,7 +88,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         LogDatabaseConnection("testdb", "app_user");
 
         // Act
-        LogAct("Inserting and selecting entity");
+        LogAct("Inserindo e selecionando entidade");
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
@@ -121,7 +121,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         LogSql("SELECT executed successfully");
 
         // Assert
-        LogAssert("Verifying entity was persisted correctly");
+        LogAssert("Verificando que a entidade foi persistida corretamente");
         selectedName.ShouldBe(entityName);
         LogInfo($"Entity '{entityName}' persisted and retrieved successfully");
     }
@@ -131,7 +131,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     public async Task Should_select_with_readonly_user()
     {
         // Arrange
-        LogArrange("Setting up test with admin, then reading with readonly user");
+        LogArrange("Configurando teste com admin e lendo com usuário readonly");
         var env = UseEnvironment(_fixture.Environments["repository"]);
 
         // First, insert with admin
@@ -163,7 +163,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         LogInfo("Entity inserted with admin user");
 
         // Act
-        LogAct("Selecting with readonly user");
+        LogAct("Selecionando com usuário readonly");
         var readonlyConnectionString = env.Postgres["main"].GetConnectionString("testdb", user: "readonly_user");
         LogDatabaseConnection("testdb", "readonly_user");
 
@@ -179,7 +179,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         var selectedName = await selectCommand.ExecuteScalarAsync();
 
         // Assert
-        LogAssert("Verifying readonly user can select");
+        LogAssert("Verificando que o usuário readonly consegue selecionar");
         selectedName.ShouldBe(entityName);
         LogInfo("Readonly user successfully retrieved entity");
     }
@@ -189,7 +189,7 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
     public async Task Should_fail_insert_with_readonly_user()
     {
         // Arrange
-        LogArrange("Attempting insert with readonly user (should fail)");
+        LogArrange("Tentando inserção com usuário readonly (deve falhar)");
         var env = UseEnvironment(_fixture.Environments["repository"]);
         var connectionString = env.Postgres["main"].GetConnectionString("testdb", user: "readonly_user");
         LogDatabaseConnection("testdb", "readonly_user");
@@ -211,11 +211,11 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         insertCommand.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
 
         // Act & Assert
-        LogAct("Executing INSERT (expecting permission denied)");
+        LogAct("Executando INSERT (esperando permissão negada)");
         var exception = await Should.ThrowAsync<PostgresException>(
             insertCommand.ExecuteNonQueryAsync);
 
-        LogAssert("Verifying permission was denied");
+        LogAssert("Verificando que a permissão foi negada");
         exception.SqlState.ShouldBe("42501"); // insufficient_privilege
         LogInfo($"Permission correctly denied: {exception.MessageText}");
     }

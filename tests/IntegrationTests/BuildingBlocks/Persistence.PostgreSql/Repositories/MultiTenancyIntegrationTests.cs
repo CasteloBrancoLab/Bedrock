@@ -29,7 +29,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity for Tenant B");
+        LogArrange("Criando entidade para o Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
         var entityB = _fixture.CreateTestEntity(tenantCode: tenantCodeB, name: "TenantBEntity");
@@ -40,12 +40,12 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Tenant A tries to read Tenant B's entity by ID");
+        LogAct("Tenant A tenta ler a entidade do Tenant B por ID");
         await unitOfWork.OpenConnectionAsync(executionContextA, CancellationToken.None);
         var result = await repository.GetByIdAsync(executionContextA, entityB.Id, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying Tenant A cannot see Tenant B's entity");
+        LogAssert("Verificando que o Tenant A não consegue ver a entidade do Tenant B");
         result.ShouldBeNull();
         executionContextA.HasExceptions.ShouldBeFalse();
         LogInfo("Multi-tenancy isolation verified: Tenant A cannot see Tenant B's entity");
@@ -56,7 +56,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity for Tenant B");
+        LogArrange("Criando entidade para o Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
         var entityB = _fixture.CreateTestEntity(tenantCode: tenantCodeB);
@@ -67,12 +67,12 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Tenant A checks if Tenant B's entity exists");
+        LogAct("Tenant A verifica se a entidade do Tenant B existe");
         await unitOfWork.OpenConnectionAsync(executionContextA, CancellationToken.None);
         var result = await repository.ExistsAsync(executionContextA, entityB.Id, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying Tenant A sees entity as non-existent");
+        LogAssert("Verificando que o Tenant A vê a entidade como inexistente");
         result.ShouldBeFalse();
         executionContextA.HasExceptions.ShouldBeFalse();
         LogInfo("Multi-tenancy isolation verified: ExistsAsync returns false for other tenant's entity");
@@ -83,7 +83,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entities for Tenant A and Tenant B");
+        LogArrange("Criando entidades para o Tenant A e Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
 
@@ -102,7 +102,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
         var enumeratedEntities = new List<Guid>();
 
         // Act
-        LogAct("Tenant A enumerates all entities");
+        LogAct("Tenant A enumera todas as entidades");
         await unitOfWork.OpenConnectionAsync(executionContextA, CancellationToken.None);
         var result = await repository.EnumerateAllAsync(
             executionContextA,
@@ -115,7 +115,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
             CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying only Tenant A's entities were enumerated");
+        LogAssert("Verificando que apenas as entidades do Tenant A foram enumeradas");
         result.ShouldBeTrue();
         enumeratedEntities.Count.ShouldBe(2);
         enumeratedEntities.ShouldContain(entityA1.Id);
@@ -129,7 +129,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity for Tenant B");
+        LogArrange("Criando entidade para o Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
         var entityB = _fixture.CreateTestEntity(tenantCode: tenantCodeB, name: "OriginalName", entityVersion: 1);
@@ -149,14 +149,14 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
         modifiedEntity.CreatedAt = entityB.CreatedAt;
 
         // Act
-        LogAct("Tenant A tries to update Tenant B's entity");
+        LogAct("Tenant A tenta atualizar a entidade do Tenant B");
         await unitOfWork.OpenConnectionAsync(executionContextA, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContextA, CancellationToken.None);
         var result = await repository.UpdateAsync(executionContextA, modifiedEntity, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContextA, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying Tenant A cannot modify Tenant B's entity");
+        LogAssert("Verificando que o Tenant A não consegue modificar a entidade do Tenant B");
         result.ShouldBeFalse(); // No rows affected because WHERE clause includes TenantCode from ExecutionContext
 
         var unchangedEntity = await _fixture.GetTestEntityDirectlyAsync(entityB.Id, tenantCodeB);
@@ -170,7 +170,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity for Tenant B");
+        LogArrange("Criando entidade para o Tenant B");
         var tenantCodeA = Guid.NewGuid();
         var tenantCodeB = Guid.NewGuid();
         var entityB = _fixture.CreateTestEntity(tenantCode: tenantCodeB, entityVersion: 1);
@@ -181,14 +181,14 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Tenant A tries to delete Tenant B's entity");
+        LogAct("Tenant A tenta excluir a entidade do Tenant B");
         await unitOfWork.OpenConnectionAsync(executionContextA, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContextA, CancellationToken.None);
         var result = await repository.DeleteAsync(executionContextA, entityB.Id, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContextA, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying Tenant A cannot delete Tenant B's entity");
+        LogAssert("Verificando que o Tenant A não consegue excluir a entidade do Tenant B");
         result.ShouldBeFalse(); // No rows affected because WHERE clause includes TenantCode
 
         var stillExistsEntity = await _fixture.GetTestEntityDirectlyAsync(entityB.Id, tenantCodeB);
@@ -201,7 +201,7 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity and setting ExecutionContext with specific TenantCode");
+        LogArrange("Criando entidade e configurando ExecutionContext com TenantCode específico");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -209,14 +209,14 @@ public class MultiTenancyIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Inserting entity");
+        LogAct("Inserindo entidade");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.InsertAsync(executionContext, entity, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity was stored with correct TenantCode");
+        LogAssert("Verificando que a entidade foi armazenada com o TenantCode correto");
         result.ShouldBeTrue();
 
         var persistedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
