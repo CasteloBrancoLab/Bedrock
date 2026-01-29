@@ -29,16 +29,16 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating connection");
+        LogArrange("Criando conexão");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
 
         // Act
-        LogAct("Opening connection");
+        LogAct("Abrindo conexão");
         var result = await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying connection is open");
+        LogAssert("Verificando que a conexão está aberta");
         result.ShouldBeTrue();
         connection.IsOpen().ShouldBeTrue();
         connection.GetConnectionObject().ShouldNotBeNull();
@@ -50,18 +50,18 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and opening connection");
+        LogArrange("Criando e abrindo conexão");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
         var firstConnectionObject = connection.GetConnectionObject();
 
         // Act
-        LogAct("Calling TryOpenConnectionAsync again");
+        LogAct("Chamando TryOpenConnectionAsync novamente");
         var result = await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying second call returns true and connection is still open");
+        LogAssert("Verificando que a segunda chamada retorna true e a conexão permanece aberta");
         result.ShouldBeTrue();
         connection.IsOpen().ShouldBeTrue();
         // Note: The double-check locking pattern returns early if already open
@@ -73,17 +73,17 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and opening connection");
+        LogArrange("Criando e abrindo conexão");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
 
         // Act
-        LogAct("Closing connection");
+        LogAct("Fechando conexão");
         var result = await connection.TryCloseConnectionAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying connection is closed");
+        LogAssert("Verificando que a conexão está fechada");
         result.ShouldBeTrue();
         connection.IsOpen().ShouldBeFalse();
         connection.GetConnectionObject().ShouldBeNull();
@@ -95,18 +95,18 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating, opening, and closing connection");
+        LogArrange("Criando, abrindo e fechando conexão");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
         await connection.TryCloseConnectionAsync(executionContext, CancellationToken.None);
 
         // Act
-        LogAct("Calling TryCloseConnectionAsync again on already closed connection");
+        LogAct("Chamando TryCloseConnectionAsync novamente em conexão já fechada");
         var result = await connection.TryCloseConnectionAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying second close returns true without error");
+        LogAssert("Verificando que o segundo fechamento retorna true sem erro");
         result.ShouldBeTrue();
         connection.IsOpen().ShouldBeFalse();
         LogInfo("TryCloseConnectionAsync is idempotent");
@@ -117,15 +117,15 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating connection without opening");
+        LogArrange("Criando conexão sem abrir");
         using var connection = _fixture.CreateAppUserConnection();
 
         // Act
-        LogAct("Checking IsOpen");
+        LogAct("Verificando IsOpen");
         var result = connection.IsOpen();
 
         // Assert
-        LogAssert("Verifying IsOpen returns false");
+        LogAssert("Verificando que IsOpen retorna false");
         result.ShouldBeFalse();
         LogInfo("IsOpen correctly returns false before opening");
     }
@@ -135,15 +135,15 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating connection without opening");
+        LogArrange("Criando conexão sem abrir");
         using var connection = _fixture.CreateAppUserConnection();
 
         // Act
-        LogAct("Getting connection object");
+        LogAct("Obtendo objeto de conexão");
         var result = connection.GetConnectionObject();
 
         // Assert
-        LogAssert("Verifying GetConnectionObject returns null");
+        LogAssert("Verificando que GetConnectionObject retorna null");
         result.ShouldBeNull();
         LogInfo("GetConnectionObject correctly returns null before opening");
     }
@@ -153,17 +153,17 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and opening connection");
+        LogArrange("Criando e abrindo conexão");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
 
         // Act
-        LogAct("Getting connection object");
+        LogAct("Obtendo objeto de conexão");
         var result = connection.GetConnectionObject();
 
         // Assert
-        LogAssert("Verifying GetConnectionObject returns NpgsqlConnection");
+        LogAssert("Verificando que GetConnectionObject retorna NpgsqlConnection");
         result.ShouldNotBeNull();
         result.State.ShouldBe(System.Data.ConnectionState.Open);
         LogInfo("GetConnectionObject correctly returns open NpgsqlConnection");
@@ -174,18 +174,18 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and opening connection");
+        LogArrange("Criando e abrindo conexão");
         var executionContext = _fixture.CreateExecutionContext();
         var connection = _fixture.CreateAppUserConnection();
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
         connection.IsOpen().ShouldBeTrue();
 
         // Act
-        LogAct("Disposing connection");
+        LogAct("Descartando conexão");
         await connection.DisposeAsync();
 
         // Assert
-        LogAssert("Verifying connection is closed after dispose");
+        LogAssert("Verificando que a conexão está fechada após dispose");
         connection.IsOpen().ShouldBeFalse();
         connection.GetConnectionObject().ShouldBeNull();
         LogInfo("DisposeAsync closed connection correctly");
@@ -196,18 +196,18 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and opening connection");
+        LogArrange("Criando e abrindo conexão");
         var executionContext = _fixture.CreateExecutionContext();
         var connection = _fixture.CreateAppUserConnection();
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
         connection.IsOpen().ShouldBeTrue();
 
         // Act
-        LogAct("Disposing connection synchronously");
+        LogAct("Descartando conexão de forma síncrona");
         connection.Dispose();
 
         // Assert
-        LogAssert("Verifying connection is closed after dispose");
+        LogAssert("Verificando que a conexão está fechada após dispose");
         connection.IsOpen().ShouldBeFalse();
         LogInfo("Dispose closed connection correctly");
     }
@@ -217,20 +217,20 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and opening connection");
+        LogArrange("Criando e abrindo conexão");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
 
         // Act
-        LogAct("Executing query through connection");
+        LogAct("Executando query pela conexão");
         using var npgsqlConnection = connection.GetConnectionObject();
         await using var command = npgsqlConnection!.CreateCommand();
         command.CommandText = "SELECT 1 + 1";
         var result = await command.ExecuteScalarAsync();
 
         // Assert
-        LogAssert("Verifying query executed successfully");
+        LogAssert("Verificando que a query foi executada com sucesso");
         result.ShouldBe(2);
         LogInfo("Query executed successfully through open connection");
     }
@@ -240,7 +240,7 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating connection");
+        LogArrange("Criando conexão");
         var executionContext = _fixture.CreateExecutionContext();
         await using var connection = _fixture.CreateAppUserConnection();
 
@@ -248,19 +248,19 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
         connection.IsOpen().ShouldBeFalse();
 
         // Act - Open
-        LogAct("Opening connection");
+        LogAct("Abrindo conexão");
         await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
 
         // Assert open state
-        LogAssert("Verifying IsOpen reflects open state");
+        LogAssert("Verificando que IsOpen reflete o estado aberto");
         connection.IsOpen().ShouldBeTrue();
 
         // Act - Close
-        LogAct("Closing connection");
+        LogAct("Fechando conexão");
         await connection.TryCloseConnectionAsync(executionContext, CancellationToken.None);
 
         // Assert closed state
-        LogAssert("Verifying IsOpen reflects closed state");
+        LogAssert("Verificando que IsOpen reflete o estado fechado");
         connection.IsOpen().ShouldBeFalse();
         LogInfo("IsOpen correctly reflects connection state transitions");
     }

@@ -101,7 +101,7 @@ foreach (var trxFile in trxFiles)
                     var stepObj = JsonSerializer.Deserialize<JsonElement>(json);
                     steps.Add(new StepData
                     {
-                        Type = stepObj.GetProperty("type").GetString() ?? "Given",
+                        Type = stepObj.GetProperty("type").GetString() ?? "Dado",
                         Description = stepObj.GetProperty("description").GetString() ?? ""
                     });
                 }
@@ -530,7 +530,7 @@ static string GenerateHtml(List<ProjectData> projects, List<TestEnvironmentData>
                 .steps{margin-top:.5rem;padding-left:2rem}
                 .step{display:flex;gap:.5rem;font-size:.8rem;padding:.25rem 0;color:var(--muted)}
                 .step-type{font-weight:600;min-width:45px}
-                .step-type.given{color:#3b82f6}.step-type.when{color:#8b5cf6}.step-type.then{color:#10b981}
+                .step-type.dado{color:#3b82f6}.step-type.quando{color:#8b5cf6}.step-type.então{color:#10b981}
                 .error-box{background:#fee2e2;border:1px solid #fecaca;border-radius:.5rem;padding:.75rem 1rem;margin-top:.5rem;margin-left:2rem;font-size:.8rem;color:#991b1b}
                 .error-box strong{display:block;margin-bottom:.25rem}
                 .error-msg{font-family:monospace;white-space:pre-wrap;word-break:break-all;font-size:.75rem}
@@ -738,7 +738,7 @@ static string GenerateHtml(List<ProjectData> projects, List<TestEnvironmentData>
                 if (service.Databases.Count > 0)
                 {
                     sb.Append($"""
-                                <dt>Databases</dt>
+                                <dt>Bancos de Dados</dt>
                                 <dd>{WebUtility.HtmlEncode(string.Join(", ", service.Databases))}</dd>
                     """);
                 }

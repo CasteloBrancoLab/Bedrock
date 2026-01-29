@@ -29,7 +29,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating test entity and inserting directly");
+        LogArrange("Criando entidade de teste e inserindo diretamente");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -39,12 +39,12 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Opening connection and calling GetByIdAsync");
+        LogAct("Abrindo conexão e chamando GetByIdAsync");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.GetByIdAsync(executionContext, entity.Id, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity was retrieved correctly");
+        LogAssert("Verificando que a entidade foi recuperada corretamente");
         result.ShouldNotBeNull();
         result.Id.ShouldBe(entity.Id);
         result.TenantCode.ShouldBe(entity.TenantCode);
@@ -60,7 +60,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up context with non-existent entity ID");
+        LogArrange("Configurando contexto com ID de entidade inexistente");
         var tenantCode = Guid.NewGuid();
         var nonExistentId = Guid.NewGuid();
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -68,12 +68,12 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Opening connection and calling GetByIdAsync for non-existent entity");
+        LogAct("Abrindo conexão e chamando GetByIdAsync para entidade inexistente");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.GetByIdAsync(executionContext, nonExistentId, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying null is returned");
+        LogAssert("Verificando que null é retornado");
         result.ShouldBeNull();
         executionContext.HasExceptions.ShouldBeFalse();
         LogInfo("GetByIdAsync correctly returned null for non-existent entity");
@@ -84,7 +84,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and inserting test entity");
+        LogArrange("Criando e inserindo entidade de teste");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -94,12 +94,12 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Calling ExistsAsync");
+        LogAct("Chamando ExistsAsync");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.ExistsAsync(executionContext, entity.Id, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity exists");
+        LogAssert("Verificando que a entidade existe");
         result.ShouldBeTrue();
         executionContext.HasExceptions.ShouldBeFalse();
         LogInfo("ExistsAsync correctly returned true");
@@ -110,7 +110,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up context with non-existent entity ID");
+        LogArrange("Configurando contexto com ID de entidade inexistente");
         var tenantCode = Guid.NewGuid();
         var nonExistentId = Guid.NewGuid();
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -118,12 +118,12 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Calling ExistsAsync for non-existent entity");
+        LogAct("Chamando ExistsAsync para entidade inexistente");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         var result = await repository.ExistsAsync(executionContext, nonExistentId, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity does not exist");
+        LogAssert("Verificando que a entidade não existe");
         result.ShouldBeFalse();
         executionContext.HasExceptions.ShouldBeFalse();
         LogInfo("ExistsAsync correctly returned false");
@@ -134,7 +134,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating test entity for insertion");
+        LogArrange("Criando entidade de teste para inserção");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -142,14 +142,14 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Inserting entity via repository");
+        LogAct("Inserindo entidade pelo repositório");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.InsertAsync(executionContext, entity, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity was persisted");
+        LogAssert("Verificando que a entidade foi persistida");
         result.ShouldBeTrue();
         executionContext.HasExceptions.ShouldBeFalse();
 
@@ -165,7 +165,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating test entity with all fields populated");
+        LogArrange("Criando entidade de teste com todos os campos preenchidos");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         entity.LastChangedBy = "test_modifier";
@@ -179,14 +179,14 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Inserting entity with all fields");
+        LogAct("Inserindo entidade com todos os campos");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.InsertAsync(executionContext, entity, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying all fields were persisted");
+        LogAssert("Verificando que todos os campos foram persistidos");
         result.ShouldBeTrue();
         var persistedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
         persistedEntity.ShouldNotBeNull();
@@ -202,7 +202,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating test entity with null optional fields");
+        LogArrange("Criando entidade de teste com campos opcionais nulos");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode);
         // Leave optional fields as null
@@ -212,14 +212,14 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Inserting entity with null optional fields");
+        LogAct("Inserindo entidade com campos opcionais nulos");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.InsertAsync(executionContext, entity, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying nullable fields are stored as null");
+        LogAssert("Verificando que campos anuláveis são armazenados como null");
         result.ShouldBeTrue();
         var persistedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
         persistedEntity.ShouldNotBeNull();
@@ -236,7 +236,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and inserting test entity");
+        LogArrange("Criando e inserindo entidade de teste");
         var tenantCode = Guid.NewGuid();
         var originalVersion = 1L;
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: originalVersion);
@@ -253,7 +253,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         entity.EntityVersion = originalVersion + 1; // New version must be > current version
 
         // Act
-        LogAct("Updating entity with matching version");
+        LogAct("Atualizando entidade com versão correspondente");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         // Note: expectedVersion parameter is used in a second WHERE clause (entity_version = expectedVersion)
@@ -263,7 +263,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity was updated");
+        LogAssert("Verificando que a entidade foi atualizada");
         result.ShouldBeTrue();
         executionContext.HasExceptions.ShouldBeFalse();
 
@@ -279,7 +279,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and inserting test entity with version 5");
+        LogArrange("Criando e inserindo entidade de teste com versão 5");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 5);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -293,14 +293,14 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         entity.EntityVersion = 6;
 
         // Act
-        LogAct("Attempting update with stale version (expecting 1, actual is 5)");
+        LogAct("Tentando atualização com versão obsoleta (esperada 1, real é 5)");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.UpdateAsync(executionContext, entity, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying update failed due to version mismatch");
+        LogAssert("Verificando que a atualização falhou por incompatibilidade de versão");
         result.ShouldBeFalse();
         executionContext.HasExceptions.ShouldBeFalse(); // No exception, just returns false
 
@@ -316,7 +316,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and inserting test entity");
+        LogArrange("Criando e inserindo entidade de teste");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -326,14 +326,14 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Deleting entity with matching version");
+        LogAct("Excluindo entidade com versão correspondente");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.DeleteAsync(executionContext, entity.Id, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity was deleted");
+        LogAssert("Verificando que a entidade foi excluída");
         result.ShouldBeTrue();
         executionContext.HasExceptions.ShouldBeFalse();
 
@@ -347,7 +347,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating and inserting test entity with version 3");
+        LogArrange("Criando e inserindo entidade de teste com versão 3");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 3);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -357,14 +357,14 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Attempting delete with stale version (expecting 1, actual is 3)");
+        LogAct("Tentando exclusão com versão obsoleta (esperada 1, real é 3)");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.DeleteAsync(executionContext, entity.Id, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying delete failed due to version mismatch");
+        LogAssert("Verificando que a exclusão falhou por incompatibilidade de versão");
         result.ShouldBeFalse();
         executionContext.HasExceptions.ShouldBeFalse();
 
@@ -378,7 +378,7 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Setting up context with non-existent entity ID");
+        LogArrange("Configurando contexto com ID de entidade inexistente");
         var tenantCode = Guid.NewGuid();
         var nonExistentId = Guid.NewGuid();
         var executionContext = _fixture.CreateExecutionContext(tenantCode);
@@ -386,14 +386,14 @@ public class DataModelRepositoryIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Attempting to delete non-existent entity");
+        LogAct("Tentando excluir entidade inexistente");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.DeleteAsync(executionContext, nonExistentId, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying delete returned false for non-existent entity");
+        LogAssert("Verificando que a exclusão retornou false para entidade inexistente");
         result.ShouldBeFalse();
         executionContext.HasExceptions.ShouldBeFalse();
         LogInfo("Delete correctly returned false for non-existent entity");

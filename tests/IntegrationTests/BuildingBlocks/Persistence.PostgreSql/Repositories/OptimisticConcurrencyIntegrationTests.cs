@@ -29,7 +29,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity with version 1");
+        LogArrange("Criando entidade com versão 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -42,14 +42,14 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         entity.EntityVersion = 2;
 
         // Act
-        LogAct("Updating with expected version 1");
+        LogAct("Atualizando com versão esperada 1");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.UpdateAsync(executionContext, entity, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying update succeeded");
+        LogAssert("Verificando que a atualização foi bem-sucedida");
         result.ShouldBeTrue();
 
         var updatedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
@@ -64,7 +64,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity with version 10");
+        LogArrange("Criando entidade com versão 10");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 10);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -78,14 +78,14 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         entity.EntityVersion = 11;
 
         // Act
-        LogAct("Attempting update with stale version (expecting 5, actual is 10)");
+        LogAct("Tentando atualização com versão obsoleta (esperada 5, real é 10)");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.UpdateAsync(executionContext, entity, expectedVersion: 5, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying update failed (no rows affected)");
+        LogAssert("Verificando que a atualização falhou (nenhuma linha afetada)");
         result.ShouldBeFalse();
         executionContext.HasExceptions.ShouldBeFalse();
 
@@ -101,7 +101,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity with version 1");
+        LogArrange("Criando entidade com versão 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -118,7 +118,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         var repository2 = _fixture.CreateRepository(unitOfWork2);
 
         // Act
-        LogAct("First user updates the entity");
+        LogAct("Primeiro usuário atualiza a entidade");
         await unitOfWork1.OpenConnectionAsync(executionContext1, CancellationToken.None);
         await unitOfWork1.BeginTransactionAsync(executionContext1, CancellationToken.None);
 
@@ -133,7 +133,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         var result1 = await repository1.UpdateAsync(executionContext1, entity1, expectedVersion: 1, CancellationToken.None);
         await unitOfWork1.CommitAsync(executionContext1, CancellationToken.None);
 
-        LogAct("Second user tries to update with same original version");
+        LogAct("Segundo usuário tenta atualizar com a mesma versão original");
         await unitOfWork2.OpenConnectionAsync(executionContext2, CancellationToken.None);
         await unitOfWork2.BeginTransactionAsync(executionContext2, CancellationToken.None);
 
@@ -149,7 +149,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         await unitOfWork2.CommitAsync(executionContext2, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying first update succeeded and second failed");
+        LogAssert("Verificando que a primeira atualização foi bem-sucedida e a segunda falhou");
         result1.ShouldBeTrue();
         result2.ShouldBeFalse();
 
@@ -165,7 +165,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity with version 1");
+        LogArrange("Criando entidade com versão 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -175,14 +175,14 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Deleting with expected version 1");
+        LogAct("Excluindo com versão esperada 1");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.DeleteAsync(executionContext, entity.Id, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying delete succeeded");
+        LogAssert("Verificando que a exclusão foi bem-sucedida");
         result.ShouldBeTrue();
 
         var deletedEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
@@ -195,7 +195,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity with version 5");
+        LogArrange("Criando entidade com versão 5");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 5);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -205,14 +205,14 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Act
-        LogAct("Attempting delete with stale version (expecting 1, actual is 5)");
+        LogAct("Tentando exclusão com versão obsoleta (esperada 1, real é 5)");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.DeleteAsync(executionContext, entity.Id, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying delete failed (no rows affected)");
+        LogAssert("Verificando que a exclusão falhou (nenhuma linha afetada)");
         result.ShouldBeFalse();
         executionContext.HasExceptions.ShouldBeFalse();
 
@@ -226,7 +226,7 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Creating entity with version 1");
+        LogArrange("Criando entidade com versão 1");
         var tenantCode = Guid.NewGuid();
         var entity = _fixture.CreateTestEntity(tenantCode: tenantCode, entityVersion: 1);
         await _fixture.InsertTestEntityDirectlyAsync(entity);
@@ -236,18 +236,18 @@ public class OptimisticConcurrencyIntegrationTests : IntegrationTestBase
         var repository = _fixture.CreateRepository(unitOfWork);
 
         // Simulate concurrent update by another process
-        LogAct("Another process updates entity to version 2");
+        LogAct("Outro processo atualiza a entidade para versão 2");
         await _fixture.UpdateEntityVersionDirectlyAsync(entity.Id, tenantCode, 2);
 
         // Now try to delete with stale version
-        LogAct("Attempting delete with original version 1");
+        LogAct("Tentando exclusão com versão original 1");
         await unitOfWork.OpenConnectionAsync(executionContext, CancellationToken.None);
         await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
         var result = await repository.DeleteAsync(executionContext, entity.Id, expectedVersion: 1, CancellationToken.None);
         await unitOfWork.CommitAsync(executionContext, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying delete failed due to concurrent update");
+        LogAssert("Verificando que a exclusão falhou devido a atualização concorrente");
         result.ShouldBeFalse();
 
         var stillExistsEntity = await _fixture.GetTestEntityDirectlyAsync(entity.Id, tenantCode);
