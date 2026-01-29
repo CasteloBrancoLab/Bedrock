@@ -14,7 +14,7 @@ namespace Bedrock.BuildingBlocks.Testing.Benchmarks;
 ///   <item>Working set (MB) via <c>Environment.WorkingSet</c></item>
 ///   <item>GC collection counts (Gen 0/1/2) via <c>GC.CollectionCount</c></item>
 ///   <item>CPU usage (%) via <c>Process.TotalProcessorTime</c> delta</item>
-///   <item>Network bytes sent/received (placeholder — requires EventSource for real data)</item>
+///   <item>Network bytes sent/received via <see cref="NetworkEventListener"/> (System.Net.Sockets EventCounters)</item>
 /// </list>
 /// </para>
 /// <para>
@@ -36,6 +36,7 @@ public sealed class RuntimeMetricsTracker : IDisposable
     private readonly ConcurrentBag<RuntimeSample> _samples = [];
     private readonly Timer _timer;
     private readonly Process _process;
+    private readonly NetworkEventListener _networkListener;
     private readonly int _processorCount;
     private TimeSpan _lastCpuTime;
     private DateTime _lastCpuCheck;
@@ -50,6 +51,7 @@ public sealed class RuntimeMetricsTracker : IDisposable
         _processorCount = Environment.ProcessorCount;
         _lastCpuTime = _process.TotalProcessorTime;
         _lastCpuCheck = DateTime.UtcNow;
+        _networkListener = new NetworkEventListener();
 
         // Start polling immediately, then every interval
         _timer = new Timer(CaptureSample, null, 0, SampleIntervalMs);
@@ -164,8 +166,8 @@ public sealed class RuntimeMetricsTracker : IDisposable
                 Gen1Count: gen1,
                 Gen2Count: gen2,
                 CpuUsagePercent: Math.Round(cpuPercent, 2),
-                NetworkBytesSent: 0,
-                NetworkBytesReceived: 0));
+                NetworkBytesSent: _networkListener.BytesSent,
+                NetworkBytesReceived: _networkListener.BytesReceived));
         }
         catch (InvalidOperationException)
         {
@@ -181,5 +183,6 @@ public sealed class RuntimeMetricsTracker : IDisposable
 
         _disposed = true;
         _timer.Dispose();
+        _networkListener.Dispose();
     }
 }
