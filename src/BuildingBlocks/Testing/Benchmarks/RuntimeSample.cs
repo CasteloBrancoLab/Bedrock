@@ -13,6 +13,8 @@ namespace Bedrock.BuildingBlocks.Testing.Benchmarks;
 /// <param name="CpuUsagePercent">CPU usage percentage (from System.Runtime cpu-usage).</param>
 /// <param name="NetworkBytesSent">Cumulative network bytes sent (from System.Net.Sockets bytes-sent).</param>
 /// <param name="NetworkBytesReceived">Cumulative network bytes received (from System.Net.Sockets bytes-received).</param>
+/// <param name="GcPauseTimePercent">Cumulative percentage of time spent in GC pauses since process start (from GCMemoryInfo.PauseTimePercentage).</param>
+/// <param name="GcPauseDurationMs">Cumulative total GC pause duration in milliseconds since process start (from GC.GetTotalPauseDuration).</param>
 public sealed record RuntimeSample(
     DateTimeOffset Timestamp,
     double GcHeapSizeMb,
@@ -22,4 +24,6 @@ public sealed record RuntimeSample(
     long Gen2Count,
     double CpuUsagePercent,
     long NetworkBytesSent,
-    long NetworkBytesReceived);
+    long NetworkBytesReceived,
+    double GcPauseTimePercent,
+    double GcPauseDurationMs);

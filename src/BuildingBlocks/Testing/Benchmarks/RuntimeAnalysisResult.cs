@@ -16,6 +16,9 @@ namespace Bedrock.BuildingBlocks.Testing.Benchmarks;
 /// <param name="PeakCpuPercent">Peak CPU usage percentage observed.</param>
 /// <param name="TotalNetworkBytesSent">Total network bytes sent during the benchmark.</param>
 /// <param name="TotalNetworkBytesReceived">Total network bytes received during the benchmark.</param>
+/// <param name="AvgGcPausePercent">Average percentage of time spent in GC pauses across all samples.</param>
+/// <param name="PeakGcPausePercent">Peak percentage of time spent in GC pauses observed.</param>
+/// <param name="TotalGcPauseDurationMs">Total GC pause duration in milliseconds during the benchmark (delta from first to last sample).</param>
 public sealed record RuntimeAnalysisResult(
     MemoryGrowthStatus MemoryGrowth,
     IReadOnlyList<RuntimeSample> Samples,
@@ -28,4 +31,7 @@ public sealed record RuntimeAnalysisResult(
     double AvgCpuPercent,
     double PeakCpuPercent,
     long TotalNetworkBytesSent,
-    long TotalNetworkBytesReceived);
+    long TotalNetworkBytesReceived,
+    double AvgGcPausePercent,
+    double PeakGcPausePercent,
+    double TotalGcPauseDurationMs);

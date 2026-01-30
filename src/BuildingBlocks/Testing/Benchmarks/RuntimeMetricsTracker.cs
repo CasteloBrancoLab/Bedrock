@@ -79,7 +79,9 @@ public sealed class RuntimeMetricsTracker : IDisposable
                 InitialHeapMb: 0, FinalHeapMb: 0, HeapGrowthPercent: 0,
                 TotalGen0: 0, TotalGen1: 0, TotalGen2: 0,
                 AvgCpuPercent: 0, PeakCpuPercent: 0,
-                TotalNetworkBytesSent: 0, TotalNetworkBytesReceived: 0);
+                TotalNetworkBytesSent: 0, TotalNetworkBytesReceived: 0,
+                AvgGcPausePercent: 0, PeakGcPausePercent: 0,
+                TotalGcPauseDurationMs: 0);
         }
 
         // Divide samples into quarters for trend analysis
@@ -110,6 +112,11 @@ public sealed class RuntimeMetricsTracker : IDisposable
         var totalBytesSent = lastSample.NetworkBytesSent;
         var totalBytesReceived = lastSample.NetworkBytesReceived;
 
+        // GC pause time statistics
+        var avgGcPause = orderedSamples.Average(s => s.GcPauseTimePercent);
+        var peakGcPause = orderedSamples.Max(s => s.GcPauseTimePercent);
+        var totalGcPauseDurationMs = lastSample.GcPauseDurationMs - firstSample.GcPauseDurationMs;
+
         return new RuntimeAnalysisResult(
             MemoryGrowth: memoryGrowth,
             Samples: orderedSamples,
@@ -122,7 +129,10 @@ public sealed class RuntimeMetricsTracker : IDisposable
             AvgCpuPercent: Math.Round(avgCpu, 2),
             PeakCpuPercent: Math.Round(peakCpu, 2),
             TotalNetworkBytesSent: totalBytesSent,
-            TotalNetworkBytesReceived: totalBytesReceived);
+            TotalNetworkBytesReceived: totalBytesReceived,
+            AvgGcPausePercent: Math.Round(avgGcPause, 2),
+            PeakGcPausePercent: Math.Round(peakGcPause, 2),
+            TotalGcPauseDurationMs: Math.Round(totalGcPauseDurationMs, 2));
     }
 
     private void CaptureSample(object? state)
@@ -167,7 +177,9 @@ public sealed class RuntimeMetricsTracker : IDisposable
                 Gen2Count: gen2,
                 CpuUsagePercent: Math.Round(cpuPercent, 2),
                 NetworkBytesSent: _networkListener.BytesSent,
-                NetworkBytesReceived: _networkListener.BytesReceived));
+                NetworkBytesReceived: _networkListener.BytesReceived,
+                GcPauseTimePercent: Math.Round(GC.GetGCMemoryInfo().PauseTimePercentage, 2),
+                GcPauseDurationMs: Math.Round(GC.GetTotalPauseDuration().TotalMilliseconds, 2)));
         }
         catch (InvalidOperationException)
         {

@@ -86,6 +86,9 @@ public sealed class BenchmarkPendingExporter : IExporter
                 sb.AppendLine(CultureInfo.InvariantCulture, $"PEAK_CPU_PERCENT: {runtimeResult.PeakCpuPercent:F2}");
                 sb.AppendLine(CultureInfo.InvariantCulture, $"NETWORK_BYTES_SENT: {runtimeResult.TotalNetworkBytesSent}");
                 sb.AppendLine(CultureInfo.InvariantCulture, $"NETWORK_BYTES_RECEIVED: {runtimeResult.TotalNetworkBytesReceived}");
+                sb.AppendLine(CultureInfo.InvariantCulture, $"AVG_GC_PAUSE_PERCENT: {runtimeResult.AvgGcPausePercent:F2}");
+                sb.AppendLine(CultureInfo.InvariantCulture, $"PEAK_GC_PAUSE_PERCENT: {runtimeResult.PeakGcPausePercent:F2}");
+                sb.AppendLine(CultureInfo.InvariantCulture, $"TOTAL_GC_PAUSE_MS: {runtimeResult.TotalGcPauseDurationMs:F2}");
             }
             else
             {
@@ -190,6 +193,8 @@ public sealed class BenchmarkPendingExporter : IExporter
             writer.WriteNumber("g2", s.Gen2Count);
             writer.WriteNumber("netS", s.NetworkBytesSent);
             writer.WriteNumber("netR", s.NetworkBytesReceived);
+            writer.WriteNumber("gcPause", Math.Round(s.GcPauseTimePercent, 2));
+            writer.WriteNumber("gcPauseMs", Math.Round(s.GcPauseDurationMs, 2));
             writer.WriteEndObject();
         }
         writer.WriteEndArray();

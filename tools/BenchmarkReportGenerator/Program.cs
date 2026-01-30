@@ -171,6 +171,9 @@ static BenchmarkResult? ParsePendingFile(string filePath)
                 case "PEAK_CPU_PERCENT": result.PeakCpuPercent = double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var pc) ? pc : 0; break;
                 case "NETWORK_BYTES_SENT": result.NetworkBytesSent = long.TryParse(value, out var ns) ? ns : 0; break;
                 case "NETWORK_BYTES_RECEIVED": result.NetworkBytesReceived = long.TryParse(value, out var nr) ? nr : 0; break;
+                case "AVG_GC_PAUSE_PERCENT": result.AvgGcPausePercent = double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var agp) ? agp : 0; break;
+                case "PEAK_GC_PAUSE_PERCENT": result.PeakGcPausePercent = double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var pgp) ? pgp : 0; break;
+                case "TOTAL_GC_PAUSE_MS": result.TotalGcPauseMs = double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var tgp) ? tgp : 0; break;
             }
         }
 
@@ -190,6 +193,18 @@ static string FormatTime(double nanoseconds)
         < 1_000_000 => $"{nanoseconds / 1_000:F2}us",
         < 1_000_000_000 => $"{nanoseconds / 1_000_000:F2}ms",
         _ => $"{nanoseconds / 1_000_000_000:F2}s"
+    };
+}
+
+static string FormatPauseMs(double ms)
+{
+    return ms switch
+    {
+        0 => "0ms",
+        < 1 => $"{ms * 1000:F0}μs",
+        < 1_000 => $"{ms:F1}ms",
+        < 60_000 => $"{ms / 1_000:F2}s",
+        _ => $"{ms / 60_000:F2}min"
     };
 }
 
@@ -384,6 +399,7 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                             <th class="num">CPU Medio</th>
                             <th class="num">Rede I/O</th>
                             <th class="num">GC (0/1/2)</th>
+                            <th class="num">GC Pause</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -414,6 +430,7 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                             <td class="num">{(r.AvgCpuPercent > 0 ? $"{r.AvgCpuPercent:F1}%" : "-")}</td>
                             <td class="num" style="font-size:.75rem">{networkIO}</td>
                             <td class="num">{r.GcGen0}/{r.GcGen1}/{r.GcGen2}</td>
+                            <td class="num">{(r.AvgGcPausePercent > 0 || r.TotalGcPauseMs > 0 ? $"{r.AvgGcPausePercent:F2}% avg ({FormatPauseMs(r.TotalGcPauseMs)})" : "-")}</td>
                         </tr>
             """);
     }
@@ -472,6 +489,9 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                             <div class="metric"><div class="metric-label">GC Gen0</div><div class="metric-value">{r.GcGen0}</div></div>
                             <div class="metric"><div class="metric-label">GC Gen1</div><div class="metric-value">{r.GcGen1}</div></div>
                             <div class="metric"><div class="metric-label">GC Gen2</div><div class="metric-value">{r.GcGen2}</div></div>
+                            <div class="metric"><div class="metric-label">GC Pause Medio</div><div class="metric-value">{r.AvgGcPausePercent:F2}%</div></div>
+                            <div class="metric"><div class="metric-label">GC Pause Pico</div><div class="metric-value">{r.PeakGcPausePercent:F2}%</div></div>
+                            <div class="metric"><div class="metric-label">GC Pause Total</div><div class="metric-value">{FormatPauseMs(r.TotalGcPauseMs)}</div></div>
                             <div class="metric"><div class="metric-label">Rede Enviado</div><div class="metric-value">{FormatBytes(r.NetworkBytesSent)}</div></div>
                             <div class="metric"><div class="metric-label">Rede Recebido</div><div class="metric-value">{FormatBytes(r.NetworkBytesReceived)}</div></div>
                         </div>
@@ -512,8 +532,16 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                     sb.Append(CultureInfo.InvariantCulture, $"<th class=\"num\">P{p}</th>");
                 sb.Append("</tr></thead><tbody>");
 
+                var gcPauseValues = samples.Select(s => s.GcPause).OrderBy(v => v).ToArray();
+                var gcPauseMsDeltas = new List<double>();
+                for (var i = 1; i < samples.Count; i++)
+                    gcPauseMsDeltas.Add(samples[i].GcPauseMs - samples[i - 1].GcPauseMs);
+                var gcPauseMsArr = gcPauseMsDeltas.OrderBy(v => v).ToArray();
+
                 AppendStatsRow(sb, "CPU (%)", cpuValues, percentiles, "F1");
                 AppendStatsRow(sb, "Heap GC (MB)", heapValues, percentiles, "F2");
+                AppendStatsRow(sb, "GC Pause (%)", gcPauseValues, percentiles, "F2");
+                AppendStatsRow(sb, "GC Pause (ms/s)", gcPauseMsArr, percentiles, "F1");
                 AppendStatsRow(sb, "Rede Enviado (KB/s)", ioSentArr, percentiles, "F1");
                 AppendStatsRow(sb, "Rede Recebido (KB/s)", ioRecvArr, percentiles, "F1");
 
@@ -635,7 +663,9 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                 {label:'\u0394 Rede Recebido (KB)',data:delta(samples,'netR').map(function(v){return v/1024;}),borderColor:'#60a5fa',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
                 {label:'GC Gen0',data:delta(samples,'g0'),borderColor:'#ec4899',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
                 {label:'GC Gen1',data:delta(samples,'g1'),borderColor:'#f97316',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'GC Gen2',data:delta(samples,'g2'),borderColor:'#ef4444',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true}
+                {label:'GC Gen2',data:delta(samples,'g2'),borderColor:'#ef4444',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
+                {label:'GC Pause (%)',data:samples.map(function(s){return s.gcPause||0;}),borderColor:'#e11d48',backgroundColor:'rgba(225,29,72,0.1)',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y1',hidden:false},
+                {label:'\u0394 GC Pause (ms)',data:delta(samples,'gcPauseMs'),borderColor:'#be123c',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true}
             ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true,boxWidth:8,color:getComputedStyle(document.body).getPropertyValue('--chart-legend').trim()}},tooltip:{mode:'index',intersect:false}},scales:{x:{display:true,title:{display:true,text:'Tempo (mm:ss)',color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim(),maxTicksLimit:20},grid:{color:'rgba(148,163,184,0.1)'}},y:{type:'linear',display:true,position:'left',title:{display:true,text:'Memoria (MB)',color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},grid:{color:'rgba(148,163,184,0.1)'}},y1:{type:'linear',display:true,position:'right',title:{display:true,text:'CPU (%)',color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},min:0,max:100,grid:{drawOnChartArea:false}},y2:{type:'linear',display:false,ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim()}}}}});
             timelineCharts.push(chart);
         });
@@ -732,14 +762,16 @@ static List<SampleData> ParseSamplesForPercentiles(string json)
                 Heap: el.TryGetProperty("heap", out var heap) ? heap.GetDouble() : 0,
                 Ws: el.TryGetProperty("ws", out var ws) ? ws.GetDouble() : 0,
                 NetS: el.TryGetProperty("netS", out var netS) ? netS.GetInt64() : 0,
-                NetR: el.TryGetProperty("netR", out var netR) ? netR.GetInt64() : 0));
+                NetR: el.TryGetProperty("netR", out var netR) ? netR.GetInt64() : 0,
+                GcPause: el.TryGetProperty("gcPause", out var gcPause) ? gcPause.GetDouble() : 0,
+                GcPauseMs: el.TryGetProperty("gcPauseMs", out var gcPauseMs) ? gcPauseMs.GetDouble() : 0));
         }
     }
     catch { /* ignore parse errors */ }
     return results;
 }
 
-internal sealed record SampleData(double Cpu, double Heap, double Ws, long NetS, long NetR);
+internal sealed record SampleData(double Cpu, double Heap, double Ws, long NetS, long NetR, double GcPause, double GcPauseMs);
 
 // --- Data classes ---
 
@@ -763,6 +795,9 @@ internal sealed class BenchmarkResult
     public double PeakCpuPercent { get; set; }
     public long NetworkBytesSent { get; set; }
     public long NetworkBytesReceived { get; set; }
+    public double AvgGcPausePercent { get; set; }
+    public double PeakGcPausePercent { get; set; }
+    public double TotalGcPauseMs { get; set; }
     public double Median { get; set; }
     public double StdDev { get; set; }
     public double Min { get; set; }

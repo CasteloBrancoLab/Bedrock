@@ -89,6 +89,7 @@ public static class SustainedBenchmarkRunner
                 Console.WriteLine($"    Memory: {analysis.MemoryGrowth}");
                 Console.WriteLine($"    CPU avg: {analysis.AvgCpuPercent:F1}%, peak: {analysis.PeakCpuPercent:F1}%");
                 Console.WriteLine($"    GC: Gen0={analysis.TotalGen0} Gen1={analysis.TotalGen1} Gen2={analysis.TotalGen2}");
+                Console.WriteLine($"    GC Pause: avg={analysis.AvgGcPausePercent:F2}%, peak={analysis.PeakGcPausePercent:F2}%, total={analysis.TotalGcPauseDurationMs:F0}ms");
                 Console.WriteLine();
 
                 // Export pending file
@@ -189,6 +190,9 @@ public static class SustainedBenchmarkRunner
         sb.AppendLine(CultureInfo.InvariantCulture, $"PEAK_CPU_PERCENT: {analysis.PeakCpuPercent:F2}");
         sb.AppendLine(CultureInfo.InvariantCulture, $"NETWORK_BYTES_SENT: {analysis.TotalNetworkBytesSent}");
         sb.AppendLine(CultureInfo.InvariantCulture, $"NETWORK_BYTES_RECEIVED: {analysis.TotalNetworkBytesReceived}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"AVG_GC_PAUSE_PERCENT: {analysis.AvgGcPausePercent:F2}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"PEAK_GC_PAUSE_PERCENT: {analysis.PeakGcPausePercent:F2}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"TOTAL_GC_PAUSE_MS: {analysis.TotalGcPauseDurationMs:F2}");
 
         var filePath = Path.Combine(dir, $"benchmark_{safeFileName}.txt");
         File.WriteAllText(filePath, sb.ToString());
@@ -215,6 +219,8 @@ public static class SustainedBenchmarkRunner
             writer.WriteNumber("g2", s.Gen2Count);
             writer.WriteNumber("netS", s.NetworkBytesSent);
             writer.WriteNumber("netR", s.NetworkBytesReceived);
+            writer.WriteNumber("gcPause", Math.Round(s.GcPauseTimePercent, 2));
+            writer.WriteNumber("gcPauseMs", Math.Round(s.GcPauseDurationMs, 2));
             writer.WriteEndObject();
         }
 
