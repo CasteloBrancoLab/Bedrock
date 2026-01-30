@@ -384,6 +384,23 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
             </section>
         """);
 
+    // --- Pre-compute medians from samples for summary table ---
+    var medianData = new Dictionary<string, (double CpuMedian, double WsMedian, double GcPauseMedian)>();
+    foreach (var r in results)
+    {
+        if (!string.IsNullOrEmpty(r.SamplesJson))
+        {
+            var smp = ParseSamplesForPercentiles(r.SamplesJson);
+            if (smp.Count > 0)
+            {
+                var cpuSorted = smp.Select(s => s.Cpu).OrderBy(v => v).ToArray();
+                var wsSorted = smp.Select(s => s.Ws).OrderBy(v => v).ToArray();
+                var gcPauseSorted = smp.Select(s => s.GcPause).OrderBy(v => v).ToArray();
+                medianData[r.Name] = (Percentile(cpuSorted, 50), Percentile(wsSorted, 50), Percentile(gcPauseSorted, 50));
+            }
+        }
+    }
+
     // --- Benchmark Summary Table ---
     sb.Append("""
             <section>
@@ -405,10 +422,11 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
 
     sb.Append("""
                             <th>Memoria</th>
-                            <th class="num">CPU Medio</th>
+                            <th class="num">Working Set (P50)</th>
+                            <th class="num">CPU (P50)</th>
                             <th class="num">Rede I/O</th>
                             <th class="num">GC (0/1/2)</th>
-                            <th class="num">GC Pause</th>
+                            <th class="num">GC Pause (P50)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -443,12 +461,15 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
             """);
         }
 
+        var md = medianData.TryGetValue(r.Name, out var m) ? m : default;
+
         sb.Append($"""
                             <td>{memBadge}</td>
-                            <td class="num">{(r.AvgCpuPercent > 0 ? $"{r.AvgCpuPercent:F1}%" : "-")}</td>
+                            <td class="num">{(md.WsMedian > 0 ? $"{md.WsMedian:F1} MB" : "-")}</td>
+                            <td class="num">{(md.CpuMedian > 0 ? $"{md.CpuMedian:F1}%" : "-")}</td>
                             <td class="num" style="font-size:.75rem">{networkIO}</td>
                             <td class="num">{r.GcGen0}/{r.GcGen1}/{r.GcGen2}</td>
-                            <td class="num">{(r.AvgGcPausePercent > 0 || r.TotalGcPauseMs > 0 ? $"{r.AvgGcPausePercent:F2}% avg ({FormatPauseMs(r.TotalGcPauseMs)})" : "-")}</td>
+                            <td class="num">{(md.GcPauseMedian > 0 || r.TotalGcPauseMs > 0 ? $"{md.GcPauseMedian:F2}% ({FormatPauseMs(r.TotalGcPauseMs)})" : "-")}</td>
                         </tr>
             """);
     }
