@@ -630,6 +630,14 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                         <div class="corr-section" id="{canvasId}_corr">
                             <div class="chart-label" style="margin-top:1.5rem">Matriz de Correlacao</div>
                             <p style="font-size:.75rem;color:var(--muted);margin-bottom:.75rem">Arraste as metricas para Linhas e Colunas para calcular a correlacao de Pearson.</p>
+                            <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin-bottom:.75rem;align-items:center">
+                                <span><b>Escala:</b></span>
+                                <span style="display:inline-flex;align-items:center;gap:.3rem"><span style="width:14px;height:14px;border-radius:3px;background:rgba(239,68,68,0.85);display:inline-block"></span> -1.0 a -0.7 Forte negativa</span>
+                                <span style="display:inline-flex;align-items:center;gap:.3rem"><span style="width:14px;height:14px;border-radius:3px;background:rgba(239,68,68,0.45);display:inline-block"></span> -0.7 a -0.3 Moderada negativa</span>
+                                <span style="display:inline-flex;align-items:center;gap:.3rem"><span style="width:14px;height:14px;border-radius:3px;background:transparent;border:1px solid var(--border);display:inline-block"></span> -0.3 a +0.3 Fraca/nenhuma</span>
+                                <span style="display:inline-flex;align-items:center;gap:.3rem"><span style="width:14px;height:14px;border-radius:3px;background:rgba(16,185,129,0.45);display:inline-block"></span> +0.3 a +0.7 Moderada positiva</span>
+                                <span style="display:inline-flex;align-items:center;gap:.3rem"><span style="width:14px;height:14px;border-radius:3px;background:rgba(16,185,129,0.85);display:inline-block"></span> +0.7 a +1.0 Forte positiva</span>
+                            </div>
                             <div class="corr-chips" data-corr-chips="{canvasId}">
                                 <span class="corr-chip" draggable="true" data-metric="cpu">CPU (%)</span>
                                 <span class="corr-chip" draggable="true" data-metric="heap">Heap GC (MB)</span>
