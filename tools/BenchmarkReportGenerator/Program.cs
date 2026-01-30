@@ -293,6 +293,37 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
 
                 .section-header{font-size:1.25rem;font-weight:600;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
 
+                /* Dicas de analise */
+                .tips-section{background:var(--card);border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:2rem;overflow:hidden}
+                .tips-header{padding:1rem 1.5rem;background:linear-gradient(135deg,#312e81,#4338ca);color:#e0e7ff;font-weight:600;font-size:1.1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:filter .2s}
+                .tips-header:hover{filter:brightness(1.15)}
+                .light-theme .tips-header{background:linear-gradient(135deg,#eef2ff,#c7d2fe);color:#3730a3}
+                .tips-toggle{font-size:.75rem;transition:transform .2s}
+                .tips-section.collapsed .tips-toggle{transform:rotate(-90deg)}
+                .tips-body{max-height:8000px;overflow:hidden;transition:max-height .4s;padding:1.5rem}
+                .tips-section.collapsed .tips-body{max-height:0;padding:0 1.5rem}
+                .tip-group{margin-bottom:1.5rem}
+                .tip-group:last-child{margin-bottom:0}
+                .tip-group-header{font-size:.95rem;font-weight:600;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.5rem .75rem;border-radius:.5rem;transition:background .2s}
+                .tip-group-header:hover{background:rgba(148,163,184,0.1)}
+                .tip-group-toggle{font-size:.65rem;color:var(--muted);transition:transform .2s}
+                .tip-group.collapsed .tip-group-toggle{transform:rotate(-90deg)}
+                .tip-group-body{max-height:4000px;overflow:hidden;transition:max-height .3s}
+                .tip-group.collapsed .tip-group-body{max-height:0}
+                .tip-card{background:var(--bg);border-radius:.5rem;padding:1rem 1.25rem;margin-bottom:.75rem;border-left:4px solid var(--border)}
+                .tip-card.tip-good{border-left-color:var(--passed)}
+                .tip-card.tip-warn{border-left-color:var(--warn)}
+                .tip-card.tip-danger{border-left-color:var(--failed)}
+                .tip-card.tip-info{border-left-color:#6366f1}
+                .tip-title{font-weight:600;font-size:.85rem;margin-bottom:.35rem;display:flex;align-items:center;gap:.5rem}
+                .tip-text{font-size:.8rem;color:var(--muted);line-height:1.7}
+                .tip-text b{color:var(--text)}
+                .tip-icon{font-size:1.1rem}
+                .tip-example{background:var(--card);border:1px solid var(--border);border-radius:.375rem;padding:.5rem .75rem;margin-top:.5rem;font-size:.75rem;font-family:monospace;color:var(--muted)}
+                .tip-scale{display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap}
+                .tip-scale-item{display:flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--muted)}
+                .tip-scale-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+
                 /* Tabela de benchmarks */
                 .bench-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:2rem}
                 .bench-table th,.bench-table td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border)}
@@ -497,6 +528,292 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                     </tbody>
                 </table>
             </section>
+        """);
+
+    // --- Dicas de Analise ---
+    sb.Append("""
+            <div class="tips-section collapsed">
+                <div class="tips-header" onclick="this.closest('.tips-section').classList.toggle('collapsed')">
+                    <span class="tips-toggle">&#9660;</span>
+                    <span>&#128161;</span>
+                    <span>Dicas de Analise — Como interpretar este relatorio</span>
+                </div>
+                <div class="tips-body">
+
+                    <div class="tip-group">
+                        <div class="tip-group-header" onclick="this.closest('.tip-group').classList.toggle('collapsed')">
+                            <span class="tip-group-toggle">&#9660;</span>
+                            <span>&#129504;</span>
+                            <span>Memoria e Heap — O aplicativo esta vazando memoria?</span>
+                        </div>
+                        <div class="tip-group-body">
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128203;</span> O que e Heap GC?</div>
+                                <div class="tip-text">
+                                    O <b>Heap GC</b> e a area de memoria gerenciada pelo .NET onde os objetos vivem.
+                                    Quando voce cria um <code>new Object()</code>, ele vai para o Heap.
+                                    O <b>Garbage Collector (GC)</b> limpa periodicamente os objetos que nao estao mais em uso.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-good">
+                                <div class="tip-title"><span class="tip-icon">&#9989;</span> STABLE = Tudo certo</div>
+                                <div class="tip-text">
+                                    Se o badge mostra <b>STABLE</b>, significa que a memoria se estabilizou ao longo do tempo.
+                                    O GC esta conseguindo limpar os objetos na mesma velocidade em que sao criados.
+                                    <b>A linha de tendencia do Heap deve estar plana ou levemente subindo.</b>
+                                </div>
+                            </div>
+                            <div class="tip-card tip-warn">
+                                <div class="tip-title"><span class="tip-icon">&#9888;&#65039;</span> GROWING = Atencao</div>
+                                <div class="tip-text">
+                                    Se o badge mostra <b>GROWING</b>, o Heap cresceu mais de 20% entre o inicio e o fim do benchmark.
+                                    Isso <b>pode</b> indicar um vazamento de memoria (memory leak), mas tambem pode ser apenas o
+                                    warm-up normal da aplicacao. <b>Pergunte-se:</b>
+                                </div>
+                                <div class="tip-example">
+                                    &#8226; A linha de tendencia do Heap esta subindo continuamente? &#8594; Possivel leak<br>
+                                    &#8226; O Heap subiu e depois estabilizou? &#8594; Provavelmente warm-up normal<br>
+                                    &#8226; O Working Set tambem esta subindo? &#8594; O SO esta alocando mais memoria fisica
+                                </div>
+                            </div>
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128200;</span> Working Set vs Heap GC</div>
+                                <div class="tip-text">
+                                    O <b>Working Set</b> e a memoria fisica total do processo (inclui Heap + codigo + buffers nativos).
+                                    Se o Working Set cresce mas o Heap nao, pode ser memoria nativa (ex: buffers de I/O, conexoes).
+                                    Se ambos crescem juntos, o crescimento e do codigo gerenciado.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-group collapsed">
+                        <div class="tip-group-header" onclick="this.closest('.tip-group').classList.toggle('collapsed')">
+                            <span class="tip-group-toggle">&#9660;</span>
+                            <span>&#9889;</span>
+                            <span>CPU — O benchmark esta usando processamento de forma eficiente?</span>
+                        </div>
+                        <div class="tip-group-body">
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128203;</span> Como interpretar CPU (%)</div>
+                                <div class="tip-text">
+                                    O valor de <b>CPU (%)</b> indica quanto do processador o benchmark esta usando.
+                                    O valor e normalizado pelo numero de nucleos: 100% = todos os nucleos em uso maximo.
+                                    <b>Um valor baixo e esperado</b> para benchmarks de I/O (rede, disco).
+                                    <b>Um valor alto e esperado</b> para benchmarks de computacao (algoritmos, serializacao).
+                                </div>
+                            </div>
+                            <div class="tip-card tip-good">
+                                <div class="tip-title"><span class="tip-icon">&#9989;</span> Tendencia estavel</div>
+                                <div class="tip-text">
+                                    Se a <b>linha de tendencia da CPU</b> esta plana, o benchmark tem consumo previsivel.
+                                    Variacao e normal (o SO agenda outros processos), mas a mediana (P50) deve representar bem o uso tipico.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-warn">
+                                <div class="tip-title"><span class="tip-icon">&#9888;&#65039;</span> CPU subindo ao longo do tempo</div>
+                                <div class="tip-text">
+                                    Se a tendencia sobe continuamente, pode indicar que o benchmark esta ficando mais pesado
+                                    (ex: listas crescendo, cache inflando, mais threads competindo). Correlacione com o Heap
+                                    na <b>Matriz de Correlacao</b> para investigar.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-group collapsed">
+                        <div class="tip-group-header" onclick="this.closest('.tip-group').classList.toggle('collapsed')">
+                            <span class="tip-group-toggle">&#9660;</span>
+                            <span>&#9851;&#65039;</span>
+                            <span>Garbage Collector — As pausas estao impactando a performance?</span>
+                        </div>
+                        <div class="tip-group-body">
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128203;</span> Geracoes do GC: Gen0, Gen1, Gen2</div>
+                                <div class="tip-text">
+                                    O GC do .NET organiza objetos em 3 geracoes:<br>
+                                    <b>Gen0</b> — Objetos recem-criados. Coletas rapidas e frequentes. &#9989; Normal ter muitas.<br>
+                                    <b>Gen1</b> — Objetos que sobreviveram a Gen0. Coletas moderadas.<br>
+                                    <b>Gen2</b> — Objetos de longa duracao. Coletas caras e lentas. &#9888;&#65039; Muitas Gen2 = problema.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#9200;</span> GC Pause — O que significa?</div>
+                                <div class="tip-text">
+                                    <b>GC Pause (%)</b> e a porcentagem do tempo que a aplicacao ficou <b>parada</b> esperando o GC limpar a memoria.
+                                    <b>GC Pause (ms)</b> e o tempo absoluto de pausa. Quanto menor, melhor.<br>
+                                    <b>Referencia:</b>
+                                </div>
+                                <div class="tip-scale">
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:var(--passed)"></span> &lt; 1% Excelente</span>
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:#f59e0b"></span> 1-5% Aceitavel</span>
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:var(--failed)"></span> &gt; 5% Investigar</span>
+                                </div>
+                            </div>
+                            <div class="tip-card tip-warn">
+                                <div class="tip-title"><span class="tip-icon">&#128269;</span> Correlacao: GC Pause vs Heap</div>
+                                <div class="tip-text">
+                                    Se voce viu na <b>Matriz de Correlacao</b> que Heap GC e GC Pause tem correlacao negativa,
+                                    isso e <b>normal</b>: o GC pausa para limpar, o que reduz o Heap. Quando o Heap cresce livremente
+                                    (sem coleta), as pausas sao menores. E o ciclo natural do GC.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-group collapsed">
+                        <div class="tip-group-header" onclick="this.closest('.tip-group').classList.toggle('collapsed')">
+                            <span class="tip-group-toggle">&#9660;</span>
+                            <span>&#127760;</span>
+                            <span>Rede — O trafego de rede esta dentro do esperado?</span>
+                        </div>
+                        <div class="tip-group-body">
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128203;</span> Enviado vs Recebido</div>
+                                <div class="tip-text">
+                                    <b>Enviado</b> e <b>Recebido</b> mostram o volume total de dados trafegados pelo processo.
+                                    Para benchmarks que nao usam rede (computacao pura), esses valores devem ser <b>zero</b>.
+                                    Para benchmarks de API/HTTP, um crescimento linear e esperado.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-good">
+                                <div class="tip-title"><span class="tip-icon">&#9989;</span> Crescimento linear = OK</div>
+                                <div class="tip-text">
+                                    Se a linha do grafico de rede sobe de forma constante (reta), significa que o benchmark
+                                    esta enviando/recebendo dados a uma taxa estavel. A <b>linha de tendencia</b> deve
+                                    ser praticamente colada na serie original.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-warn">
+                                <div class="tip-title"><span class="tip-icon">&#9888;&#65039;</span> Rede inesperada?</div>
+                                <div class="tip-text">
+                                    Se um benchmark que <b>nao deveria usar rede</b> mostra trafego, investigue:
+                                    pode ser telemetria, logging remoto, ou dependencias externas nao-mockadas.
+                                    Use o <b>&#916; Enviado/Recebido</b> (oculto por padrao na legenda) para ver a taxa por segundo.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-group collapsed">
+                        <div class="tip-group-header" onclick="this.closest('.tip-group').classList.toggle('collapsed')">
+                            <span class="tip-group-toggle">&#9660;</span>
+                            <span>&#128202;</span>
+                            <span>Percentis e Estatisticas — O que significam P50, P99 etc?</span>
+                        </div>
+                        <div class="tip-group-body">
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128203;</span> O que e um Percentil?</div>
+                                <div class="tip-text">
+                                    O percentil indica que X% das amostras ficaram <b>abaixo</b> daquele valor.<br>
+                                    <b>P50 (Mediana)</b> — Metade das amostras ficou abaixo, metade acima. E o valor "tipico".<br>
+                                    <b>P95</b> — 95% das amostras ficaram abaixo. Mostra o comportamento quase-pior.<br>
+                                    <b>P99</b> — 99% das amostras ficaram abaixo. Captura outliers e picos.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128200;</span> Variacao em relacao ao P50</div>
+                                <div class="tip-text">
+                                    Na tabela de percentis, cada valor mostra a <b>variacao percentual</b> em relacao ao P50.
+                                    Isso ajuda a entender o quanto os extremos se desviam do comportamento tipico.
+                                </div>
+                                <div class="tip-example">
+                                    P50 = 2.5% &nbsp;|&nbsp; P99 = 8.1% (+224%) &#8594; O P99 e 224% maior que o tipico (pico de stress)<br>
+                                    P50 = 2.5% &nbsp;|&nbsp; P25 = 1.2% (-52%) &nbsp;&#8594; O P25 e 52% menor que o tipico (periodos mais calmos)
+                                </div>
+                            </div>
+                            <div class="tip-card tip-warn">
+                                <div class="tip-title"><span class="tip-icon">&#128161;</span> Quando se preocupar?</div>
+                                <div class="tip-text">
+                                    Se o <b>P99 e muito maior que o P50</b> (ex: +500%), existem picos extremos.
+                                    Isso pode indicar GC pausando, contencao de lock, ou warm-up.
+                                    Correlacione o pico de CPU com GC Pause na <b>Matriz de Correlacao</b>.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-group collapsed">
+                        <div class="tip-group-header" onclick="this.closest('.tip-group').classList.toggle('collapsed')">
+                            <span class="tip-group-toggle">&#9660;</span>
+                            <span>&#128279;</span>
+                            <span>Matriz de Correlacao — Como descobrir relacoes entre metricas</span>
+                        </div>
+                        <div class="tip-group-body">
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128203;</span> O que e a Correlacao de Pearson?</div>
+                                <div class="tip-text">
+                                    Mede se duas metricas se movem juntas ao longo do tempo. Vai de <b>-1</b> a <b>+1</b>:<br>
+                                    <b>+1</b> = quando uma sobe, a outra sempre sobe junto (correlacao positiva perfeita)<br>
+                                    <b>0</b> = nenhuma relacao<br>
+                                    <b>-1</b> = quando uma sobe, a outra sempre desce (correlacao negativa perfeita)
+                                </div>
+                                <div class="tip-scale">
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:rgba(239,68,68,0.85)"></span> Forte negativa</span>
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:rgba(239,68,68,0.45)"></span> Moderada neg.</span>
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:var(--border)"></span> Fraca</span>
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:rgba(16,185,129,0.45)"></span> Moderada pos.</span>
+                                    <span class="tip-scale-item"><span class="tip-scale-dot" style="background:rgba(16,185,129,0.85)"></span> Forte positiva</span>
+                                </div>
+                            </div>
+                            <div class="tip-card tip-good">
+                                <div class="tip-title"><span class="tip-icon">&#127919;</span> Sugestoes de correlacoes uteis</div>
+                                <div class="tip-text">
+                                    Arraste estas combinacoes para a matriz e veja o que acontece:
+                                </div>
+                                <div class="tip-example">
+                                    &#8226; <b>CPU</b> vs <b>GC Pause (%)</b> &#8594; O GC esta roubando CPU?<br>
+                                    &#8226; <b>Heap GC</b> vs <b>GC Pause (ms/s)</b> &#8594; Heap crescendo causa mais pausas?<br>
+                                    &#8226; <b>CPU</b> vs <b>Rede Recebido</b> &#8594; Processar dados da rede esta pesando?<br>
+                                    &#8226; <b>Working Set</b> vs <b>Heap GC</b> &#8594; Memoria nativa vs gerenciada crescem juntas?<br>
+                                    &#8226; <b>GC Pause (%)</b> vs <b>GC Pause (ms/s)</b> &#8594; Devem ser altamente correlacionados
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-group collapsed">
+                        <div class="tip-group-header" onclick="this.closest('.tip-group').classList.toggle('collapsed')">
+                            <span class="tip-group-toggle">&#9660;</span>
+                            <span>&#128218;</span>
+                            <span>Linhas de Tendencia — O que a inclinacao revela</span>
+                        </div>
+                        <div class="tip-group-body">
+                            <div class="tip-card tip-info">
+                                <div class="tip-title"><span class="tip-icon">&#128203;</span> Como funciona</div>
+                                <div class="tip-text">
+                                    Cada grafico tem <b>linhas tracejadas</b> que representam a <b>regressao linear</b> da serie.
+                                    E uma reta que melhor aproxima a tendencia geral dos dados, ignorando oscilacoes pontuais.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-good">
+                                <div class="tip-title"><span class="tip-icon">&#8594;</span> Linha plana = Estavel</div>
+                                <div class="tip-text">
+                                    Se a linha de tendencia e praticamente <b>horizontal</b>, a metrica esta estavel.
+                                    Isso e o ideal para CPU, GC Pause e Heap apos o warm-up.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-warn">
+                                <div class="tip-title"><span class="tip-icon">&#8599;&#65039;</span> Linha subindo = Crescimento</div>
+                                <div class="tip-text">
+                                    Uma tendencia subindo indica crescimento ao longo do tempo.
+                                    Para <b>Rede</b> (cumulativo) e esperado. Para <b>Heap</b> ou <b>CPU</b>, pode indicar problema.
+                                    Compare a inclinacao do Heap com a do Working Set para distinguir memoria gerenciada de nativa.
+                                </div>
+                            </div>
+                            <div class="tip-card tip-danger">
+                                <div class="tip-title"><span class="tip-icon">&#128680;</span> Heap subindo + Gen2 subindo = Alerta</div>
+                                <div class="tip-text">
+                                    Se as linhas de tendencia de <b>Heap GC</b> e <b>&#916; Gen2</b> estao ambas subindo,
+                                    o GC nao esta conseguindo limpar objetos de longa duracao. Isso e o padrao classico de
+                                    <b>memory leak</b> em .NET. Investigue objetos retidos por event handlers, caches ou listas estaticas.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         """);
 
     // --- Detailed Results (collapsible per benchmark) ---
