@@ -1103,6 +1103,279 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
             }
         }
 
+        // 7-13: Sample-based diagnostics (need samples for trends/percentiles)
+        if (!string.IsNullOrEmpty(r.SamplesJson))
+        {
+            var diagSamples = ParseSamplesForPercentiles(r.SamplesJson);
+            if (diagSamples.Count >= 10)
+            {
+                // 7. GC Efficiency: ratio of Gen0 to Gen1+Gen2 (promotion rate)
+                {
+                    var gen0 = r.GcGen0;
+                    var gen1 = r.GcGen1;
+                    var gen2 = r.GcGen2;
+                    var promoted = gen1 + gen2;
+                    if (gen0 > 0)
+                    {
+                        var promotionRate = (double)promoted / gen0 * 100;
+                        string effIcon, effMsg;
+                        if (promotionRate < 5)
+                        {
+                            effIcon = "&#9989;";
+                            effMsg = $"Taxa de promocao excelente: apenas {promotionRate:F1}% das coletas Gen0 promoveram para geracoes superiores. Objetos sao efemeros.";
+                        }
+                        else if (promotionRate < 20)
+                        {
+                            effIcon = "&#9888;&#65039;";
+                            effMsg = $"Taxa de promocao de {promotionRate:F1}%. Alguns objetos sobrevivem Gen0 e sao promovidos. Considere pooling ou Span<T> para reducao.";
+                        }
+                        else
+                        {
+                            effIcon = "&#128680;";
+                            effMsg = $"Taxa de promocao alta: {promotionRate:F1}%! Muitos objetos sobrevivem Gen0. Isso causa pressao nas geracoes superiores e pausas maiores.";
+                        }
+                        sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{effIcon}</span>
+                                        <div><div class="diag-label">Eficiencia do GC</div><div class="diag-msg">{effMsg}</div></div>
+                                    </div>
+                        """);
+                    }
+                }
+
+                // 8. CPU Stability (coefficient of variation)
+                {
+                    var cpuVals = diagSamples.Select(s => s.Cpu).ToArray();
+                    var cpuMean = cpuVals.Average();
+                    if (cpuMean > 1)
+                    {
+                        var cpuStdDev = Math.Sqrt(cpuVals.Sum(v => (v - cpuMean) * (v - cpuMean)) / cpuVals.Length);
+                        var cv = cpuStdDev / cpuMean * 100;
+                        string cvIcon, cvMsg;
+                        if (cv < 30)
+                        {
+                            cvIcon = "&#9989;";
+                            cvMsg = $"CPU muito estavel (CV={cv:F0}%). Pouca variacao entre amostras — comportamento previsivel.";
+                        }
+                        else if (cv < 80)
+                        {
+                            cvIcon = "&#9888;&#65039;";
+                            cvMsg = $"CPU com variacao moderada (CV={cv:F0}%). Existem oscilacoes — pode haver fases de warm-up ou GC intercaladas.";
+                        }
+                        else
+                        {
+                            cvIcon = "&#128680;";
+                            cvMsg = $"CPU altamente instavel (CV={cv:F0}%). Comportamento erratico — investigue contencao de threads, GC ou I/O bloqueante.";
+                        }
+                        sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{cvIcon}</span>
+                                        <div><div class="diag-label">Estabilidade CPU</div><div class="diag-msg">{cvMsg}</div></div>
+                                    </div>
+                        """);
+                    }
+                }
+
+                // 9. Memory trend (linear regression slope on heap)
+                {
+                    var heapVals = diagSamples.Select(s => s.Heap).ToArray();
+                    var n = heapVals.Length;
+                    double sx = 0, sy = 0, sxy = 0, sx2 = 0;
+                    for (var i = 0; i < n; i++) { sx += i; sy += heapVals[i]; sxy += i * heapVals[i]; sx2 += i * i; }
+                    var slope = (n * sxy - sx * sy) / (n * sx2 - sx * sx);
+                    var slopePerMin = slope * 60; // MB per minute (samples are ~1s apart)
+                    string trendIcon, trendMsg;
+                    if (Math.Abs(slopePerMin) < 0.1)
+                    {
+                        trendIcon = "&#9989;";
+                        trendMsg = $"Tendencia do Heap plana ({slopePerMin:+0.00;-0.00} MB/min). Memoria totalmente estabilizada.";
+                    }
+                    else if (slopePerMin < 0)
+                    {
+                        trendIcon = "&#9989;";
+                        trendMsg = $"Tendencia do Heap decrescente ({slopePerMin:+0.00;-0.00} MB/min). GC esta reduzindo o Heap ativamente.";
+                    }
+                    else if (slopePerMin < 1)
+                    {
+                        trendIcon = "&#9888;&#65039;";
+                        trendMsg = $"Heap crescendo lentamente ({slopePerMin:+0.00;-0.00} MB/min). Pode ser warm-up ou crescimento lento de cache.";
+                    }
+                    else
+                    {
+                        trendIcon = "&#128680;";
+                        trendMsg = $"Heap crescendo a {slopePerMin:+0.00;-0.00} MB/min! Ritmo significativo — em 1h seriam +{slopePerMin * 60:F0} MB adicionais.";
+                    }
+                    sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{trendIcon}</span>
+                                        <div><div class="diag-label">Tendencia do Heap</div><div class="diag-msg">{trendMsg}</div></div>
+                                    </div>
+                        """);
+                }
+
+                // 10. GC Pause spikes (P99 vs P50)
+                {
+                    var gcPauseVals = diagSamples.Select(s => s.GcPause).OrderBy(v => v).ToArray();
+                    var p50 = Percentile(gcPauseVals, 50);
+                    var p99 = Percentile(gcPauseVals, 99);
+                    if (p50 > 0)
+                    {
+                        var spikeRatio = p99 / p50;
+                        string spkIcon, spkMsg;
+                        if (spikeRatio < 2)
+                        {
+                            spkIcon = "&#9989;";
+                            spkMsg = $"GC Pause sem picos: P50={p50:F2}%, P99={p99:F2}% (x{spikeRatio:F1}). Comportamento uniforme.";
+                        }
+                        else if (spikeRatio < 5)
+                        {
+                            spkIcon = "&#9888;&#65039;";
+                            spkMsg = $"GC Pause com picos moderados: P99={p99:F2}% e {spikeRatio:F1}x o P50={p50:F2}%. Existem momentos de maior pressao.";
+                        }
+                        else
+                        {
+                            spkIcon = "&#128680;";
+                            spkMsg = $"GC Pause com picos severos: P99={p99:F2}% e {spikeRatio:F1}x o P50={p50:F2}%! Pausas esporadicas muito maiores que o normal.";
+                        }
+                        sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{spkIcon}</span>
+                                        <div><div class="diag-label">Picos de GC Pause</div><div class="diag-msg">{spkMsg}</div></div>
+                                    </div>
+                        """);
+                    }
+                }
+
+                // 11. Network symmetry (sent vs received ratio)
+                {
+                    var sent = r.NetworkBytesSent;
+                    var recv = r.NetworkBytesReceived;
+                    if (sent > 0 && recv > 0)
+                    {
+                        var ratio = (double)sent / recv;
+                        string symIcon, symMsg;
+                        if (ratio > 0.5 && ratio < 2)
+                        {
+                            symIcon = "&#9989;";
+                            symMsg = $"Trafego simetrico: enviou {FormatBytes(sent)}, recebeu {FormatBytes(recv)} (ratio {ratio:F2}). Padrao request/response equilibrado.";
+                        }
+                        else if (ratio >= 2)
+                        {
+                            symIcon = "&#9888;&#65039;";
+                            symMsg = $"Upload dominante: enviou {FormatBytes(sent)} vs recebeu {FormatBytes(recv)} (ratio {ratio:F1}x). Benchmark faz mais upload (ex: streaming, logging remoto).";
+                        }
+                        else
+                        {
+                            symIcon = "&#9888;&#65039;";
+                            symMsg = $"Download dominante: recebeu {FormatBytes(recv)} vs enviou {FormatBytes(sent)} (ratio 1:{1.0 / ratio:F1}). Benchmark consome mais dados do que envia.";
+                        }
+                        sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{symIcon}</span>
+                                        <div><div class="diag-label">Simetria de Rede</div><div class="diag-msg">{symMsg}</div></div>
+                                    </div>
+                        """);
+                    }
+                }
+
+                // 12. Warm-up detection (first quarter avg vs remaining avg for CPU)
+                {
+                    var cpuVals = diagSamples.Select(s => s.Cpu).ToArray();
+                    var quarterSize = Math.Max(1, cpuVals.Length / 4);
+                    var firstQ = cpuVals.Take(quarterSize).Average();
+                    var restAvg = cpuVals.Skip(quarterSize).Average();
+                    if (restAvg > 1)
+                    {
+                        var warmupDiff = Math.Abs(firstQ - restAvg) / restAvg * 100;
+                        string wuIcon, wuMsg;
+                        if (warmupDiff < 20)
+                        {
+                            wuIcon = "&#9989;";
+                            wuMsg = $"Sem warm-up detectado. CPU do 1o quartil ({firstQ:F1}%) similar ao restante ({restAvg:F1}%). Benchmark estavel desde o inicio.";
+                        }
+                        else if (firstQ < restAvg)
+                        {
+                            wuIcon = "&#9888;&#65039;";
+                            wuMsg = $"Warm-up detectado: CPU do 1o quartil ({firstQ:F1}%) e {warmupDiff:F0}% menor que o restante ({restAvg:F1}%). Inicio mais lento — JIT ou caches frios.";
+                        }
+                        else
+                        {
+                            wuIcon = "&#9888;&#65039;";
+                            wuMsg = $"Cool-down detectado: CPU do 1o quartil ({firstQ:F1}%) e {warmupDiff:F0}% maior que o restante ({restAvg:F1}%). Inicio mais intenso — possivelmente inicializacao pesada.";
+                        }
+                        sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{wuIcon}</span>
+                                        <div><div class="diag-label">Warm-up</div><div class="diag-msg">{wuMsg}</div></div>
+                                    </div>
+                        """);
+                    }
+                }
+
+                // 13. Overall health score
+                {
+                    var score = 100;
+                    var issues = new List<string>();
+
+                    // Memory
+                    if (r.MemoryGrowth?.ToUpperInvariant() == "GROWING" && r.HeapGrowthPercent > 50) { score -= 25; issues.Add("heap crescendo >50%"); }
+                    else if (r.MemoryGrowth?.ToUpperInvariant() == "GROWING") { score -= 10; issues.Add("heap crescendo"); }
+
+                    // CPU
+                    if (r.AvgCpuPercent > 80) { score -= 15; issues.Add("CPU >80%"); }
+                    else if (r.AvgCpuPercent > 50) { score -= 5; issues.Add("CPU elevado"); }
+
+                    // GC Pause
+                    if (r.AvgGcPausePercent >= 5) { score -= 20; issues.Add("GC Pause alto"); }
+                    else if (r.AvgGcPausePercent >= 1) { score -= 5; issues.Add("GC Pause moderado"); }
+
+                    // Gen2
+                    if (r.GcGen2 > 10) { score -= 15; issues.Add($"Gen2={r.GcGen2}"); }
+                    else if (r.GcGen2 > 3) { score -= 5; issues.Add($"Gen2={r.GcGen2}"); }
+
+                    // Heap trend
+                    var heapSlope = ComputeHeapSlopePerMin(diagSamples);
+                    if (heapSlope > 1) { score -= 15; issues.Add($"heap +{heapSlope:F1} MB/min"); }
+                    else if (heapSlope > 0.1) { score -= 5; issues.Add("heap crescendo lentamente"); }
+
+                    score = Math.Max(0, score);
+                    string scoreIcon, scoreColor, scoreMsg;
+                    if (score >= 90)
+                    {
+                        scoreIcon = "&#127942;"; // trophy
+                        scoreColor = "var(--passed)";
+                        scoreMsg = issues.Count == 0
+                            ? $"Saude geral: <b>{score}/100</b> — Excelente! Nenhum problema detectado."
+                            : $"Saude geral: <b>{score}/100</b> — Muito bom. Pontos menores: {string.Join(", ", issues)}.";
+                    }
+                    else if (score >= 70)
+                    {
+                        scoreIcon = "&#128077;"; // thumbs up
+                        scoreColor = "var(--passed)";
+                        scoreMsg = $"Saude geral: <b>{score}/100</b> — Bom, com pontos de atencao: {string.Join(", ", issues)}.";
+                    }
+                    else if (score >= 50)
+                    {
+                        scoreIcon = "&#9888;&#65039;";
+                        scoreColor = "var(--warn)";
+                        scoreMsg = $"Saude geral: <b>{score}/100</b> — Atencao necessaria: {string.Join(", ", issues)}.";
+                    }
+                    else
+                    {
+                        scoreIcon = "&#128680;";
+                        scoreColor = "var(--failed)";
+                        scoreMsg = $"Saude geral: <b>{score}/100</b> — Problemas criticos: {string.Join(", ", issues)}.";
+                    }
+                    sb.Append($"""
+                                    <div class="diag-item" style="border:2px solid {scoreColor};grid-column:1/-1">
+                                        <span class="diag-icon">{scoreIcon}</span>
+                                        <div><div class="diag-label">Score de Saude</div><div class="diag-msg">{scoreMsg}</div></div>
+                                    </div>
+                        """);
+                }
+            }
+        }
+
         sb.Append("""
                                 </div>
                             </div>
@@ -1571,6 +1844,18 @@ static double Percentile(double[] sorted, int p)
     if (lower == upper) return sorted[lower];
     var weight = rank - lower;
     return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+}
+
+static double ComputeHeapSlopePerMin(List<SampleData> samples)
+{
+    var n = samples.Count;
+    if (n < 2) return 0;
+    double sx = 0, sy = 0, sxy = 0, sx2 = 0;
+    for (var i = 0; i < n; i++) { sx += i; sy += samples[i].Heap; sxy += i * samples[i].Heap; sx2 += i * i; }
+    var denom = n * sx2 - sx * sx;
+    if (denom == 0) return 0;
+    var slope = (n * sxy - sx * sy) / denom;
+    return slope * 60; // samples ~1s apart, so slope * 60 = MB/min
 }
 
 static List<SampleData> ParseSamplesForPercentiles(string json)
