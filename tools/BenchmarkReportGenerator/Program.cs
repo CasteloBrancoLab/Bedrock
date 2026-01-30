@@ -806,9 +806,24 @@ static void AppendStatsRow(StringBuilder sb, string label, double[] sorted, int[
     {
         var val = Percentile(sorted, p);
         var valStr = val.ToString(fmt, CultureInfo.InvariantCulture);
-        if (p == 50 || p50 == 0)
+        if (p == 50)
         {
             sb.Append(CultureInfo.InvariantCulture, $"<td class=\"num\">{valStr}</td>");
+        }
+        else if (p50 == 0)
+        {
+            // P50 is zero — show absolute difference instead of percentage
+            var absDiff = val - p50;
+            if (absDiff == 0)
+            {
+                sb.Append(CultureInfo.InvariantCulture, $"<td class=\"num\">{valStr}</td>");
+            }
+            else
+            {
+                var sign = absDiff >= 0 ? "+" : "";
+                var cssClass = absDiff > 0 ? "pct-up" : "pct-down";
+                sb.Append(CultureInfo.InvariantCulture, $"<td class=\"num\">{valStr} <span class=\"{cssClass}\">({sign}{absDiff.ToString(fmt, CultureInfo.InvariantCulture)})</span></td>");
+            }
         }
         else
         {
