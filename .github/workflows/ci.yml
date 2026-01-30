@@ -53,8 +53,8 @@ jobs:
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
-            /d:sonar.exclusions="**/tests/**/*,**/scripts/**/*,**/obj/**/*,**/bin/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*" \
-            /d:sonar.coverage.exclusions="**/tests/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*" \
+            /d:sonar.exclusions="**/tests/**/*,**/scripts/**/*,**/obj/**/*,**/bin/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/playground/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*" \
+            /d:sonar.coverage.exclusions="**/tests/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/playground/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*" \
             /d:sonar.cpd.exclusions="**/Serialization.Avro/AvroSerializerBase.cs,**/Serialization.Protobuf/ProtobufSerializerBase.cs,**/Serialization.Parquet/ParquetSerializerBase.cs"
 
       - name: Build
