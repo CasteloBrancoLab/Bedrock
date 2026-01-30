@@ -324,6 +324,20 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                 .tip-scale-item{display:flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--muted)}
                 .tip-scale-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
 
+                /* Diagnostic panel */
+                .diag-panel{margin-bottom:1.5rem;border:1px solid var(--border);border-radius:.5rem;overflow:hidden}
+                .diag-header{padding:.75rem 1rem;background:var(--table-header-bg);font-weight:600;font-size:.85rem;display:flex;align-items:center;gap:.5rem;cursor:pointer}
+                .diag-header:hover{filter:brightness(1.1)}
+                .diag-toggle{font-size:.65rem;color:var(--muted);transition:transform .2s}
+                .diag-panel.collapsed .diag-toggle{transform:rotate(-90deg)}
+                .diag-body{max-height:3000px;overflow:hidden;transition:max-height .3s;padding:.75rem 1rem}
+                .diag-panel.collapsed .diag-body{max-height:0;padding:0 1rem}
+                .diag-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem}
+                .diag-item{display:flex;align-items:flex-start;gap:.6rem;padding:.6rem .75rem;border-radius:.375rem;background:var(--bg);font-size:.8rem;line-height:1.5}
+                .diag-icon{font-size:1.2rem;flex-shrink:0;margin-top:.1rem}
+                .diag-label{font-weight:600;font-size:.75rem;color:var(--muted);text-transform:uppercase;margin-bottom:.15rem}
+                .diag-msg{color:var(--text)}
+
                 /* Tabela de benchmarks */
                 .bench-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:2rem}
                 .bench-table th,.bench-table td{padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border)}
@@ -878,6 +892,220 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                             <div class="metric"><div class="metric-label">GC Pause Total</div><div class="metric-value">{FormatPauseMs(r.TotalGcPauseMs)}</div></div>
                             <div class="metric"><div class="metric-label">Rede Enviado</div><div class="metric-value">{FormatBytes(r.NetworkBytesSent)}</div></div>
                             <div class="metric"><div class="metric-label">Rede Recebido</div><div class="metric-value">{FormatBytes(r.NetworkBytesReceived)}</div></div>
+                        </div>
+            """);
+
+        // --- Diagnostic Panel ---
+        sb.Append("""
+                        <div class="diag-panel">
+                            <div class="diag-header" onclick="this.closest('.diag-panel').classList.toggle('collapsed')">
+                                <span class="diag-toggle">&#9660;</span>
+                                <span>&#129658;</span>
+                                <span>Diagnostico Automatico</span>
+                            </div>
+                            <div class="diag-body">
+                                <div class="diag-items">
+            """);
+
+        // 1. Memory Growth
+        {
+            var isGrowing = r.MemoryGrowth?.ToUpperInvariant() == "GROWING";
+            var heapGrowth = r.HeapGrowthPercent;
+            string memIcon, memMsg;
+            if (!isGrowing && heapGrowth <= 5)
+            {
+                memIcon = "&#9989;"; // green check
+                memMsg = $"Memoria estavel. Heap cresceu apenas {heapGrowth:F1}% — GC esta dando conta.";
+            }
+            else if (!isGrowing && heapGrowth <= 20)
+            {
+                memIcon = "&#9989;";
+                memMsg = $"Memoria estavel. Heap cresceu {heapGrowth:F1}% (abaixo do limiar de 20%).";
+            }
+            else if (isGrowing && heapGrowth <= 50)
+            {
+                memIcon = "&#9888;&#65039;"; // yellow warning
+                memMsg = $"Heap cresceu {heapGrowth:F1}%. Pode ser warm-up ou vazamento leve. Verifique a linha de tendencia.";
+            }
+            else if (isGrowing)
+            {
+                memIcon = "&#128680;"; // red alert
+                memMsg = $"Heap cresceu {heapGrowth:F1}%! Crescimento significativo. Investigue possiveis memory leaks.";
+            }
+            else
+            {
+                memIcon = "&#9989;";
+                memMsg = "Memoria dentro do esperado.";
+            }
+            sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{memIcon}</span>
+                                        <div><div class="diag-label">Memoria</div><div class="diag-msg">{memMsg}</div></div>
+                                    </div>
+                """);
+        }
+
+        // 2. CPU
+        {
+            var avgCpu = r.AvgCpuPercent;
+            var peakCpu = r.PeakCpuPercent;
+            var spikeRatio = avgCpu > 0 ? peakCpu / avgCpu : 0;
+            string cpuIcon, cpuMsg;
+            if (avgCpu < 5)
+            {
+                cpuIcon = "&#9989;";
+                cpuMsg = $"CPU baixo ({avgCpu:F1}% medio). Benchmark provavelmente e I/O-bound.";
+            }
+            else if (avgCpu <= 50 && spikeRatio < 3)
+            {
+                cpuIcon = "&#9989;";
+                cpuMsg = $"CPU moderado ({avgCpu:F1}% medio, pico {peakCpu:F1}%). Uso consistente.";
+            }
+            else if (avgCpu <= 50 && spikeRatio >= 3)
+            {
+                cpuIcon = "&#9888;&#65039;";
+                cpuMsg = $"CPU medio de {avgCpu:F1}% mas pico de {peakCpu:F1}% (x{spikeRatio:F1}). Existem picos esporadicos — possivelmente GC ou contencao.";
+            }
+            else if (avgCpu <= 80)
+            {
+                cpuIcon = "&#9888;&#65039;";
+                cpuMsg = $"CPU elevado ({avgCpu:F1}% medio, pico {peakCpu:F1}%). Considere se e esperado para este benchmark.";
+            }
+            else
+            {
+                cpuIcon = "&#128680;";
+                cpuMsg = $"CPU muito alto ({avgCpu:F1}% medio, pico {peakCpu:F1}%). Pode haver saturacao de processamento.";
+            }
+            sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{cpuIcon}</span>
+                                        <div><div class="diag-label">CPU</div><div class="diag-msg">{cpuMsg}</div></div>
+                                    </div>
+                """);
+        }
+
+        // 3. GC Pause
+        {
+            var avgPause = r.AvgGcPausePercent;
+            var peakPause = r.PeakGcPausePercent;
+            var totalMs = r.TotalGcPauseMs;
+            string gcIcon, gcMsg;
+            if (avgPause < 1 && peakPause < 2)
+            {
+                gcIcon = "&#9989;";
+                gcMsg = $"GC Pause excelente ({avgPause:F2}% medio). Pausas totais de {FormatPauseMs(totalMs)}.";
+            }
+            else if (avgPause < 5 && peakPause < 10)
+            {
+                gcIcon = "&#9888;&#65039;";
+                gcMsg = $"GC Pause aceitavel ({avgPause:F2}% medio, pico {peakPause:F2}%). Total: {FormatPauseMs(totalMs)}.";
+            }
+            else
+            {
+                gcIcon = "&#128680;";
+                gcMsg = $"GC Pause alto ({avgPause:F2}% medio, pico {peakPause:F2}%). Total: {FormatPauseMs(totalMs)}. Reduza alocacoes ou investigue objetos Gen2.";
+            }
+            sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{gcIcon}</span>
+                                        <div><div class="diag-label">GC Pause</div><div class="diag-msg">{gcMsg}</div></div>
+                                    </div>
+                """);
+        }
+
+        // 4. GC Generations
+        {
+            var gen2 = r.GcGen2;
+            var gen1 = r.GcGen1;
+            var gen0 = r.GcGen0;
+            string genIcon, genMsg;
+            if (gen2 == 0 && gen1 <= 5)
+            {
+                genIcon = "&#9989;";
+                genMsg = $"GC saudavel: Gen0={gen0}, Gen1={gen1}, Gen2={gen2}. Sem coletas de geracao 2.";
+            }
+            else if (gen2 <= 3)
+            {
+                genIcon = "&#9989;";
+                genMsg = $"GC normal: Gen0={gen0}, Gen1={gen1}, Gen2={gen2}. Poucas coletas Gen2.";
+            }
+            else if (gen2 <= 10)
+            {
+                genIcon = "&#9888;&#65039;";
+                genMsg = $"GC com atencao: Gen0={gen0}, Gen1={gen1}, Gen2={gen2}. Coletas Gen2 frequentes podem impactar latencia.";
+            }
+            else
+            {
+                genIcon = "&#128680;";
+                genMsg = $"GC sob pressao: Gen0={gen0}, Gen1={gen1}, Gen2={gen2}. Muitas coletas Gen2 indicam objetos de longa duracao excessivos.";
+            }
+            sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{genIcon}</span>
+                                        <div><div class="diag-label">GC Geracoes</div><div class="diag-msg">{genMsg}</div></div>
+                                    </div>
+                """);
+        }
+
+        // 5. Network
+        {
+            var sent = r.NetworkBytesSent;
+            var recv = r.NetworkBytesReceived;
+            string netIcon, netMsg;
+            if (sent == 0 && recv == 0)
+            {
+                netIcon = "&#9989;";
+                netMsg = "Nenhum trafego de rede detectado. Esperado para benchmarks de computacao pura.";
+            }
+            else
+            {
+                netIcon = "&#9989;";
+                netMsg = $"Trafego de rede: {FormatBytes(sent)} enviado, {FormatBytes(recv)} recebido. Verifique se e esperado para este benchmark.";
+            }
+            sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{netIcon}</span>
+                                        <div><div class="diag-label">Rede</div><div class="diag-msg">{netMsg}</div></div>
+                                    </div>
+                """);
+        }
+
+        // 6. Heap vs Working Set relationship
+        {
+            var heapFinal = r.FinalHeapMb;
+            var hasMd = medianData.TryGetValue(r.Name, out var mdd);
+            var wsMedian = hasMd ? mdd.WsMedian : 0;
+            if (heapFinal > 0 && wsMedian > 0)
+            {
+                var ratio = wsMedian / heapFinal;
+                string relIcon, relMsg;
+                if (ratio < 1.5)
+                {
+                    relIcon = "&#9989;";
+                    relMsg = $"Working Set ({wsMedian:F1} MB) proximo do Heap ({heapFinal:F2} MB). Quase toda memoria e gerenciada.";
+                }
+                else if (ratio < 3)
+                {
+                    relIcon = "&#9888;&#65039;";
+                    relMsg = $"Working Set ({wsMedian:F1} MB) e {ratio:F1}x o Heap ({heapFinal:F2} MB). Parte significativa e memoria nativa (buffers, codigo, etc).";
+                }
+                else
+                {
+                    relIcon = "&#128680;";
+                    relMsg = $"Working Set ({wsMedian:F1} MB) e {ratio:F1}x o Heap ({heapFinal:F2} MB). Grande volume de memoria nativa — investigue buffers, conexoes ou libs nativas.";
+                }
+                sb.Append($"""
+                                    <div class="diag-item">
+                                        <span class="diag-icon">{relIcon}</span>
+                                        <div><div class="diag-label">Heap vs Working Set</div><div class="diag-msg">{relMsg}</div></div>
+                                    </div>
+                    """);
+            }
+        }
+
+        sb.Append("""
+                                </div>
+                            </div>
                         </div>
             """);
 
