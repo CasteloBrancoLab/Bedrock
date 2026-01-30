@@ -768,6 +768,8 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
             var t0=samples[0].t;
             var labels=samples.map(function(s){var d=s.t-t0;var m=Math.floor(d/60);var sec=d%60;return m+':'+(sec<10?'0':'')+sec;});
             function delta(arr,key){return arr.map(function(s,i){return i===0?0:s[key]-arr[i-1][key];});}
+            function trendline(data){var n=data.length;if(n<2)return data.slice();var sx=0,sy=0,sxy=0,sx2=0;for(var i=0;i<n;i++){sx+=i;sy+=data[i];sxy+=i*data[i];sx2+=i*i;}var slope=(n*sxy-sx*sy)/(n*sx2-sx*sx);var intercept=(sy-slope*sx)/n;return data.map(function(_,i){return Math.round((slope*i+intercept)*1000)/1000;});}
+            function makeTrend(label,data,color){return{label:'\u2197 '+label,data:trendline(data),borderColor:color,borderDash:[6,4],borderWidth:1.5,pointRadius:0,pointHitRadius:0,fill:false,tension:0};}
             var mt=getComputedStyle(document.body).getPropertyValue('--muted').trim();
             var lg=getComputedStyle(document.body).getPropertyValue('--chart-legend').trim();
             var gridC='rgba(148,163,184,0.1)';
@@ -775,36 +777,56 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
             var xScale={display:true,title:{display:true,text:'Tempo (mm:ss)',color:mt},ticks:{color:mt,maxTicksLimit:20},grid:{color:gridC}};
             function makeY(label){return{type:'linear',display:true,position:'left',title:{display:true,text:label,color:mt},ticks:{color:mt},grid:{color:gridC}};}
 
+            // Pre-compute data arrays for charts + trendlines
+            var cpuData=samples.map(function(s){return s.cpu;});
+            var heapData=samples.map(function(s){return s.heap;});
+            var wsData=samples.map(function(s){return s.ws;});
+            var gcPauseData=samples.map(function(s){return s.gcPause||0;});
+            var gcPauseMsDelta=delta(samples,'gcPauseMs');
+            var gen0Delta=delta(samples,'g0');
+            var gen1Delta=delta(samples,'g1');
+            var gen2Delta=delta(samples,'g2');
+            var netSData=samples.map(function(s){return s.netS/1024;});
+            var netRData=samples.map(function(s){return s.netR/1024;});
+            var netSDelta=delta(samples,'netS').map(function(v){return v/1024;});
+            var netRDelta=delta(samples,'netR').map(function(v){return v/1024;});
+
             // 1. CPU chart
             var cpuCanvas=document.getElementById(base+'_cpu');
             if(cpuCanvas){var c=new Chart(cpuCanvas,{type:'line',data:{labels:labels,datasets:[
-                {label:'CPU (%)',data:samples.map(function(s){return s.cpu;}),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6}
+                {label:'CPU (%)',data:cpuData,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                makeTrend('CPU',cpuData,'#f59e0b')
             ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:Object.assign(makeY('Percentual (%)'),{min:0,max:100})}})});timelineCharts.push(c);}
 
             // 2. Memory chart
             var memCanvas=document.getElementById(base+'_mem');
             if(memCanvas){var c=new Chart(memCanvas,{type:'line',data:{labels:labels,datasets:[
-                {label:'Heap GC (MB)',data:samples.map(function(s){return s.heap;}),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
-                {label:'Conjunto de Trabalho (MB)',data:samples.map(function(s){return s.ws;}),borderColor:'#06b6d4',backgroundColor:'rgba(6,182,212,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6}
+                {label:'Heap GC (MB)',data:heapData,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                {label:'Conjunto de Trabalho (MB)',data:wsData,borderColor:'#06b6d4',backgroundColor:'rgba(6,182,212,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                makeTrend('Heap',heapData,'#8b5cf6'),
+                makeTrend('WS',wsData,'#06b6d4')
             ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:makeY('Memoria (MB)')}})});timelineCharts.push(c);}
 
             // 3. GC chart
             var gcCanvas=document.getElementById(base+'_gc');
             if(gcCanvas){var c=new Chart(gcCanvas,{type:'line',data:{labels:labels,datasets:[
-                {label:'GC Pause (%)',data:samples.map(function(s){return s.gcPause||0;}),borderColor:'#e11d48',backgroundColor:'rgba(225,29,72,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y'},
-                {label:'\u0394 GC Pause (ms)',data:delta(samples,'gcPauseMs'),borderColor:'#be123c',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
-                {label:'\u0394 Gen0',data:delta(samples,'g0'),borderColor:'#ec4899',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
-                {label:'\u0394 Gen1',data:delta(samples,'g1'),borderColor:'#f97316',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
-                {label:'\u0394 Gen2',data:delta(samples,'g2'),borderColor:'#ef4444',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'}
+                {label:'GC Pause (%)',data:gcPauseData,borderColor:'#e11d48',backgroundColor:'rgba(225,29,72,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y'},
+                {label:'\u0394 GC Pause (ms)',data:gcPauseMsDelta,borderColor:'#be123c',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
+                {label:'\u0394 Gen0',data:gen0Delta,borderColor:'#ec4899',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
+                {label:'\u0394 Gen1',data:gen1Delta,borderColor:'#f97316',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
+                {label:'\u0394 Gen2',data:gen2Delta,borderColor:'#ef4444',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
+                Object.assign(makeTrend('GC Pause',gcPauseData,'#e11d48'),{yAxisID:'y'})
             ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:Object.assign(makeY('Percentual (%)'),{min:0}),y2:{type:'linear',display:true,position:'right',title:{display:true,text:'Quantidade',color:mt},ticks:{color:mt},grid:{drawOnChartArea:false}}}})});timelineCharts.push(c);}
 
             // 4. Network chart
             var netCanvas=document.getElementById(base+'_net');
             if(netCanvas){var c=new Chart(netCanvas,{type:'line',data:{labels:labels,datasets:[
-                {label:'Enviado (KB)',data:samples.map(function(s){return s.netS/1024;}),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
-                {label:'Recebido (KB)',data:samples.map(function(s){return s.netR/1024;}),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
-                {label:'\u0394 Enviado (KB)',data:delta(samples,'netS').map(function(v){return v/1024;}),borderColor:'#34d399',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,hidden:true},
-                {label:'\u0394 Recebido (KB)',data:delta(samples,'netR').map(function(v){return v/1024;}),borderColor:'#60a5fa',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,hidden:true}
+                {label:'Enviado (KB)',data:netSData,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                {label:'Recebido (KB)',data:netRData,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                {label:'\u0394 Enviado (KB)',data:netSDelta,borderColor:'#34d399',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,hidden:true},
+                {label:'\u0394 Recebido (KB)',data:netRDelta,borderColor:'#60a5fa',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,hidden:true},
+                makeTrend('Enviado',netSData,'#10b981'),
+                makeTrend('Recebido',netRData,'#3b82f6')
             ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:makeY('Kilobytes (KB)')}})});timelineCharts.push(c);}
         });
 
