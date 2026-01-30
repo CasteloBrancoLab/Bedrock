@@ -528,7 +528,14 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
         {
             sb.Append($"""
                         <div class="chart-label">Linha do Tempo de Metricas</div>
-                        <div class="timeline-chart"><canvas id="{canvasId}"></canvas></div>
+                        <div class="chart-label" style="font-size:.75rem;color:var(--muted)">CPU</div>
+                        <div class="timeline-chart"><canvas id="{canvasId}_cpu"></canvas></div>
+                        <div class="chart-label" style="font-size:.75rem;color:var(--muted)">Memoria</div>
+                        <div class="timeline-chart"><canvas id="{canvasId}_mem"></canvas></div>
+                        <div class="chart-label" style="font-size:.75rem;color:var(--muted)">Garbage Collector</div>
+                        <div class="timeline-chart"><canvas id="{canvasId}_gc"></canvas></div>
+                        <div class="chart-label" style="font-size:.75rem;color:var(--muted)">Rede</div>
+                        <div class="timeline-chart"><canvas id="{canvasId}_net"></canvas></div>
                         <script type="application/json" id="{canvasId}_data">{r.SamplesJson}</script>
                 """);
 
@@ -670,31 +677,59 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
         function toggleTheme(){document.body.classList.toggle('light-theme');localStorage.setItem('bench-theme',document.body.classList.contains('light-theme')?'light':'dark');updateChart();timelineCharts.forEach(c=>c.update());}
         function updateChart(){var c=getComputedStyle(document.body);var txt=c.getPropertyValue('--text').trim();var mt=c.getPropertyValue('--muted').trim();overviewCharts.forEach(function(ch){ch.options.plugins.title.color=txt;if(ch.options.plugins.legend&&ch.options.plugins.legend.display){ch.options.plugins.legend.labels.color=txt;}ch.options.scales.y.ticks.color=mt;ch.options.scales.x.ticks.color=mt;ch.update();});}
 
-        // Timeline charts for each benchmark with samples
+        // Timeline charts for each benchmark with samples (4 charts per benchmark)
         var timelineCharts=[];
-        document.querySelectorAll('.timeline-chart canvas').forEach(function(canvas){
-            var dataEl=document.getElementById(canvas.id+'_data');
+        var baseIds=new Set();
+        document.querySelectorAll('script[id$="_data"]').forEach(function(el){
+            var base=el.id.replace('_data','');
+            baseIds.add(base);
+        });
+        baseIds.forEach(function(base){
+            var dataEl=document.getElementById(base+'_data');
             if(!dataEl)return;
             var samples=JSON.parse(dataEl.textContent);
             if(!samples.length)return;
             var t0=samples[0].t;
             var labels=samples.map(function(s){var d=s.t-t0;var m=Math.floor(d/60);var sec=d%60;return m+':'+(sec<10?'0':'')+sec;});
             function delta(arr,key){return arr.map(function(s,i){return i===0?0:s[key]-arr[i-1][key];});}
-            var chart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:[
-                {label:'Heap GC (MB)',data:samples.map(function(s){return s.heap;}),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y'},
-                {label:'Conjunto de Trabalho (MB)',data:samples.map(function(s){return s.ws;}),borderColor:'#06b6d4',backgroundColor:'rgba(6,182,212,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y'},
-                {label:'CPU (%)',data:samples.map(function(s){return s.cpu;}),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y1'},
-                {label:'Rede Enviado (KB)',data:samples.map(function(s){return s.netS/1024;}),borderColor:'#10b981',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'Rede Recebido (KB)',data:samples.map(function(s){return s.netR/1024;}),borderColor:'#3b82f6',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'\u0394 Rede Enviado (KB)',data:delta(samples,'netS').map(function(v){return v/1024;}),borderColor:'#34d399',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'\u0394 Rede Recebido (KB)',data:delta(samples,'netR').map(function(v){return v/1024;}),borderColor:'#60a5fa',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'GC Gen0',data:delta(samples,'g0'),borderColor:'#ec4899',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'GC Gen1',data:delta(samples,'g1'),borderColor:'#f97316',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'GC Gen2',data:delta(samples,'g2'),borderColor:'#ef4444',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true},
-                {label:'GC Pause (%)',data:samples.map(function(s){return s.gcPause||0;}),borderColor:'#e11d48',backgroundColor:'rgba(225,29,72,0.1)',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y1',hidden:false},
-                {label:'\u0394 GC Pause (ms)',data:delta(samples,'gcPauseMs'),borderColor:'#be123c',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2',hidden:true}
-            ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true,boxWidth:8,color:getComputedStyle(document.body).getPropertyValue('--chart-legend').trim()}},tooltip:{mode:'index',intersect:false}},scales:{x:{display:true,title:{display:true,text:'Tempo (mm:ss)',color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim(),maxTicksLimit:20},grid:{color:'rgba(148,163,184,0.1)'}},y:{type:'linear',display:true,position:'left',title:{display:true,text:'Memoria (MB)',color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},grid:{color:'rgba(148,163,184,0.1)'}},y1:{type:'linear',display:true,position:'right',title:{display:true,text:'Percentual (%)',color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim()},min:0,max:100,grid:{drawOnChartArea:false}},y2:{type:'linear',display:false,ticks:{color:getComputedStyle(document.body).getPropertyValue('--muted').trim()}}}}});
-            timelineCharts.push(chart);
+            var mt=getComputedStyle(document.body).getPropertyValue('--muted').trim();
+            var lg=getComputedStyle(document.body).getPropertyValue('--chart-legend').trim();
+            var gridC='rgba(148,163,184,0.1)';
+            var baseOpts={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true,boxWidth:8,color:lg}},tooltip:{mode:'index',intersect:false}}};
+            var xScale={display:true,title:{display:true,text:'Tempo (mm:ss)',color:mt},ticks:{color:mt,maxTicksLimit:20},grid:{color:gridC}};
+            function makeY(label){return{type:'linear',display:true,position:'left',title:{display:true,text:label,color:mt},ticks:{color:mt},grid:{color:gridC}};}
+
+            // 1. CPU chart
+            var cpuCanvas=document.getElementById(base+'_cpu');
+            if(cpuCanvas){var c=new Chart(cpuCanvas,{type:'line',data:{labels:labels,datasets:[
+                {label:'CPU (%)',data:samples.map(function(s){return s.cpu;}),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6}
+            ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:Object.assign(makeY('Percentual (%)'),{min:0,max:100})}})});timelineCharts.push(c);}
+
+            // 2. Memory chart
+            var memCanvas=document.getElementById(base+'_mem');
+            if(memCanvas){var c=new Chart(memCanvas,{type:'line',data:{labels:labels,datasets:[
+                {label:'Heap GC (MB)',data:samples.map(function(s){return s.heap;}),borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                {label:'Conjunto de Trabalho (MB)',data:samples.map(function(s){return s.ws;}),borderColor:'#06b6d4',backgroundColor:'rgba(6,182,212,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6}
+            ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:makeY('Memoria (MB)')}})});timelineCharts.push(c);}
+
+            // 3. GC chart
+            var gcCanvas=document.getElementById(base+'_gc');
+            if(gcCanvas){var c=new Chart(gcCanvas,{type:'line',data:{labels:labels,datasets:[
+                {label:'GC Pause (%)',data:samples.map(function(s){return s.gcPause||0;}),borderColor:'#e11d48',backgroundColor:'rgba(225,29,72,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y'},
+                {label:'\u0394 GC Pause (ms)',data:delta(samples,'gcPauseMs'),borderColor:'#be123c',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
+                {label:'\u0394 Gen0',data:delta(samples,'g0'),borderColor:'#ec4899',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
+                {label:'\u0394 Gen1',data:delta(samples,'g1'),borderColor:'#f97316',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
+                {label:'\u0394 Gen2',data:delta(samples,'g2'),borderColor:'#ef4444',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'}
+            ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:Object.assign(makeY('Percentual (%)'),{min:0}),y2:{type:'linear',display:true,position:'right',title:{display:true,text:'Quantidade',color:mt},ticks:{color:mt},grid:{drawOnChartArea:false}}}})});timelineCharts.push(c);}
+
+            // 4. Network chart
+            var netCanvas=document.getElementById(base+'_net');
+            if(netCanvas){var c=new Chart(netCanvas,{type:'line',data:{labels:labels,datasets:[
+                {label:'Enviado (KB)',data:samples.map(function(s){return s.netS/1024;}),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                {label:'Recebido (KB)',data:samples.map(function(s){return s.netR/1024;}),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.3,pointRadius:0,pointHitRadius:6},
+                {label:'\u0394 Enviado (KB)',data:delta(samples,'netS').map(function(v){return v/1024;}),borderColor:'#34d399',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,hidden:true},
+                {label:'\u0394 Recebido (KB)',data:delta(samples,'netR').map(function(v){return v/1024;}),borderColor:'#60a5fa',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,hidden:true}
+            ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:makeY('Kilobytes (KB)')}})});timelineCharts.push(c);}
         });
 
         (function(){if(localStorage.getItem('bench-theme')==='light')document.body.classList.add('light-theme');updateChart();})();
