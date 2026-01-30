@@ -393,8 +393,17 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                         <tr>
                             <th>Status</th>
                             <th>Benchmark</th>
+        """);
+
+    if (hasMeanTimeData)
+    {
+        sb.Append("""
                             <th class="num">Tempo Medio</th>
                             <th class="num">Alocado</th>
+        """);
+    }
+
+    sb.Append("""
                             <th>Memoria</th>
                             <th class="num">CPU Medio</th>
                             <th class="num">Rede I/O</th>
@@ -424,8 +433,17 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                         <tr>
                             <td>{statusBadge}</td>
                             <td>{WebUtility.HtmlEncode(r.Name)}{(string.IsNullOrEmpty(r.Parameters) ? "" : $" <small>({WebUtility.HtmlEncode(r.Parameters)})</small>")}</td>
+            """);
+
+        if (hasMeanTimeData)
+        {
+            sb.Append($"""
                             <td class="num">{WebUtility.HtmlEncode(r.MeanTime ?? "-")}</td>
                             <td class="num">{WebUtility.HtmlEncode(r.Allocated ?? "-")}</td>
+            """);
+        }
+
+        sb.Append($"""
                             <td>{memBadge}</td>
                             <td class="num">{(r.AvgCpuPercent > 0 ? $"{r.AvgCpuPercent:F1}%" : "-")}</td>
                             <td class="num" style="font-size:.75rem">{networkIO}</td>
@@ -476,9 +494,18 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                     </div>
                     <div class="detail-content">
                         <div class="metrics-grid">
+            """);
+
+        if (hasMeanTimeData)
+        {
+            sb.Append($"""
                             <div class="metric"><div class="metric-label">Tempo Medio</div><div class="metric-value">{WebUtility.HtmlEncode(r.MeanTime ?? "-")}</div></div>
                             <div class="metric"><div class="metric-label">Tempo Mediano</div><div class="metric-value">{WebUtility.HtmlEncode(r.MedianTime ?? r.StdDevFormatted ?? "-")}</div></div>
                             <div class="metric"><div class="metric-label">Alocado</div><div class="metric-value">{WebUtility.HtmlEncode(r.Allocated ?? "-")}</div></div>
+            """);
+        }
+
+        sb.Append($"""
                             <div class="metric"><div class="metric-label">Crescimento Memoria</div><div class="metric-value">{WebUtility.HtmlEncode(r.MemoryGrowth ?? "-")}</div></div>
                             <div class="metric"><div class="metric-label">Heap Inicial</div><div class="metric-value">{r.InitialHeapMb:F2} MB</div></div>
                             <div class="metric"><div class="metric-label">Heap Final</div><div class="metric-value">{r.FinalHeapMb:F2} MB</div></div>
