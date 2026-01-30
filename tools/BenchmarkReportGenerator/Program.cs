@@ -815,7 +815,11 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                 {label:'\u0394 Gen0',data:gen0Delta,borderColor:'#ec4899',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
                 {label:'\u0394 Gen1',data:gen1Delta,borderColor:'#f97316',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
                 {label:'\u0394 Gen2',data:gen2Delta,borderColor:'#ef4444',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,yAxisID:'y2'},
-                Object.assign(makeTrend('GC Pause',gcPauseData,'#e11d48'),{yAxisID:'y'})
+                Object.assign(makeTrend('GC Pause',gcPauseData,'#e11d48'),{yAxisID:'y'}),
+                Object.assign(makeTrend('\u0394 GC Pause (ms)',gcPauseMsDelta,'#be123c'),{yAxisID:'y2'}),
+                Object.assign(makeTrend('\u0394 Gen0',gen0Delta,'#ec4899'),{yAxisID:'y2'}),
+                Object.assign(makeTrend('\u0394 Gen1',gen1Delta,'#f97316'),{yAxisID:'y2'}),
+                Object.assign(makeTrend('\u0394 Gen2',gen2Delta,'#ef4444'),{yAxisID:'y2'})
             ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:Object.assign(makeY('Percentual (%)'),{min:0}),y2:{type:'linear',display:true,position:'right',title:{display:true,text:'Quantidade',color:mt},ticks:{color:mt},grid:{drawOnChartArea:false}}}})});timelineCharts.push(c);}
 
             // 4. Network chart
