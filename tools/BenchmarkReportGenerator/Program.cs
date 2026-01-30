@@ -506,10 +506,10 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
         }
 
         sb.Append($"""
+                            <div class="metric"><div class="metric-label">Crescimento Memoria</div><div class="metric-value">{(r.MemoryGrowth?.ToUpperInvariant() == "GROWING" ? $"""<span class="badge badge-growing">{WebUtility.HtmlEncode(r.MemoryGrowth)}</span>""" : $"""<span class="badge badge-stable">{WebUtility.HtmlEncode(r.MemoryGrowth ?? "-")}</span>""")}</div></div>
+                            <div class="metric"><div class="metric-label">Amostras</div><div class="metric-value">{r.MemorySamples}</div></div>
                             <div class="metric"><div class="metric-label">CPU Medio</div><div class="metric-value">{r.AvgCpuPercent:F1}%</div></div>
                             <div class="metric"><div class="metric-label">CPU Pico</div><div class="metric-value">{r.PeakCpuPercent:F1}%</div></div>
-                            <div class="metric"><div class="metric-label">Amostras</div><div class="metric-value">{r.MemorySamples}</div></div>
-                            <div class="metric"><div class="metric-label">Crescimento Memoria</div><div class="metric-value">{WebUtility.HtmlEncode(r.MemoryGrowth ?? "-")}</div></div>
                             <div class="metric"><div class="metric-label">Heap Inicial</div><div class="metric-value">{r.InitialHeapMb:F2} MB</div></div>
                             <div class="metric"><div class="metric-label">Heap Final</div><div class="metric-value">{r.FinalHeapMb:F2} MB</div></div>
                             <div class="metric"><div class="metric-label">Crescimento Heap</div><div class="metric-value">{r.HeapGrowthPercent:F2}%</div></div>
