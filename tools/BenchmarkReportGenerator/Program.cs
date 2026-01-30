@@ -272,6 +272,25 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                 .pct-down{color:var(--passed);font-size:.7rem;font-weight:600}
                 .pct-neutral{color:var(--muted);font-size:.7rem}
 
+                /* Correlation matrix drag-and-drop */
+                .corr-section{margin-top:1.5rem}
+                .corr-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem}
+                .corr-chip{padding:.3rem .7rem;border-radius:9999px;font-size:.75rem;font-weight:600;cursor:grab;user-select:none;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all .15s}
+                .corr-chip:active{cursor:grabbing;opacity:.7}
+                .corr-chip.used{opacity:.4;pointer-events:none}
+                .corr-dropzones{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+                .corr-dropzone{min-height:48px;border:2px dashed var(--border);border-radius:.5rem;padding:.5rem;display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;transition:border-color .2s}
+                .corr-dropzone.drag-over{border-color:var(--passed)}
+                .corr-dropzone-label{font-size:.7rem;text-transform:uppercase;color:var(--muted);margin-bottom:.25rem}
+                .corr-dropped{padding:.25rem .6rem;border-radius:9999px;font-size:.7rem;font-weight:600;background:var(--badge-pass-bg);color:var(--badge-pass-text);cursor:pointer;display:flex;align-items:center;gap:.3rem}
+                .corr-dropped:hover{opacity:.7}
+                .corr-dropped::after{content:'\00d7';font-size:.85rem}
+                .corr-matrix{overflow-x:auto;margin-top:.75rem}
+                .corr-matrix table{border-collapse:collapse;width:auto}
+                .corr-matrix th,.corr-matrix td{padding:.4rem .6rem;text-align:center;font-size:.75rem;border:1px solid var(--border);font-family:monospace}
+                .corr-matrix th{background:var(--table-header-bg);color:var(--muted);font-weight:600;white-space:nowrap}
+                .corr-matrix td{min-width:60px}
+
                 .section-header{font-size:1.25rem;font-weight:600;margin-bottom:1rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
 
                 /* Tabela de benchmarks */
@@ -605,6 +624,34 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                             </table>
                         </div>
                 """);
+
+                // Correlation matrix section
+                sb.Append($"""
+                        <div class="corr-section" id="{canvasId}_corr">
+                            <div class="chart-label" style="margin-top:1.5rem">Matriz de Correlacao</div>
+                            <p style="font-size:.75rem;color:var(--muted);margin-bottom:.75rem">Arraste as metricas para Linhas e Colunas para calcular a correlacao de Pearson.</p>
+                            <div class="corr-chips" data-corr-chips="{canvasId}">
+                                <span class="corr-chip" draggable="true" data-metric="cpu">CPU (%)</span>
+                                <span class="corr-chip" draggable="true" data-metric="heap">Heap GC (MB)</span>
+                                <span class="corr-chip" draggable="true" data-metric="ws">Working Set (MB)</span>
+                                <span class="corr-chip" draggable="true" data-metric="gcPause">GC Pause (%)</span>
+                                <span class="corr-chip" draggable="true" data-metric="gcPauseMsDelta">GC Pause (ms/s)</span>
+                                <span class="corr-chip" draggable="true" data-metric="netSDelta">Rede Enviado (KB/s)</span>
+                                <span class="corr-chip" draggable="true" data-metric="netRDelta">Rede Recebido (KB/s)</span>
+                            </div>
+                            <div class="corr-dropzones">
+                                <div>
+                                    <div class="corr-dropzone-label">Linhas</div>
+                                    <div class="corr-dropzone" data-corr-zone="rows" data-corr-id="{canvasId}"></div>
+                                </div>
+                                <div>
+                                    <div class="corr-dropzone-label">Colunas</div>
+                                    <div class="corr-dropzone" data-corr-zone="cols" data-corr-id="{canvasId}"></div>
+                                </div>
+                            </div>
+                            <div class="corr-matrix" id="{canvasId}_corrMatrix"></div>
+                        </div>
+                """);
             }
         }
 
@@ -752,6 +799,106 @@ static string GenerateHtml(List<BenchmarkResult> results, string gitBranch, stri
                 {label:'\u0394 Recebido (KB)',data:delta(samples,'netR').map(function(v){return v/1024;}),borderColor:'#60a5fa',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,pointHitRadius:6,hidden:true}
             ]},options:Object.assign({},baseOpts,{scales:{x:xScale,y:makeY('Kilobytes (KB)')}})});timelineCharts.push(c);}
         });
+
+        // Correlation matrix drag-and-drop
+        (function(){
+            var metricLabels={cpu:'CPU (%)',heap:'Heap GC (MB)',ws:'Working Set (MB)',gcPause:'GC Pause (%)',gcPauseMsDelta:'GC Pause (ms/s)',netSDelta:'Rede Enviado (KB/s)',netRDelta:'Rede Recebido (KB/s)'};
+
+            function getSeries(samples,metric){
+                if(metric==='cpu')return samples.map(function(s){return s.cpu;});
+                if(metric==='heap')return samples.map(function(s){return s.heap;});
+                if(metric==='ws')return samples.map(function(s){return s.ws;});
+                if(metric==='gcPause')return samples.map(function(s){return s.gcPause||0;});
+                if(metric==='gcPauseMsDelta'){var r=[0];for(var i=1;i<samples.length;i++)r.push((samples[i].gcPauseMs||0)-(samples[i-1].gcPauseMs||0));return r;}
+                if(metric==='netSDelta'){var r=[0];for(var i=1;i<samples.length;i++)r.push((samples[i].netS-samples[i-1].netS)/1024);return r;}
+                if(metric==='netRDelta'){var r=[0];for(var i=1;i<samples.length;i++)r.push((samples[i].netR-samples[i-1].netR)/1024);return r;}
+                return [];
+            }
+
+            function pearson(a,b){
+                var n=Math.min(a.length,b.length);if(n<2)return 0;
+                var ma=0,mb=0;for(var i=0;i<n;i++){ma+=a[i];mb+=b[i];}ma/=n;mb/=n;
+                var num=0,da=0,db=0;
+                for(var i=0;i<n;i++){var x=a[i]-ma,y=b[i]-mb;num+=x*y;da+=x*x;db+=y*y;}
+                var den=Math.sqrt(da*db);return den===0?0:num/den;
+            }
+
+            function corrColor(r){
+                var abs=Math.abs(r);
+                if(abs<0.3)return 'transparent';
+                var alpha=((abs-0.3)/0.7*0.7+0.15).toFixed(2);
+                return r>0?'rgba(16,185,129,'+alpha+')':'rgba(239,68,68,'+alpha+')';
+            }
+
+            function renderMatrix(baseId){
+                var dataEl=document.getElementById(baseId+'_data');
+                if(!dataEl)return;
+                var samples=JSON.parse(dataEl.textContent);
+                if(!samples.length)return;
+                var rowZone=document.querySelector('[data-corr-zone="rows"][data-corr-id="'+baseId+'"]');
+                var colZone=document.querySelector('[data-corr-zone="cols"][data-corr-id="'+baseId+'"]');
+                var matrixDiv=document.getElementById(baseId+'_corrMatrix');
+                var rows=Array.from(rowZone.querySelectorAll('.corr-dropped')).map(function(e){return e.dataset.metric;});
+                var cols=Array.from(colZone.querySelectorAll('.corr-dropped')).map(function(e){return e.dataset.metric;});
+                if(rows.length===0||cols.length===0){matrixDiv.innerHTML='';return;}
+                var seriesCache={};
+                function get(m){if(!seriesCache[m])seriesCache[m]=getSeries(samples,m);return seriesCache[m];}
+                var html='<table><thead><tr><th></th>';
+                cols.forEach(function(c){html+='<th>'+metricLabels[c]+'</th>';});
+                html+='</tr></thead><tbody>';
+                rows.forEach(function(r){
+                    html+='<tr><th>'+metricLabels[r]+'</th>';
+                    cols.forEach(function(c){
+                        var v=r===c?1:pearson(get(r),get(c));
+                        var bg=corrColor(v);
+                        html+='<td style="background:'+bg+'">'+v.toFixed(2)+'</td>';
+                    });
+                    html+='</tr>';
+                });
+                html+='</tbody></table>';
+                matrixDiv.innerHTML=html;
+            }
+
+            function updateChipStates(baseId){
+                var rowZone=document.querySelector('[data-corr-zone="rows"][data-corr-id="'+baseId+'"]');
+                var colZone=document.querySelector('[data-corr-zone="cols"][data-corr-id="'+baseId+'"]');
+                var used=new Set();
+                [rowZone,colZone].forEach(function(z){if(z)z.querySelectorAll('.corr-dropped').forEach(function(e){used.add(e.dataset.metric);});});
+                var chips=document.querySelector('[data-corr-chips="'+baseId+'"]');
+                if(chips)chips.querySelectorAll('.corr-chip').forEach(function(ch){
+                    ch.classList.toggle('used',used.has(ch.dataset.metric));
+                });
+            }
+
+            // Setup drag events
+            document.querySelectorAll('.corr-chip').forEach(function(chip){
+                chip.addEventListener('dragstart',function(e){
+                    e.dataTransfer.setData('text/plain',chip.dataset.metric);
+                    e.dataTransfer.effectAllowed='copy';
+                });
+            });
+
+            document.querySelectorAll('.corr-dropzone').forEach(function(zone){
+                zone.addEventListener('dragover',function(e){e.preventDefault();e.dataTransfer.dropEffect='copy';zone.classList.add('drag-over');});
+                zone.addEventListener('dragleave',function(){zone.classList.remove('drag-over');});
+                zone.addEventListener('drop',function(e){
+                    e.preventDefault();zone.classList.remove('drag-over');
+                    var metric=e.dataTransfer.getData('text/plain');
+                    if(!metric||!metricLabels[metric])return;
+                    // Check not already in this zone
+                    if(zone.querySelector('[data-metric="'+metric+'"]'))return;
+                    var tag=document.createElement('span');
+                    tag.className='corr-dropped';
+                    tag.dataset.metric=metric;
+                    tag.textContent=metricLabels[metric];
+                    var baseId=zone.dataset.corrId;
+                    tag.addEventListener('click',function(){tag.remove();updateChipStates(baseId);renderMatrix(baseId);});
+                    zone.appendChild(tag);
+                    updateChipStates(baseId);
+                    renderMatrix(baseId);
+                });
+            });
+        })();
 
         (function(){if(localStorage.getItem('bench-theme')==='light')document.body.classList.add('light-theme');updateChart();})();
         </script>
