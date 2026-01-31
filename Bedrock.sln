@@ -157,6 +157,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "playground", "playground", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground.ConsoleApp", "playground\Playground.ConsoleApp\Playground.ConsoleApp.csproj", "{964BC52D-FB75-4194-B826-CAC6D3B2E1A1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Serialization.Json.Schema", "Serialization.Json.Schema", "{B744E134-28D4-4B3C-CE4F-9FD7EF7876F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.BuildingBlocks.Serialization.Json.Schema", "src\BuildingBlocks\Serialization.Json.Schema\Bedrock.BuildingBlocks.Serialization.Json.Schema.csproj", "{A46B97B5-8142-4459-9FE9-DEEA88FFE769}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Serialization.Json.Schema", "Serialization.Json.Schema", "{811FF756-D3BA-4CEC-1981-CDE748C230E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.UnitTests.BuildingBlocks.Serialization.Json.Schema", "tests\UnitTests\BuildingBlocks\Serialization.Json.Schema\Bedrock.UnitTests.BuildingBlocks.Serialization.Json.Schema.csproj", "{88798986-7E6C-4469-9FB6-F14E08A2C5EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -563,6 +571,30 @@ Global
 		{964BC52D-FB75-4194-B826-CAC6D3B2E1A1}.Release|x64.Build.0 = Release|Any CPU
 		{964BC52D-FB75-4194-B826-CAC6D3B2E1A1}.Release|x86.ActiveCfg = Release|Any CPU
 		{964BC52D-FB75-4194-B826-CAC6D3B2E1A1}.Release|x86.Build.0 = Release|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Debug|x64.Build.0 = Debug|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Debug|x86.Build.0 = Debug|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Release|x64.ActiveCfg = Release|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Release|x64.Build.0 = Release|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Release|x86.ActiveCfg = Release|Any CPU
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769}.Release|x86.Build.0 = Release|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Debug|x64.Build.0 = Debug|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Debug|x86.Build.0 = Debug|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Release|x64.ActiveCfg = Release|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Release|x64.Build.0 = Release|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Release|x86.ActiveCfg = Release|Any CPU
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -640,5 +672,9 @@ Global
 		{B40E19A8-6DEB-428E-AAE0-262D16734E00} = {F6774A09-4328-9E81-2A8F-031260C197EC}
 		{2FFA6103-F3C5-4DB6-A963-CEFDC735B113} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 		{964BC52D-FB75-4194-B826-CAC6D3B2E1A1} = {12E5C810-18C6-BE57-4EA6-3F3BE821652E}
+		{B744E134-28D4-4B3C-CE4F-9FD7EF7876F9} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
+		{A46B97B5-8142-4459-9FE9-DEEA88FFE769} = {B744E134-28D4-4B3C-CE4F-9FD7EF7876F9}
+		{811FF756-D3BA-4CEC-1981-CDE748C230E7} = {A7B8C9D0-E1F2-3456-0123-567890123456}
+		{88798986-7E6C-4469-9FB6-F14E08A2C5EC} = {811FF756-D3BA-4CEC-1981-CDE748C230E7}
 	EndGlobalSection
 EndGlobal
