@@ -12,6 +12,8 @@
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="10.0.1" />
     <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
     <!-- Serialization -->
+    <PackageVersion Include="JsonSchema.Net" Version="8.0.5" />
+    <PackageVersion Include="JsonSchema.Net.Generation" Version="6.0.0" />
     <PackageVersion Include="Apache.Arrow" Version="22.1.0" />
     <PackageVersion Include="Apache.Avro" Version="1.12.1" />
     <PackageVersion Include="Google.Protobuf" Version="3.33.2" />
