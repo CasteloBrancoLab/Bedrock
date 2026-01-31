@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Bedrock.BuildingBlocks.Serialization.Avro.Models;
 
-public class Options
+public sealed class Options
 {
     // Stryker disable all : Options initialization is infrastructure code - default values are configuration choices
     [ExcludeFromCodeCoverage(Justification = "Inicializacao de opcoes padrao - valores sao escolhas de configuracao")]

@@ -7,7 +7,7 @@ namespace Bedrock.BuildingBlocks.Serialization.Json.Models;
 /// <summary>
 /// Configuration options for JSON serialization.
 /// </summary>
-public class Options
+public sealed class Options
 {
     // Stryker disable all : Options initialization is infrastructure code - default values are configuration choices not behavioral logic
     /// <summary>

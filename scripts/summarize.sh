@@ -17,6 +17,14 @@ mkdir -p "$PENDING_DIR"
 rm -rf "${PENDING_DIR:?}"/*
 
 # ========================================
+# VIOLAÇÕES DE ARQUITETURA
+# ========================================
+echo "Counting architecture violations..."
+
+ARCH_PENDING=$(find "$PENDING_DIR" -name "architecture_*.txt" 2>/dev/null | wc -l)
+ARCH_PENDING=${ARCH_PENDING//[^0-9]/}
+
+# ========================================
 # MUTANTES SOBREVIVENTES
 # ========================================
 echo "Extracting surviving mutants..."
@@ -237,6 +245,7 @@ echo "Generating summary..."
     echo "  PENDENCIAS - $(date '+%Y-%m-%d %H:%M:%S')"
     echo "========================================"
     echo ""
+    echo "VIOLACOES ARQUITETURA: $ARCH_PENDING"
     echo "MUTANTES PENDENTES: $MUTATION_PENDING"
     echo "COBERTURA PENDENTE: $COVERAGE_PENDING arquivos"
     echo "SONARCLOUD ISSUES: $SONAR_PENDING"
@@ -292,6 +301,25 @@ for f in $sonar_files; do
         line=$(grep "^LINE:" "$f" | cut -d: -f2 | tr -d ' ')
         rule=$(grep "^RULE:" "$f" | cut -d: -f2 | tr -d ' ')
         echo "  [$severity] $type - $file:$line ($rule)" >> "$SUMMARY_FILE"
+    fi
+done
+
+{
+    echo ""
+    echo "----------------------------------------"
+    echo "VIOLACOES DE ARQUITETURA:"
+    echo "----------------------------------------"
+} >> "$SUMMARY_FILE"
+
+# Lista architecture violations resumidas
+architecture_files=$(find "$PENDING_DIR" -name "architecture_*.txt" 2>/dev/null | sort || true)
+for f in $architecture_files; do
+    if [ -f "$f" ]; then
+        rule=$(grep "^RULE:" "$f" | cut -d: -f2 | tr -d ' ')
+        severity=$(grep "^SEVERITY:" "$f" | cut -d: -f2 | tr -d ' ')
+        file=$(grep "^FILE:" "$f" | cut -d: -f2- | xargs)
+        line=$(grep "^LINE:" "$f" | cut -d: -f2 | tr -d ' ')
+        echo "  [$severity] $rule - $file:$line" >> "$SUMMARY_FILE"
     fi
 done
 
