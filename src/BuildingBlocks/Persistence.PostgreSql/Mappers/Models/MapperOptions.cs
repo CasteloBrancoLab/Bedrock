@@ -5,7 +5,7 @@ using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 
 namespace Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Models;
 
-public class MapperOptions<TDataModel>
+public sealed class MapperOptions<TDataModel>
     where TDataModel : DataModelBase
 {
     // Fields

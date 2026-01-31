@@ -1,5 +1,5 @@
 #!/bin/bash
-# Executa a pipeline completa: clean → build → test → mutate → integration
+# Executa a pipeline completa: clean → build → architecture → test → mutate → integration
 # Gera artifacts/summary.json com resultados consolidados
 
 set -e
@@ -17,21 +17,96 @@ echo "========================================"
 echo ""
 
 # === CLEAN ===
-echo ">>> Step 1/5: Clean"
+echo ">>> Step 1/6: Clean"
 "$SCRIPT_DIR/clean.sh"
 "$SCRIPT_DIR/clean-artifacts.sh"
 echo ""
 
 # === BUILD ===
-echo ">>> Step 2/5: Build"
+echo ">>> Step 2/6: Build"
 BUILD_START=$(date +%s%3N)
 "$SCRIPT_DIR/build.sh"
 BUILD_END=$(date +%s%3N)
 BUILD_DURATION=$((BUILD_END - BUILD_START))
 echo ""
 
+# === ARCH ===
+echo ">>> Step 3/6: Architecture Tests"
+ARCH_START=$(date +%s%3N)
+ARCH_FAILED=0
+"$SCRIPT_DIR/architecture.sh" || ARCH_FAILED=1
+ARCH_END=$(date +%s%3N)
+ARCH_DURATION=$((ARCH_END - ARCH_START))
+echo ""
+
+if [ $ARCH_FAILED -eq 1 ]; then
+    echo ">>> Steps 4-6 SKIPPED (architecture tests failed)"
+    echo ""
+
+    END_TIME=$(date +%s%3N)
+    TOTAL_DURATION=$((END_TIME - START_TIME))
+
+    # Generate summary
+    echo ">>> Generating summary..."
+    mkdir -p artifacts
+
+    cat > artifacts/summary.json << ARCH_FAIL_EOF
+{
+  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "duration_ms": $TOTAL_DURATION,
+  "build": {
+    "success": true,
+    "duration_ms": $BUILD_DURATION
+  },
+  "architecture": {
+    "success": false,
+    "duration_ms": $ARCH_DURATION
+  },
+  "tests": {
+    "success": false,
+    "skipped": true,
+    "duration_ms": 0
+  },
+  "mutation": {
+    "success": false,
+    "skipped": true,
+    "duration_ms": 0
+  },
+  "integration": {
+    "success": false,
+    "skipped": true,
+    "projects_count": 0,
+    "duration_ms": 0
+  }
+}
+ARCH_FAIL_EOF
+
+    echo ""
+    echo "========================================"
+    echo "  PIPELINE COMPLETE"
+    echo "========================================"
+    echo ""
+    echo "Duration: ${TOTAL_DURATION}ms"
+    echo "Summary:  artifacts/summary.json"
+    if [ -f "artifacts/architecture-report/index.html" ]; then
+        echo "Architecture Report: artifacts/architecture-report/index.html"
+    fi
+    echo ""
+    echo "STATUS: FAILED (architecture tests failed)"
+    echo ""
+    echo ">>> Extracting pending items..."
+    "$SCRIPT_DIR/summarize.sh"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
+    echo "  2. Check individual files in artifacts/pending/architecture_*.txt for details"
+    echo "  3. Fix architecture violations"
+    echo "  4. Run pipeline again"
+    exit 1
+fi
+
 # === TEST ===
-echo ">>> Step 3/5: Test"
+echo ">>> Step 4/6: Test"
 TEST_START=$(date +%s%3N)
 "$SCRIPT_DIR/test.sh"
 TEST_END=$(date +%s%3N)
@@ -39,7 +114,7 @@ TEST_DURATION=$((TEST_END - TEST_START))
 echo ""
 
 # === MUTATE ===
-echo ">>> Step 4/5: Mutate"
+echo ">>> Step 5/6: Mutate"
 MUTATE_START=$(date +%s%3N)
 MUTATION_FAILED=0
 "$SCRIPT_DIR/mutate.sh" || MUTATION_FAILED=1
@@ -54,7 +129,7 @@ INTEGRATION_DURATION=0
 INTEGRATION_PROJECTS_COUNT=0
 
 if [ $MUTATION_FAILED -eq 0 ]; then
-    echo ">>> Step 5/5: Integration Tests"
+    echo ">>> Step 6/6: Integration Tests"
     INTEGRATION_START=$(date +%s%3N)
 
     # Find all integration test projects dynamically
@@ -85,7 +160,7 @@ if [ $MUTATION_FAILED -eq 0 ]; then
     fi
     echo ""
 else
-    echo ">>> Step 5/5: Integration Tests (SKIPPED - mutation tests failed)"
+    echo ">>> Step 6/6: Integration Tests (SKIPPED - mutation tests failed)"
     echo ""
 fi
 
@@ -126,6 +201,10 @@ cat > artifacts/summary.json << SUMMARY_EOF
     "success": true,
     "duration_ms": $BUILD_DURATION
   },
+  "architecture": {
+    "success": true,
+    "duration_ms": $ARCH_DURATION
+  },
   "tests": {
     "success": true,
     "duration_ms": $TEST_DURATION
@@ -151,6 +230,7 @@ echo "========================================"
 echo ""
 echo "Duration: ${TOTAL_DURATION}ms"
 echo "Summary:  artifacts/summary.json"
+echo "Architecture: artifacts/architecture-report/index.html"
 echo "Coverage: artifacts/coverage/"
 echo "Mutation: artifacts/mutation/"
 if [ -f "artifacts/integration-report/index.html" ]; then

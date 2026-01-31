@@ -20,7 +20,7 @@ namespace Bedrock.BuildingBlocks.Core.TimeProviders;
 /// // Agora MyService sempre verá fixedTime como hora atual
 /// </code>
 /// </remarks>
-public class CustomTimeProvider : TimeProvider
+public sealed class CustomTimeProvider : TimeProvider
 {
     private readonly Func<TimeZoneInfo?, DateTimeOffset>? _utcNowFunc;
 

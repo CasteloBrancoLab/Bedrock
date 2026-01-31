@@ -57,7 +57,7 @@ namespace Bedrock.BuildingBlocks.Core.ExecutionContexts;
 // // No final, usa o contexto para diagnóstico
 // if (!context.IsSuccessful)
 //     _logger.LogWarning("Processing had issues: {Messages}", context.Messages);
-public class ExecutionContext
+public sealed class ExecutionContext
 {
     // Fields
     private readonly ConcurrentDictionary<Id, Message> _messageCollection;

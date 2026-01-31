@@ -1,6 +1,6 @@
 namespace Bedrock.BuildingBlocks.Persistence.PostgreSql.Connections.Models;
 
-public class PostgreSqlConnectionOptions
+public sealed class PostgreSqlConnectionOptions
 {
     // Properties
     public string? ConnectionString { get; private set; }

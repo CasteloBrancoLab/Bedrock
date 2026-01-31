@@ -1,6 +1,6 @@
 namespace Bedrock.BuildingBlocks.Core.ExecutionContexts;
 
-public class ExecutionContextAccessor : IExecutionContextAccessor
+public sealed class ExecutionContextAccessor : IExecutionContextAccessor
 {
     private volatile ExecutionContext? _current;
 

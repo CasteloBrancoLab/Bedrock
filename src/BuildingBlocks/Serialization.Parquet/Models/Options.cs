@@ -3,7 +3,7 @@ using Apache.Arrow.Ipc;
 
 namespace Bedrock.BuildingBlocks.Serialization.Parquet.Models;
 
-public class Options
+public sealed class Options
 {
     // Stryker disable all : Options initialization is infrastructure code - default values are configuration choices
     [ExcludeFromCodeCoverage(Justification = "Inicializacao de opcoes padrao - valores sao escolhas de configuracao")]
