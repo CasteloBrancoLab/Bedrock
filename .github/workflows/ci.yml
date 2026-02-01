@@ -68,35 +68,34 @@ jobs:
         run: dotnet restore && dotnet build --no-restore
 
       - name: Run Architecture Tests
+        id: arch
         run: |
+          mkdir -p artifacts/architecture
           FAILED=0
           for project in $(find tests/ArchitectureTests -name "*.csproj"); do
             name=$(basename "$(dirname "$project")")
             echo "::group::Architecture tests for $name"
-            dotnet test "$project" --no-build || FAILED=1
+            dotnet test "$project" --no-build \
+              --logger "trx;LogFileName=architecture-${name}.trx" \
+              --results-directory "artifacts/architecture" || FAILED=1
             echo "::endgroup::"
           done
-          if [ $FAILED -eq 1 ]; then
-            echo "::error::Architecture tests failed"
-            exit 1
-          fi
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
 
-      - name: Generate Architecture Report
-        if: always()
-        run: |
-          ./scripts/generate-architecture-report.sh || true
-
-      - name: Upload Architecture Report
+      - name: Upload Architecture Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: architecture-report
-          path: artifacts/architecture-report/
+          name: architecture-results
+          path: artifacts/architecture/
           retention-days: 1
           if-no-files-found: ignore
 
-  test:
-    name: Test & Analyze
+    outputs:
+      failed: ${{ steps.arch.outputs.failed }}
+
+  unit-test:
+    name: Unit Tests & SonarCloud
     needs: architecture
     runs-on: ubuntu-latest
 
@@ -156,51 +155,52 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Test with coverage
+        id: test
         run: |
           mkdir -p artifacts/coverage/raw
-          mkdir -p artifacts/test-results
 
-          find tests/UnitTests -name "*.csproj" | while read project; do
+          FAILED=0
+          for project in $(find tests/UnitTests -name "*.csproj"); do
             name=$(basename "$(dirname "$project")")
-            echo "Running tests for: $name"
+            echo "::group::Unit tests for $name"
 
             dotnet-coverage collect "dotnet test --no-build $project" \
               -f cobertura \
-              -o "artifacts/coverage/raw/$name.cobertura.xml"
+              -o "artifacts/coverage/raw/$name.cobertura.xml" || FAILED=1
+
+            echo "::endgroup::"
           done
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
 
       - name: Merge coverage for SonarCloud
+        if: always()
         run: |
           mkdir -p coverage
           dotnet-coverage merge artifacts/coverage/raw/*.cobertura.xml \
             -f xml \
-            -o coverage/coverage.xml
-
-          echo "Merged coverage file:"
-          ls -la coverage/coverage.xml
+            -o coverage/coverage.xml || true
 
       - name: End SonarCloud analysis
+        if: always()
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
 
-      - name: Generate Unit Test Report
-        if: always()
-        run: |
-          ./scripts/generate-unittest-report.sh || true
-
-      - name: Upload Unit Test Report
+      - name: Upload Coverage Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: unittest-report
-          path: artifacts/unittest-report/
+          name: coverage-results
+          path: artifacts/coverage/raw/
           retention-days: 1
           if-no-files-found: ignore
 
+    outputs:
+      failed: ${{ steps.test.outputs.failed }}
+
   mutation:
     name: Mutation Tests
-    needs: test
+    needs: unit-test
     runs-on: ubuntu-latest
 
     steps:
@@ -228,7 +228,7 @@ jobs:
       - name: Run Mutation Tests
         id: mutation
         run: |
-          mkdir -p mutation-reports
+          mkdir -p artifacts/mutation
           FAILED=0
           SUMMARY=""
 
@@ -239,7 +239,7 @@ jobs:
 
             cd "$DIR"
 
-            STRYKER_OUTPUT=$(dotnet stryker -O "$GITHUB_WORKSPACE/mutation-reports/$NAME" 2>&1) || true
+            STRYKER_OUTPUT=$(dotnet stryker -O "$GITHUB_WORKSPACE/artifacts/mutation/$NAME" 2>&1) || true
             STRYKER_EXIT=$?
             echo "$STRYKER_OUTPUT"
 
@@ -262,15 +262,6 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
 
-      - name: Upload Mutation Reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: mutation-reports
-          path: mutation-reports/
-          retention-days: 1
-          if-no-files-found: ignore
-
       - name: Mutation Tests Summary
         if: always()
         run: |
@@ -280,11 +271,17 @@ jobs:
           echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
           echo -e "${{ steps.mutation.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
 
-      - name: Check Mutation Results
-        if: steps.mutation.outputs.failed == '1'
-        run: |
-          echo "::error::One or more mutation test projects failed threshold requirements"
-          exit 1
+      - name: Upload Mutation Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-results
+          path: artifacts/mutation/
+          retention-days: 1
+          if-no-files-found: ignore
+
+    outputs:
+      failed: ${{ steps.mutation.outputs.failed }}
 
   integration:
     name: Integration Tests
@@ -312,38 +309,35 @@ jobs:
         run: dotnet restore && dotnet build --no-restore
 
       - name: Run Integration Tests
+        id: integration
         run: |
+          mkdir -p artifacts/test-results
           FAILED=0
           for project in $(find tests/IntegrationTests -name "*.csproj"); do
             name=$(basename "$(dirname "$project")")
             echo "::group::Integration tests for $name"
             dotnet test "$project" --no-build \
               --logger "trx;LogFileName=integration-$name.trx" \
-              --results-directory "integration-results" || FAILED=1
+              --results-directory "artifacts/test-results" || FAILED=1
             echo "::endgroup::"
           done
-          if [ $FAILED -eq 1 ]; then
-            echo "::error::Integration tests failed"
-            exit 1
-          fi
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
 
-      - name: Generate Integration Report
-        if: always()
-        run: |
-          ./scripts/generate-integration-report.sh || true
-
-      - name: Upload Integration Report
+      - name: Upload Integration Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: integration-report
-          path: artifacts/integration-report/
+          name: integration-results
+          path: artifacts/test-results/
           retention-days: 1
           if-no-files-found: ignore
 
+    outputs:
+      failed: ${{ steps.integration.outputs.failed }}
+
   benchmarks:
     name: Benchmarks
-    needs: build
+    needs: mutation
     if: ${{ inputs.run_benchmarks == true }}
     runs-on: ubuntu-latest
 
@@ -371,7 +365,9 @@ jobs:
           done
 
       - name: Run Benchmarks
+        id: bench
         run: |
+          mkdir -p artifacts/benchmark
           FAILED=0
           for project in $(find tests/PerformanceTests -name "*.csproj"); do
             name=$(basename "$(dirname "$project")")
@@ -379,15 +375,133 @@ jobs:
             dotnet run --project "$project" -c Release --no-build || FAILED=1
             echo "::endgroup::"
           done
-          if [ $FAILED -eq 1 ]; then
-            echo "::error::Benchmarks failed"
-            exit 1
-          fi
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: artifacts/benchmark/
+          retention-days: 1
+          if-no-files-found: ignore
+
+    outputs:
+      failed: ${{ steps.bench.outputs.failed }}
+
+  reports:
+    name: Generate Reports
+    needs: [mutation, integration, benchmarks]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Download Architecture Results
+        uses: actions/download-artifact@v4
+        with:
+          name: architecture-results
+          path: artifacts/architecture/
+        continue-on-error: true
+
+      - name: Download Coverage Results
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-results
+          path: artifacts/coverage/raw/
+        continue-on-error: true
+
+      - name: Download Mutation Results
+        uses: actions/download-artifact@v4
+        with:
+          name: mutation-results
+          path: artifacts/mutation/
+        continue-on-error: true
+
+      - name: Download Integration Results
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-results
+          path: artifacts/test-results/
+        continue-on-error: true
+
+      - name: Download Benchmark Results
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results
+          path: artifacts/benchmark/
+        continue-on-error: true
+
+      - name: Generate Architecture Report
+        run: |
+          ./scripts/generate-architecture-report.sh || true
+
+      - name: Generate Unit Test Report
+        run: |
+          ./scripts/generate-unittest-report.sh || true
+
+      - name: Generate Integration Report
+        if: ${{ needs.integration.result == 'success' || needs.integration.result == 'failure' }}
+        run: |
+          ./scripts/generate-integration-report.sh || true
 
       - name: Generate Benchmark Report
-        if: always()
+        if: ${{ needs.benchmarks.result == 'success' || needs.benchmarks.result == 'failure' }}
         run: |
           ./scripts/generate-benchmark-report.sh || true
+
+      - name: Upload Architecture Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: architecture-report
+          path: artifacts/architecture-report/
+          retention-days: 1
+          if-no-files-found: ignore
+
+      - name: Upload Unit Test Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unittest-report
+          path: artifacts/unittest-report/
+          retention-days: 1
+          if-no-files-found: ignore
+
+      - name: Upload Mutation Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-reports
+          path: artifacts/mutation/
+          retention-days: 1
+          if-no-files-found: ignore
+
+      - name: Upload Integration Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-report
+          path: artifacts/integration-report/
+          retention-days: 1
+          if-no-files-found: ignore
 
       - name: Upload Benchmark Report
         uses: actions/upload-artifact@v4
@@ -397,3 +511,94 @@ jobs:
           path: artifacts/benchmark-report/
           retention-days: 1
           if-no-files-found: ignore
+
+  check:
+    name: Pipeline Check
+    needs: [architecture, unit-test, mutation, integration, benchmarks, reports]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Evaluate Results
+        run: |
+          echo "## Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          FAILED=0
+
+          # Architecture
+          ARCH="${{ needs.architecture.outputs.failed }}"
+          if [ "$ARCH" = "1" ]; then
+            echo "::error::Architecture tests failed"
+            echo "- :x: Architecture Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
+            FAILED=1
+          else
+            echo "- :white_check_mark: Architecture Tests — passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Unit Tests
+          UNIT="${{ needs.unit-test.outputs.failed }}"
+          if [ "$UNIT" = "1" ]; then
+            echo "::error::Unit tests failed"
+            echo "- :x: Unit Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
+            FAILED=1
+          else
+            echo "- :white_check_mark: Unit Tests — passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Mutation
+          MUT="${{ needs.mutation.outputs.failed }}"
+          if [ "$MUT" = "1" ]; then
+            echo "::error::Mutation tests failed threshold"
+            echo "- :x: Mutation Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
+            FAILED=1
+          else
+            echo "- :white_check_mark: Mutation Tests — passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Integration (only if it ran)
+          INT_RESULT="${{ needs.integration.result }}"
+          if [ "$INT_RESULT" = "success" ] || [ "$INT_RESULT" = "failure" ]; then
+            INT="${{ needs.integration.outputs.failed }}"
+            if [ "$INT" = "1" ]; then
+              echo "::error::Integration tests failed"
+              echo "- :x: Integration Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+            else
+              echo "- :white_check_mark: Integration Tests — passed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- :fast_forward: Integration Tests — skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Benchmarks (only if it ran)
+          BENCH_RESULT="${{ needs.benchmarks.result }}"
+          if [ "$BENCH_RESULT" = "success" ] || [ "$BENCH_RESULT" = "failure" ]; then
+            BENCH="${{ needs.benchmarks.outputs.failed }}"
+            if [ "$BENCH" = "1" ]; then
+              echo "::error::Benchmarks failed"
+              echo "- :x: Benchmarks — **FAILED**" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+            else
+              echo "- :white_check_mark: Benchmarks — passed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- :fast_forward: Benchmarks — skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Reports
+          REPORTS_RESULT="${{ needs.reports.result }}"
+          if [ "$REPORTS_RESULT" = "failure" ]; then
+            echo "- :warning: Reports — generation had errors" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- :white_check_mark: Reports — generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ $FAILED -eq 1 ]; then
+            echo "::error::Pipeline failed — see summary above"
+            exit 1
+          fi
+
+          echo ":tada: All checks passed!" >> $GITHUB_STEP_SUMMARY
