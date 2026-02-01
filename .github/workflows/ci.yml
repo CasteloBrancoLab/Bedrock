@@ -157,20 +157,22 @@ jobs:
 
       - name: Test with coverage
         run: |
-          mkdir -p coverage/raw
+          mkdir -p artifacts/coverage/raw
+          mkdir -p artifacts/test-results
 
           find tests/UnitTests -name "*.csproj" | while read project; do
             name=$(basename "$(dirname "$project")")
-            echo "Running tests for: $project (output: coverage/raw/$name.xml)"
+            echo "Running tests for: $name"
+
             dotnet-coverage collect "dotnet test --no-build $project" \
-              -f xml \
-              -o "coverage/raw/$name.xml"
+              -f cobertura \
+              -o "artifacts/coverage/raw/$name.cobertura.xml"
           done
 
-      - name: Merge coverage reports
+      - name: Merge coverage for SonarCloud
         run: |
           mkdir -p coverage
-          dotnet-coverage merge coverage/raw/*.xml \
+          dotnet-coverage merge artifacts/coverage/raw/*.cobertura.xml \
             -f xml \
             -o coverage/coverage.xml
 
