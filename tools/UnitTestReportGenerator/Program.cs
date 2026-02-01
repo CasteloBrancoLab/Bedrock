@@ -1,17 +1,19 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-// Gerador de relatório HTML para testes unitários com cobertura
-// Uso: UnitTestReportGenerator <coverage-dir> <output-file> <git-branch> <git-commit> [ci-workflow]
+// Gerador de relatório HTML para testes de unidade com cobertura
+// Uso: UnitTestReportGenerator <coverage-dir> <output-file> <git-branch> <git-commit> [ci-workflow] [mutation-dir]
 
 var coverageDir = args.Length > 0 ? args[0] : "artifacts/coverage/raw";
 var outputFile = args.Length > 1 ? args[1] : "artifacts/unittest-report/index.html";
 var gitBranch = args.Length > 2 ? args[2] : "unknown";
 var gitCommit = args.Length > 3 ? args[3] : "unknown";
 var ciWorkflow = args.Length > 4 ? args[4] : "";
+var mutationDir = args.Length > 5 ? args[5] : "";
 
 if (!Directory.Exists(coverageDir))
 {
@@ -58,6 +60,13 @@ if (projects.Count == 0)
 {
     Console.WriteLine("Nenhum projeto encontrado.");
     return 1;
+}
+
+// Parse mutation data and enrich test entries
+if (!string.IsNullOrEmpty(mutationDir) && Directory.Exists(mutationDir))
+{
+    Console.WriteLine($"  Mutation dir: {mutationDir}");
+    ParseMutationData(mutationDir, projects);
 }
 
 var html = GenerateHtml(projects, gitBranch, gitCommit.Length >= 7 ? gitCommit[..7] : gitCommit, sonarExclusions);
@@ -319,6 +328,55 @@ static SonarExclusions ParseSonarExclusions(string ciWorkflowPath)
     return result;
 }
 
+static void ParseMutationData(string mutationDir, List<ProjectData> projects)
+{
+    // Each project has artifacts/mutation/<ProjectName>/reports/mutation-report.json
+    foreach (var project in projects)
+    {
+        var reportPath = Path.Combine(mutationDir, project.Name, "reports", "mutation-report.json");
+        if (!File.Exists(reportPath))
+            continue;
+
+        Console.WriteLine($"  Mutation report: {project.Name}");
+
+        using var doc = JsonDocument.Parse(File.ReadAllText(reportPath));
+        var root = doc.RootElement;
+
+        // Count mutant statuses at project level
+        // Score = Killed / (Killed + Survived + NoCoverage + Timeout)
+        // Ignored mutants are excluded from the calculation (Stryker convention)
+        int killed = 0, survived = 0, noCoverage = 0, timeout = 0, ignored = 0;
+
+        if (root.TryGetProperty("files", out var files))
+        {
+            foreach (var f in files.EnumerateObject())
+            {
+                foreach (var mutant in f.Value.GetProperty("mutants").EnumerateArray())
+                {
+                    var status = mutant.GetProperty("status").GetString() ?? "";
+                    switch (status)
+                    {
+                        case "Killed": killed++; break;
+                        case "Survived": survived++; break;
+                        case "NoCoverage": noCoverage++; break;
+                        case "Timeout": timeout++; break;
+                        case "Ignored": ignored++; break;
+                    }
+                }
+            }
+        }
+
+        var totalDetectable = killed + survived + noCoverage + timeout;
+        project.MutationKilled = killed;
+        project.MutationTotal = totalDetectable;
+        project.MutationIgnored = ignored;
+        project.HasMutationData = totalDetectable > 0;
+
+        var score = totalDetectable > 0 ? killed * 100.0 / totalDetectable : 0;
+        Console.WriteLine($"    Killed: {killed}, Survived: {survived}, NoCoverage: {noCoverage}, Timeout: {timeout}, Ignored: {ignored} -> Score: {score:F1}%");
+    }
+}
+
 // ─── HTML Generation ───────────────────────────────────────────────────────
 
 static string GenerateHtml(List<ProjectData> projects, string branch, string commit, SonarExclusions sonarExclusions)
@@ -335,6 +393,10 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
     var overallLineRate = totalLinesValid > 0 ? totalLinesCovered * 100.0 / totalLinesValid : 100.0;
     var overallBranchRate = totalBranchesValid > 0 ? totalBranchesCovered * 100.0 / totalBranchesValid : 100.0;
     var passRate = totalTests > 0 ? totalPassed * 100.0 / totalTests : 100.0;
+    var hasMutationData = projects.Any(p => p.HasMutationData);
+    var totalMutationKilled = projects.Sum(p => p.MutationKilled);
+    var totalMutationTotal = projects.Sum(p => p.MutationTotal);
+    var overallMutationScore = totalMutationTotal > 0 ? totalMutationKilled * 100.0 / totalMutationTotal : 0;
 
     var sb = new StringBuilder();
 
@@ -344,7 +406,7 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Bedrock - Relatório de Testes Unitários</title>
+            <title>Bedrock - Relatório de Testes de Unidade</title>
             <style>
                 :root{--passed:#10b981;--failed:#ef4444;--skipped:#f59e0b;--info:#3b82f6;--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;--header-bg:linear-gradient(to right,#1e1b4b,#312e81);--table-header-bg:#1e293b;--badge-passed-bg:#064e3b;--badge-passed-text:#6ee7b7;--badge-failed-bg:#7f1d1d;--badge-failed-text:#fca5a5;--badge-skipped-bg:#78350f;--badge-skipped-text:#fcd34d;--badge-info-bg:#1e3a5f;--badge-info-text:#93c5fd;--chart-legend:#e5e7eb;--progress-bg:#374151;--coverage-high:#10b981;--coverage-med:#f59e0b;--coverage-low:#ef4444}
                 .light-theme{--bg:#f9fafb;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--header-bg:linear-gradient(to right,#eef2ff,#e0e7ff);--table-header-bg:#f8fafc;--badge-passed-bg:#d1fae5;--badge-passed-text:#065f46;--badge-failed-bg:#fee2e2;--badge-failed-text:#991b1b;--badge-skipped-bg:#fef3c7;--badge-skipped-text:#92400e;--badge-info-bg:#dbeafe;--badge-info-text:#1e3a8a;--chart-legend:#374151;--progress-bg:#e5e7eb}
@@ -370,6 +432,7 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                 .card.skipped{border-left:4px solid var(--skipped)}.card.skipped .card-value{color:var(--skipped)}
                 .card.total{border-left:4px solid var(--info)}.card.total .card-value{color:var(--info)}
                 .card.coverage{border-left:4px solid var(--passed)}.card.coverage .card-value{color:var(--passed)}
+                .section-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:0 0 .5rem;padding-bottom:.25rem;border-bottom:1px solid var(--border)}
                 .chart-section{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:2rem;background:var(--card);padding:1.5rem;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1)}
                 @media(max-width:768px){.chart-section{grid-template-columns:1fr} }
                 .coverage-chart-section{margin-bottom:2rem;background:var(--card);padding:1.5rem;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1)}
@@ -379,6 +442,7 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                 .cov-accordion-body{overflow:hidden;transition:max-height .3s ease}
                 .cov-accordion-body.collapsed{max-height:0!important}
                 .cov-project-row{display:grid;grid-template-columns:220px 1fr 1fr;gap:1rem;align-items:center;padding:.5rem .75rem;border-bottom:1px solid var(--border);font-size:.85rem}
+                .cov-project-row-4col{grid-template-columns:180px 1fr 1fr 1fr}
                 .cov-project-row:last-child{border-bottom:none}
                 .cov-project-row:hover{background:rgba(148,163,184,.06)}
                 .cov-project-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -476,7 +540,7 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                     <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.05-6.95 1.41-1.41M4.64 19.36l1.41-1.41m0-11.9L4.64 4.64m14.72 14.72-1.41-1.41"/></svg>
                     <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
-                <h1>Bedrock - Relatório de Testes Unitários</h1>
+                <h1>Bedrock - Relatório de Testes de Unidade</h1>
                 <p class="subtitle">Gerado em: {{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}} UTC</p>
             </header>
 
@@ -489,6 +553,20 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                 <div class="card coverage"><div class="card-value">{{overallBranchRate:F1}}%</div><div class="card-label">Cobertura (Branches)</div></div>
             </section>
         """);
+
+    if (hasMutationData)
+    {
+        var mutCardColor = overallMutationScore >= 100 ? "var(--passed)" : overallMutationScore >= 80 ? "var(--skipped)" : "var(--failed)";
+        sb.Append($"""
+            <p class="section-label">Testes de Mutação</p>
+            <section class="cards">
+                <div class="card" style="border-left:4px solid {mutCardColor}"><div class="card-value" style="color:{mutCardColor}">{overallMutationScore:F1}%</div><div class="card-label">Mutação</div></div>
+                <div class="card" style="border-left:4px solid var(--info)"><div class="card-value" style="color:var(--info)">{totalMutationKilled}</div><div class="card-label">Mutantes Mortos</div></div>
+                <div class="card" style="border-left:4px solid var(--muted)"><div class="card-value" style="color:var(--muted)">{totalMutationTotal}</div><div class="card-label">Total Detectáveis</div></div>
+                <div class="card" style="border-left:4px solid var(--border)"><div class="card-value" style="color:var(--muted)">{projects.Sum(p => p.MutationIgnored)}</div><div class="card-label">Ignorados</div></div>
+            </section>
+        """);
+    }
 
     if (totalFailed == 0 && totalTests > 0)
     {
@@ -542,7 +620,7 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
         var branchColor = branchPct >= 90 ? "var(--coverage-high)" : branchPct >= 70 ? "var(--coverage-med)" : "var(--coverage-low)";
 
         sb.Append($"""
-                        <div class="cov-project-row" data-project="{WebUtility.HtmlEncode(p.Name.ToLowerInvariant())}">
+                        <div class="cov-project-row{(hasMutationData ? " cov-project-row-4col" : "")}" data-project="{WebUtility.HtmlEncode(p.Name.ToLowerInvariant())}">
                             <div class="cov-project-name" title="{WebUtility.HtmlEncode(p.Name)}">{WebUtility.HtmlEncode(p.Name)}</div>
                             <div class="cov-bar-wrapper">
                                 <span class="cov-bar-label">Linhas</span>
@@ -554,8 +632,22 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                                 <div class="cov-bar-track"><div class="cov-bar-fill" style="width:{branchPct:F0}%;background:{branchColor}"></div></div>
                                 <span class="cov-bar-pct" style="color:{branchColor}">{branchPct:F1}%</span>
                             </div>
-                        </div>
         """);
+
+        if (hasMutationData)
+        {
+            var mutPct = p.MutationScore;
+            var mutColor = mutPct >= 100 ? "var(--coverage-high)" : mutPct >= 80 ? "var(--coverage-med)" : "var(--coverage-low)";
+            sb.Append($"""
+                            <div class="cov-bar-wrapper">
+                                <span class="cov-bar-label">Mutação</span>
+                                <div class="cov-bar-track"><div class="cov-bar-fill" style="width:{mutPct:F0}%;background:{mutColor}"></div></div>
+                                <span class="cov-bar-pct" style="color:{mutColor}">{mutPct:F1}%</span>
+                            </div>
+            """);
+        }
+
+        sb.Append("</div>");
     }
 
     sb.Append("""
@@ -694,10 +786,11 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
         var pBranchPct = p.BranchRate * 100;
         var pLineColor = pLinePct >= 90 ? "var(--coverage-high)" : pLinePct >= 70 ? "var(--coverage-med)" : "var(--coverage-low)";
         var pBranchColor = pBranchPct >= 90 ? "var(--coverage-high)" : pBranchPct >= 70 ? "var(--coverage-med)" : "var(--coverage-low)";
+        var gridCols = p.HasMutationData ? "1fr 1fr 1fr" : "1fr 1fr";
 
         sb.Append($"""
                         <div class="tab-panel active" data-panel="coverage">
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;padding:.75rem 1rem;background:var(--bg);border-radius:.5rem">
+                            <div style="display:grid;grid-template-columns:{gridCols};gap:1rem;margin-bottom:1rem;padding:.75rem 1rem;background:var(--bg);border-radius:.5rem">
                                 <div class="cov-bar-wrapper">
                                     <span class="cov-bar-label">Linhas</span>
                                     <div class="cov-bar-track"><div class="cov-bar-fill" style="width:{pLinePct:F0}%;background:{pLineColor}"></div></div>
@@ -710,7 +803,25 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                                     <span class="cov-bar-pct" style="color:{pBranchColor}">{pBranchPct:F1}%</span>
                                     <span style="font-size:.7rem;color:var(--muted)">({p.BranchesCovered}/{p.BranchesValid})</span>
                                 </div>
-                            </div>
+        """);
+
+        if (p.HasMutationData)
+        {
+            var pMutPct = p.MutationScore;
+            var pMutColor = pMutPct >= 100 ? "var(--coverage-high)" : pMutPct >= 80 ? "var(--coverage-med)" : "var(--coverage-low)";
+            sb.Append($"""
+                                <div class="cov-bar-wrapper">
+                                    <span class="cov-bar-label">Mutação</span>
+                                    <div class="cov-bar-track"><div class="cov-bar-fill" style="width:{pMutPct:F0}%;background:{pMutColor}"></div></div>
+                                    <span class="cov-bar-pct" style="color:{pMutColor}">{pMutPct:F1}%</span>
+                                    <span style="font-size:.7rem;color:var(--muted)">({p.MutationKilled}/{p.MutationTotal})</span>
+                                </div>
+            """);
+        }
+
+        sb.Append("</div>");
+
+        sb.Append($"""
                             <table class="data-table">
                                 <thead><tr>
                                     <th>Classe</th>
@@ -879,7 +990,7 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
 
     sb.Append($"""
             <footer class="footer">
-                <p><strong>Bedrock Framework</strong> - Relatório de Testes Unitários</p>
+                <p><strong>Bedrock Framework</strong> - Relatório de Testes de Unidade</p>
                 <p>Projetos: {projects.Count} | Testes: {totalTests} | Cobertura: {overallLineRate:F1}% linhas, {overallBranchRate:F1}% branches</p>
             </footer>
         </div>
@@ -1003,6 +1114,11 @@ internal sealed class ProjectData
     public TimeSpan Duration { get; set; }
     public List<ClassData> Classes { get; } = [];
     public List<TestData> Tests { get; } = [];
+    public bool HasMutationData { get; set; }
+    public int MutationKilled { get; set; }
+    public int MutationTotal { get; set; }
+    public int MutationIgnored { get; set; }
+    public double MutationScore => MutationTotal > 0 ? MutationKilled * 100.0 / MutationTotal : 0;
 }
 
 internal sealed class ClassData

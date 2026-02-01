@@ -1,5 +1,5 @@
 #!/bin/bash
-# Gera relatório HTML a partir dos resultados de testes unitários e cobertura
+# Gera relatório HTML a partir dos resultados de testes de unidade e cobertura
 # Usa o projeto UnitTestReportGenerator em tools/
 
 set -e
@@ -14,8 +14,9 @@ REPORT_DIR="artifacts/unittest-report"
 OUTPUT_FILE="$REPORT_DIR/index.html"
 GENERATOR_PROJECT="tools/UnitTestReportGenerator/UnitTestReportGenerator.csproj"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/ci.yml"
+MUTATION_DIR="artifacts/mutation"
 
-echo ">>> Gerando Relatório de Testes Unitários..."
+echo ">>> Gerando Relatório de Testes de Unidade..."
 
 # Criar diretório do relatório
 mkdir -p "$REPORT_DIR"
@@ -35,6 +36,6 @@ GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 
 # Executar o gerador de relatório
 echo "Executando gerador de relatório..."
-dotnet run --project "$GENERATOR_PROJECT" --configuration Release -- "$COVERAGE_DIR" "$OUTPUT_FILE" "$GIT_BRANCH" "$GIT_COMMIT" "$CI_WORKFLOW"
+dotnet run --project "$GENERATOR_PROJECT" --configuration Release -- "$COVERAGE_DIR" "$OUTPUT_FILE" "$GIT_BRANCH" "$GIT_COMMIT" "$CI_WORKFLOW" "$MUTATION_DIR"
 
 echo ">>> Relatório gerado: $OUTPUT_FILE"
