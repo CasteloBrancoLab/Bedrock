@@ -81,6 +81,20 @@ jobs:
             exit 1
           fi
 
+      - name: Generate Architecture Report
+        if: always()
+        run: |
+          ./scripts/generate-architecture-report.sh || true
+
+      - name: Upload Architecture Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: architecture-report
+          path: artifacts/architecture-report/
+          retention-days: 1
+          if-no-files-found: ignore
+
   test:
     name: Test & Analyze
     needs: architecture
@@ -168,6 +182,20 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
 
+      - name: Generate Unit Test Report
+        if: always()
+        run: |
+          ./scripts/generate-unittest-report.sh || true
+
+      - name: Upload Unit Test Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unittest-report
+          path: artifacts/unittest-report/
+          retention-days: 1
+          if-no-files-found: ignore
+
   mutation:
     name: Mutation Tests
     needs: test
@@ -238,7 +266,7 @@ jobs:
         with:
           name: mutation-reports
           path: mutation-reports/
-          retention-days: 3
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Mutation Tests Summary
@@ -297,13 +325,18 @@ jobs:
             exit 1
           fi
 
-      - name: Upload Integration Results
+      - name: Generate Integration Report
+        if: always()
+        run: |
+          ./scripts/generate-integration-report.sh || true
+
+      - name: Upload Integration Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: integration-results
-          path: integration-results/
-          retention-days: 3
+          name: integration-report
+          path: artifacts/integration-report/
+          retention-days: 1
           if-no-files-found: ignore
 
   benchmarks:
@@ -349,11 +382,16 @@ jobs:
             exit 1
           fi
 
-      - name: Upload Benchmark Results
+      - name: Generate Benchmark Report
+        if: always()
+        run: |
+          ./scripts/generate-benchmark-report.sh || true
+
+      - name: Upload Benchmark Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: benchmark-results
-          path: BenchmarkDotNet.Artifacts/
-          retention-days: 3
+          name: benchmark-report
+          path: artifacts/benchmark-report/
+          retention-days: 1
           if-no-files-found: ignore
