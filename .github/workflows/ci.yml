@@ -6,10 +6,84 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
+    inputs:
+      run_benchmarks:
+        description: 'Run performance benchmarks'
+        type: boolean
+        default: false
+      run_integration:
+        description: 'Run integration tests'
+        type: boolean
+        default: false
 
 jobs:
   build:
-    name: Build, Test and Analyze
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+  architecture:
+    name: Architecture Tests
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore and Build
+        run: dotnet restore && dotnet build --no-restore
+
+      - name: Run Architecture Tests
+        run: |
+          FAILED=0
+          for project in $(find tests/ArchitectureTests -name "*.csproj"); do
+            name=$(basename "$(dirname "$project")")
+            echo "::group::Architecture tests for $name"
+            dotnet test "$project" --no-build || FAILED=1
+            echo "::endgroup::"
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo "::error::Architecture tests failed"
+            exit 1
+          fi
+
+  test:
+    name: Test & Analyze
+    needs: architecture
     runs-on: ubuntu-latest
 
     steps:
@@ -29,6 +103,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
@@ -41,8 +122,8 @@ jobs:
           dotnet tool install --global dotnet-sonarscanner
           dotnet tool install --global dotnet-coverage
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Restore and Build
+        run: dotnet restore && dotnet build --no-restore
 
       - name: Begin SonarCloud analysis
         env:
@@ -57,15 +138,13 @@ jobs:
             /d:sonar.coverage.exclusions="**/tests/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/playground/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*" \
             /d:sonar.cpd.exclusions="**/Serialization.Avro/AvroSerializerBase.cs,**/Serialization.Protobuf/ProtobufSerializerBase.cs,**/Serialization.Parquet/ParquetSerializerBase.cs"
 
-      - name: Build
+      - name: Build (SonarCloud instrumented)
         run: dotnet build --no-restore
 
       - name: Test with coverage
         run: |
           mkdir -p coverage/raw
 
-          # Find and run all test projects under tests/UnitTests
-          # Use dotnet-coverage collect to generate VS Coverage format
           find tests/UnitTests -name "*.csproj" | while read project; do
             name=$(basename "$(dirname "$project")")
             echo "Running tests for: $project (output: coverage/raw/$name.xml)"
@@ -89,6 +168,30 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
 
+  mutation:
+    name: Mutation Tests
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore and Build
+        run: dotnet restore && dotnet build --no-restore
+
       - name: Install Stryker
         run: dotnet tool install --global dotnet-stryker
 
@@ -106,12 +209,10 @@ jobs:
 
             cd "$DIR"
 
-            # Run stryker and capture output
             STRYKER_OUTPUT=$(dotnet stryker -O "$GITHUB_WORKSPACE/mutation-reports/$NAME" 2>&1) || true
             STRYKER_EXIT=$?
             echo "$STRYKER_OUTPUT"
 
-            # Check if no mutations were generated (interface-only or no code to mutate)
             if echo "$STRYKER_OUTPUT" | grep -q "No mutants were generated"; then
               echo "::notice::No mutatable code found in $NAME - skipping"
               SUMMARY="${SUMMARY}| ${NAME} | :white_check_mark: Skipped (no mutatable code) |\n"
@@ -154,3 +255,105 @@ jobs:
         run: |
           echo "::error::One or more mutation test projects failed threshold requirements"
           exit 1
+
+  integration:
+    name: Integration Tests
+    needs: mutation
+    if: ${{ inputs.run_integration == true }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore and Build
+        run: dotnet restore && dotnet build --no-restore
+
+      - name: Run Integration Tests
+        run: |
+          FAILED=0
+          for project in $(find tests/IntegrationTests -name "*.csproj"); do
+            name=$(basename "$(dirname "$project")")
+            echo "::group::Integration tests for $name"
+            dotnet test "$project" --no-build \
+              --logger "trx;LogFileName=integration-$name.trx" \
+              --results-directory "integration-results" || FAILED=1
+            echo "::endgroup::"
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo "::error::Integration tests failed"
+            exit 1
+          fi
+
+      - name: Upload Integration Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-results
+          path: integration-results/
+          retention-days: 3
+          if-no-files-found: ignore
+
+  benchmarks:
+    name: Benchmarks
+    needs: build
+    if: ${{ inputs.run_benchmarks == true }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Build (Release)
+        run: |
+          dotnet restore
+          for project in $(find tests/PerformanceTests -name "*.csproj"); do
+            dotnet build "$project" -c Release --no-restore
+          done
+
+      - name: Run Benchmarks
+        run: |
+          FAILED=0
+          for project in $(find tests/PerformanceTests -name "*.csproj"); do
+            name=$(basename "$(dirname "$project")")
+            echo "::group::Benchmarks for $name"
+            dotnet run --project "$project" -c Release --no-build || FAILED=1
+            echo "::endgroup::"
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo "::error::Benchmarks failed"
+            exit 1
+          fi
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: BenchmarkDotNet.Artifacts/
+          retention-days: 3
+          if-no-files-found: ignore
