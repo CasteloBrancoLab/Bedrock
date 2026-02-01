@@ -164,7 +164,7 @@ jobs:
             name=$(basename "$(dirname "$project")")
             echo "::group::Unit tests for $name"
 
-            dotnet-coverage collect "dotnet test --no-build $project" \
+            dotnet-coverage collect "dotnet test --no-build $project --logger trx;LogFileName=results.trx --results-directory artifacts/coverage/raw/$name" \
               -f cobertura \
               -o "artifacts/coverage/raw/$name.cobertura.xml" || FAILED=1
 
@@ -239,7 +239,7 @@ jobs:
 
             cd "$DIR"
 
-            STRYKER_OUTPUT=$(dotnet stryker -O "$GITHUB_WORKSPACE/artifacts/mutation/$NAME" 2>&1) || true
+            STRYKER_OUTPUT=$(dotnet stryker -O "$GITHUB_WORKSPACE/artifacts/mutation/$NAME" --reporter json --reporter progress 2>&1) || true
             STRYKER_EXIT=$?
             echo "$STRYKER_OUTPUT"
 
@@ -262,15 +262,6 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
 
-      - name: Mutation Tests Summary
-        if: always()
-        run: |
-          echo "## Mutation Tests Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Project | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo -e "${{ steps.mutation.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
-
       - name: Upload Mutation Results
         uses: actions/upload-artifact@v4
         if: always()
@@ -282,6 +273,7 @@ jobs:
 
     outputs:
       failed: ${{ steps.mutation.outputs.failed }}
+      summary: ${{ steps.mutation.outputs.summary }}
 
   integration:
     name: Integration Tests
@@ -520,85 +512,122 @@ jobs:
 
     steps:
       - name: Evaluate Results
+        env:
+          MUTATION_SUMMARY: ${{ needs.mutation.outputs.summary }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          echo "## Pipeline Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
           FAILED=0
 
-          # Architecture
+          # Collect results
           ARCH="${{ needs.architecture.outputs.failed }}"
-          if [ "$ARCH" = "1" ]; then
-            echo "::error::Architecture tests failed"
-            echo "- :x: Architecture Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
-            FAILED=1
-          else
-            echo "- :white_check_mark: Architecture Tests — passed" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Unit Tests
           UNIT="${{ needs.unit-test.outputs.failed }}"
-          if [ "$UNIT" = "1" ]; then
-            echo "::error::Unit tests failed"
-            echo "- :x: Unit Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
-            FAILED=1
-          else
-            echo "- :white_check_mark: Unit Tests — passed" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Mutation
           MUT="${{ needs.mutation.outputs.failed }}"
-          if [ "$MUT" = "1" ]; then
-            echo "::error::Mutation tests failed threshold"
-            echo "- :x: Mutation Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
-            FAILED=1
-          else
-            echo "- :white_check_mark: Mutation Tests — passed" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Integration (only if it ran)
           INT_RESULT="${{ needs.integration.result }}"
-          if [ "$INT_RESULT" = "success" ] || [ "$INT_RESULT" = "failure" ]; then
-            INT="${{ needs.integration.outputs.failed }}"
-            if [ "$INT" = "1" ]; then
-              echo "::error::Integration tests failed"
-              echo "- :x: Integration Tests — **FAILED**" >> $GITHUB_STEP_SUMMARY
-              FAILED=1
-            else
-              echo "- :white_check_mark: Integration Tests — passed" >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            echo "- :fast_forward: Integration Tests — skipped" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Benchmarks (only if it ran)
+          INT="${{ needs.integration.outputs.failed }}"
           BENCH_RESULT="${{ needs.benchmarks.result }}"
-          if [ "$BENCH_RESULT" = "success" ] || [ "$BENCH_RESULT" = "failure" ]; then
-            BENCH="${{ needs.benchmarks.outputs.failed }}"
-            if [ "$BENCH" = "1" ]; then
-              echo "::error::Benchmarks failed"
-              echo "- :x: Benchmarks — **FAILED**" >> $GITHUB_STEP_SUMMARY
-              FAILED=1
-            else
-              echo "- :white_check_mark: Benchmarks — passed" >> $GITHUB_STEP_SUMMARY
+          BENCH="${{ needs.benchmarks.outputs.failed }}"
+          REPORTS_RESULT="${{ needs.reports.result }}"
+
+          [ "$ARCH" = "1" ] && FAILED=1
+          [ "$UNIT" = "1" ] && FAILED=1
+          [ "$MUT" = "1" ] && FAILED=1
+          [ "$INT_RESULT" = "success" ] || [ "$INT_RESULT" = "failure" ] && [ "$INT" = "1" ] && FAILED=1
+          [ "$BENCH_RESULT" = "success" ] || [ "$BENCH_RESULT" = "failure" ] && [ "$BENCH" = "1" ] && FAILED=1
+
+          # Helper
+          status_icon() {
+            case "$1" in
+              pass) echo ":white_check_mark:" ;;
+              fail) echo ":x:" ;;
+              skip) echo ":next_track_button:" ;;
+              warn) echo ":warning:" ;;
+            esac
+          }
+          job_status() {
+            local result="$1" failed="$2"
+            if [ "$result" = "skipped" ]; then echo "skip"
+            elif [ "$failed" = "1" ]; then echo "fail"
+            else echo "pass"
             fi
+          }
+
+          ARCH_S=$(job_status "ran" "$ARCH")
+          UNIT_S=$(job_status "ran" "$UNIT")
+          MUT_S=$(job_status "ran" "$MUT")
+          [ "$INT_RESULT" = "skipped" ] && INT_S="skip" || INT_S=$(job_status "ran" "$INT")
+          [ "$BENCH_RESULT" = "skipped" ] && BENCH_S="skip" || BENCH_S=$(job_status "ran" "$BENCH")
+          [ "$REPORTS_RESULT" = "failure" ] && REP_S="warn" || REP_S="pass"
+
+          # ── Header ──
+          if [ $FAILED -eq 0 ]; then
+            echo "# :rocket: Bedrock CI — All checks passed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- :fast_forward: Benchmarks — skipped" >> $GITHUB_STEP_SUMMARY
+            echo "# :rotating_light: Bedrock CI — Pipeline failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Branch:** \`${{ github.head_ref || github.ref_name }}\` · **Commit:** \`${GITHUB_SHA::7}\` · **Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # ── Pipeline Status ──
+          echo "### Pipeline" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| :building_construction: Build | $(status_icon pass) Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| :classical_building: Architecture Tests | $(status_icon $ARCH_S) $([ "$ARCH_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
+          echo "| :test_tube: Unit Tests & SonarCloud | $(status_icon $UNIT_S) $([ "$UNIT_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
+          echo "| :dna: Mutation Tests | $(status_icon $MUT_S) $([ "$MUT_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$INT_S" = "skip" ]; then
+            echo "| :electric_plug: Integration Tests | $(status_icon skip) Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| :electric_plug: Integration Tests | $(status_icon $INT_S) $([ "$INT_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Reports
-          REPORTS_RESULT="${{ needs.reports.result }}"
-          if [ "$REPORTS_RESULT" = "failure" ]; then
-            echo "- :warning: Reports — generation had errors" >> $GITHUB_STEP_SUMMARY
+          if [ "$BENCH_S" = "skip" ]; then
+            echo "| :chart_with_upwards_trend: Benchmarks | $(status_icon skip) Skipped |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- :white_check_mark: Reports — generated" >> $GITHUB_STEP_SUMMARY
+            echo "| :chart_with_upwards_trend: Benchmarks | $(status_icon $BENCH_S) $([ "$BENCH_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "| :bar_chart: Reports | $(status_icon $REP_S) $([ "$REP_S" = "pass" ] && echo "Generated" || echo "Errors during generation") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # ── Mutation Details ──
+          if [ -n "$MUTATION_SUMMARY" ]; then
+            echo "<details><summary>:dna: Mutation Tests — Details per project</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Project | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo -e "$MUTATION_SUMMARY" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # ── Reports & Artifacts ──
+          echo "### :package: Reports" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "HTML reports are available as artifacts in this run (retention: 24h):" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Report | Artifact |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| :classical_building: Architecture | \`architecture-report\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| :test_tube: Unit Tests & Coverage | \`unittest-report\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| :dna: Mutation (Stryker) | \`mutation-reports\` |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$INT_RESULT" != "skipped" ]; then
+            echo "| :electric_plug: Integration | \`integration-report\` |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "$BENCH_RESULT" != "skipped" ]; then
+            echo "| :chart_with_upwards_trend: Benchmarks | \`benchmark-report\` |" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> :bulb: Download artifacts from the [Actions run page]($RUN_URL) → **Artifacts** section at the bottom." >> $GITHUB_STEP_SUMMARY
 
+          # ── Fail if needed ──
           if [ $FAILED -eq 1 ]; then
             echo "::error::Pipeline failed — see summary above"
             exit 1
           fi
-
-          echo ":tada: All checks passed!" >> $GITHUB_STEP_SUMMARY

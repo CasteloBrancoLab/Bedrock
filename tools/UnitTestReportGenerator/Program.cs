@@ -331,11 +331,25 @@ static SonarExclusions ParseSonarExclusions(string ciWorkflowPath)
 static void ParseMutationData(string mutationDir, List<ProjectData> projects)
 {
     // Each project has artifacts/mutation/<ProjectName>/reports/mutation-report.json
+    // Stryker may also create timestamped subdirectories: <ProjectName>/<timestamp>/reports/mutation-report.json
     foreach (var project in projects)
     {
         var reportPath = Path.Combine(mutationDir, project.Name, "reports", "mutation-report.json");
         if (!File.Exists(reportPath))
-            continue;
+        {
+            // Search recursively for the report file (handles timestamped Stryker output)
+            var projectMutDir = Path.Combine(mutationDir, project.Name);
+            if (Directory.Exists(projectMutDir))
+            {
+                var found = Directory.GetFiles(projectMutDir, "mutation-report.json", SearchOption.AllDirectories).FirstOrDefault();
+                if (found != null)
+                    reportPath = found;
+                else
+                    continue;
+            }
+            else
+                continue;
+        }
 
         Console.WriteLine($"  Mutation report: {project.Name}");
 
@@ -487,6 +501,9 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                 .data-table th.right,.data-table td.right{text-align:right}
                 .data-table th.center,.data-table td.center{text-align:center}
                 .mono{font-family:'Cascadia Code','Fira Code',monospace;font-size:.8rem}
+                .file-path{cursor:pointer;position:relative;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .2s}
+                .file-path:hover{color:var(--info)!important}
+                .file-path.copied::after{content:'✓ copiado';position:absolute;right:0;top:-1.5rem;background:var(--passed);color:#fff;padding:.1rem .5rem;border-radius:.25rem;font-size:.65rem;pointer-events:none}
                 .coverage-bar{display:inline-flex;align-items:center;gap:.5rem}
                 .coverage-bar-track{width:80px;height:6px;background:var(--progress-bg);border-radius:3px;overflow:hidden;display:inline-block}
                 .coverage-bar-fill{height:100%;border-radius:3px}
@@ -856,7 +873,7 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
             sb.Append($"""
                                     <tr{rowClass}>
                                         <td class="mono">{WebUtility.HtmlEncode(ExtractSimpleName(cls.FullName))}</td>
-                                        <td class="mono" style="color:var(--muted);font-size:.75rem">{WebUtility.HtmlEncode(cls.FileName)}</td>
+                                        <td class="mono file-path" style="color:var(--muted);font-size:.75rem" title="{WebUtility.HtmlEncode(cls.RelativePath)}" onclick="navigator.clipboard.writeText(this.title);this.classList.add('copied');setTimeout(()=>this.classList.remove('copied'),1500)">{WebUtility.HtmlEncode(TruncatePathFromEnd(cls.RelativePath, 60))}</td>
                                         <td class="center">{CoverageBarHtml(cls.LineRate * 100)}</td>
                                         <td class="center">{branchCellHtml}</td>
                                         <td class="center">{cls.Complexity}</td>
@@ -1095,6 +1112,13 @@ static string ExtractTestName(string fullTestName)
 
 static string Truncate(string s, int max) =>
     s.Length <= max ? s : s[..max] + "...";
+
+static string TruncatePathFromEnd(string path, int maxLen)
+{
+    if (string.IsNullOrEmpty(path) || path.Length <= maxLen) return path;
+    // Show the end of the path (most relevant part)
+    return "…" + path[(path.Length - maxLen + 1)..];
+}
 
 // ─── Data Models ───────────────────────────────────────────────────────────
 
