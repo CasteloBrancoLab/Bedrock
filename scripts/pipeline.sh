@@ -111,6 +111,10 @@ TEST_START=$(date +%s%3N)
 "$SCRIPT_DIR/test.sh"
 TEST_END=$(date +%s%3N)
 TEST_DURATION=$((TEST_END - TEST_START))
+
+# Generate HTML report for unit tests
+echo ">>> Generating Unit Test Report..."
+"$SCRIPT_DIR/generate-unittest-report.sh" || echo "Warning: Unit test report generation failed"
 echo ""
 
 # === MUTATE ===
@@ -231,6 +235,7 @@ echo ""
 echo "Duration: ${TOTAL_DURATION}ms"
 echo "Summary:  artifacts/summary.json"
 echo "Architecture: artifacts/architecture-report/index.html"
+echo "Unit Tests:   artifacts/unittest-report/index.html"
 echo "Coverage: artifacts/coverage/"
 echo "Mutation: artifacts/mutation/"
 if [ -f "artifacts/integration-report/index.html" ]; then
