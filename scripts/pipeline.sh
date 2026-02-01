@@ -123,7 +123,6 @@ MUTATE_DURATION=$((MUTATE_END - MUTATE_START))
 echo ""
 
 # === INTEGRATION TESTS ===
-# Only run if mutation tests passed (100% coverage and 100% mutation required)
 INTEGRATION_FAILED=0
 INTEGRATION_DURATION=0
 INTEGRATION_PROJECTS_COUNT=0
@@ -152,17 +151,23 @@ if [ $MUTATION_FAILED -eq 0 ]; then
 
     INTEGRATION_END=$(date +%s%3N)
     INTEGRATION_DURATION=$((INTEGRATION_END - INTEGRATION_START))
-
-    # Generate HTML report for integration tests
-    if [ $INTEGRATION_FAILED -eq 0 ]; then
-        echo ">>> Generating Integration Test Report..."
-        "$SCRIPT_DIR/generate-integration-report.sh" || echo "Warning: Report generation failed"
-    fi
     echo ""
 else
     echo ">>> Step 6/6: Integration Tests (SKIPPED - mutation tests failed)"
     echo ""
 fi
+
+# === GENERATE REPORTS ===
+# Reports are generated after all steps so all artifacts (coverage, mutation, integration) are available
+echo ">>> Generating Reports..."
+echo "  Unit Test Report..."
+"$SCRIPT_DIR/generate-unittest-report.sh" || echo "Warning: Unit test report generation failed"
+
+if [ $INTEGRATION_FAILED -eq 0 ] && [ $MUTATION_FAILED -eq 0 ]; then
+    echo "  Integration Test Report..."
+    "$SCRIPT_DIR/generate-integration-report.sh" || echo "Warning: Integration report generation failed"
+fi
+echo ""
 
 END_TIME=$(date +%s%3N)
 TOTAL_DURATION=$((END_TIME - START_TIME))
@@ -231,6 +236,7 @@ echo ""
 echo "Duration: ${TOTAL_DURATION}ms"
 echo "Summary:  artifacts/summary.json"
 echo "Architecture: artifacts/architecture-report/index.html"
+echo "Unit Tests:   artifacts/unittest-report/index.html"
 echo "Coverage: artifacts/coverage/"
 echo "Mutation: artifacts/mutation/"
 if [ -f "artifacts/integration-report/index.html" ]; then
