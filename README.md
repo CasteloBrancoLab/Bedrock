@@ -1,186 +1,265 @@
-# Bedrock
+<div align="center">
+
+# 🪨 Bedrock
+
+**A fundação que sua arquitetura .NET merece.**
+
+Um framework de building blocks para Domain-Driven Design, Clean Architecture e desenvolvimento assistido por IA no .NET 10.
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=CasteloBrancoLab_Bedrock&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=CasteloBrancoLab_Bedrock)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=CasteloBrancoLab_Bedrock&metric=coverage)](https://sonarcloud.io/summary/new_code?id=CasteloBrancoLab_Bedrock)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=CasteloBrancoLab_Bedrock&metric=bugs)](https://sonarcloud.io/summary/new_code?id=CasteloBrancoLab_Bedrock)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=CasteloBrancoLab_Bedrock&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=CasteloBrancoLab_Bedrock)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat&logo=dotnet)
+![C#](https://img.shields.io/badge/C%23-latest-239120?style=flat&logo=csharp)
+![Mutation Score](https://img.shields.io/badge/mutation%20score-100%25-brightgreen?style=flat)
+![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat)
 
-Um framework de referencia para **mentoria em arquitetura de software**, demonstrando boas praticas de DDD, Clean Architecture e desenvolvimento assistido por IA.
+[Comece Aqui](#-comece-aqui) · [Building Blocks](#-building-blocks) · [Decisoes Arquiteturais](#-decisoes-arquiteturais) · [Documentacao](docs/)
+
+</div>
 
 ---
 
 ## Por Que Este Repositorio Existe
 
-Este repositorio e um **showcase educacional** que demonstra:
+Um **showcase educacional** para mentoria em arquitetura de software, demonstrando:
 
-- Como estruturar um projeto .NET seguindo principios de Clean Architecture
+- Como estruturar um projeto .NET seguindo Clean Architecture
 - Padroes de Domain-Driven Design aplicados na pratica
 - Desenvolvimento assistido por IA com guardrails e supervisao humana
 - Documentacao de decisoes arquiteturais (ADRs) para cada escolha de design
 
+```
+Humano define O QUE e POR QUE  →  IA implementa o COMO  →  Guardrails garantem qualidade
+```
+
 > **Para Mentorados**: Este nao e apenas um framework para copiar. E um material de estudo vivo, onde cada decisao esta documentada e justificada.
 
+> **⚠️ Em desenvolvimento ativo**: O conteudo abaixo representa o estado atual do projeto e evoluira com o tempo.
+
 ---
 
-## Por Onde Comecar
+### 🧬 Laboratorio de Vibe Coding
 
-### 1. Entenda a Filosofia
+Este projeto e tambem um **laboratorio de vibe coding para projetos do mundo real**. Um arquiteto experiente orienta code agents (Claude Code) para criar **100% do projeto** — codigo, testes, documentacao, ADRs, pipelines — tudo gerado por IA sob supervisao e guardrails rigorosos.
 
-| Conceito | O Que E | Por Que Importa |
-|----------|---------|-----------------|
-| **Building Blocks** | Componentes reutilizaveis | Evita reinventar a roda em cada projeto |
-| **ADRs** | Decisoes arquiteturais documentadas | Entende o "porque" de cada escolha |
-| **Guardrails** | Regras que a IA deve seguir | Garante consistencia mesmo com automacao |
+| | Arquiteto (Humano) | Code Agent (IA) |
+|---|---------------------|-----------------|
+| **Papel** | Orienta, supervisiona, decide | Implementa 100% do projeto |
+| **Responsabilidade** | O QUE e POR QUE | COMO — codigo, testes, ADRs, docs, pipelines |
+| **Qualidade** | Define guardrails e quality gates | Executa e valida (100% cobertura + 100% mutacao) |
 
-### 2. Explore a Documentacao
+O objetivo e demonstrar que **vibe coding com guardrails rigorosos** produz codigo de qualidade real — validado por testes de mutacao, analise estatica e revisao arquitetural.
 
-| Topico | Link | Descricao |
-|--------|------|-----------|
-| **Building Blocks** | [docs/building-blocks/](docs/building-blocks/README.md) | Componentes fundamentais do framework |
-| **ADRs - Domain Entities** | [docs/adrs/domain-entities/](docs/adrs/domain-entities/README.md) | 58 decisoes sobre modelagem de entidades |
-| **Code Styles** | [docs/code-styles/](docs/code-styles/README.md) | Convencoes de codigo do projeto |
-| **Workflows** | [docs/workflows/](docs/workflows/README.md) | Fluxos de trabalho e processos |
+---
 
-### 3. Navegue pelo Codigo
+## Destaques
+
+| | Feature | Detalhes |
+|---|---------|---------|
+| **🆔** | **IDs UUIDv7** | Ordenados por tempo, thread-safe, 67M+ IDs/ms por thread |
+| **🔒** | **Dominio Imutavel** | Estado invalido nunca existe em memoria — factory methods + entidades sealed |
+| **🌐** | **Multi-Tenancy** | Isolamento de tenant nativo no nivel da entidade |
+| **📋** | **Trilha de Auditoria Completa** | CreatedBy, ChangedBy, CorrelationId, Origin — automatico em cada mutacao |
+| **⏱️** | **Locking Otimista** | `RegistryVersion` — 40ns por geracao, resistente a clock drift |
+| **📄** | **Paginacao e Filtros** | `PaginationInfo` + `SortInfo` + `FilterInfo` type-safe com 12 operadores |
+| **✅** | **Validacao** | Codigos de erro cacheados, integrados ao `ExecutionContext` |
+| **🧪** | **100% Mutation Kill Rate** | Stryker.NET garante que cada linha de logica e testada de verdade |
+| **📊** | **Observabilidade** | Correlation IDs + tracing distribuido via `ExecutionContext` |
+| **📦** | **4 Formatos de Serializacao** | JSON · Protobuf · Avro · Parquet — todos com memory pooling |
+
+---
+
+## 🏗️ Building Blocks
 
 ```
-src/
-└── BuildingBlocks/
-    ├── Core/           # Abstraccoes fundamentais
-    │   ├── Ids/        # Geracao de IDs tipo UUIDv7
-    │   ├── ExecutionContexts/  # Contexto de execucao
-    │   ├── TenantInfos/       # Multi-tenancy
-    │   ├── TimeProviders/     # Abstracoes de tempo
-    │   └── Validations/       # Utilitarios de validacao
-    │
-    ├── Domain/         # Building blocks de dominio
-    │   └── Entities/   # EntityBase, AggregateRoot, etc.
-    │
-    ├── Data/           # Persistencia
-    └── Testing/        # Base para testes
+Bedrock.BuildingBlocks
+├── Core                    # Id, ExecutionContext, Validacao, Paginacao, Value Objects
+│   ├── Ids/                  UUIDv7 com contador monotonico
+│   ├── ExecutionContexts/    Correlacao, tenant, mensagens, excecoes
+│   ├── Paginations/          PaginationInfo, SortInfo, FilterInfo
+│   ├── ValueObjects/         BirthDate, EmailAddress, PhoneNumber
+│   ├── TimeProviders/        CustomTimeProvider testavel
+│   └── Validations/          ValidationUtils com cache
+│
+├── Domain                  # IRepository, IAggregateRoot
+│   └── Entities/             EntityBase, EntityInfo, EntityChangeInfo
+│
+├── Data                    # RepositoryBase com Template Method pattern
+├── Persistence             # PostgreSQL + UnitOfWork + DistributedLock
+├── Serialization           # JSON, Protobuf, Avro, Parquet + JSON Schema
+├── Observability           # Extensoes de logging + tracing distribuido
+└── Testing                 # TestBase, ServiceCollectionFixture
 ```
 
 ---
 
-## Conceitos-Chave
+## 📐 Decisoes Arquiteturais
 
-### Building Blocks Principais
+Cada escolha de design esta documentada em **58 ADRs**. Estas sao as fundamentais:
 
-| Building Block | Proposito | Documentacao |
-|----------------|-----------|--------------|
-| **Id** | Geracao de IDs ordenados por tempo (UUIDv7) | [docs/building-blocks/core/ids/](docs/building-blocks/core/ids/id.md) |
-| **ExecutionContext** | Contexto de execucao com tenant, usuario, mensagens | [docs/building-blocks/core/execution-contexts/](docs/building-blocks/core/execution-contexts/execution-context.md) |
-| **TenantInfo** | Informacoes de tenant para multi-tenancy | [docs/building-blocks/core/tenant-infos/](docs/building-blocks/core/tenant-infos/tenant-info.md) |
-| **ValidationUtils** | Validacoes padronizadas com codigos de erro | [docs/building-blocks/core/validations/](docs/building-blocks/core/validations/validation-utils.md) |
-| **BirthDate** | Value object para datas de nascimento | [docs/building-blocks/core/birth-dates/](docs/building-blocks/core/birth-dates/birth-date.md) |
-| **PaginationInfo** | Paginacao, ordenacao e filtros type-safe | [docs/building-blocks/core/paginations/](docs/building-blocks/core/paginations/pagination-info.md) |
+| ADR | Decisao | Motivacao |
+|-----|---------|-----------|
+| [DE-001](docs/adrs/domain-entities/DE-001-entidades-devem-ser-sealed.md) | Entidades devem ser `sealed` | Previne hierarquias de heranca acidentais |
+| [DE-002](docs/adrs/domain-entities/DE-002-construtores-privados-com-factory-methods.md) | Construtores privados + factory methods | Garante invariantes na criacao |
+| [DE-004](docs/adrs/domain-entities/DE-004-estado-invalido-nunca-existe-na-memoria.md) | Estado invalido nunca existe em memoria | Validacao fail-fast, sem objetos parciais |
+| [DE-028](docs/adrs/domain-entities/DE-028-executioncontext-explicito.md) | `ExecutionContext` explicito | Rastreabilidade completa em cada operacao |
+| [DE-029](docs/adrs/domain-entities/DE-029-timeprovider-encapsulado-no-executioncontext.md) | `TimeProvider` encapsulado | Testabilidade total, zero `DateTime.Now` |
 
-### ADRs Fundamentais
-
-Algumas decisoes arquiteturais essenciais para entender o design:
-
-| ADR | Titulo | Por Que Ler |
-|-----|--------|-------------|
-| DE-001 | [Entidades devem ser sealed](docs/adrs/domain-entities/DE-001-entidades-devem-ser-sealed.md) | Previne heranca acidental |
-| DE-002 | [Construtores privados com factory methods](docs/adrs/domain-entities/DE-002-construtores-privados-com-factory-methods.md) | Garante invariantes |
-| DE-004 | [Estado invalido nunca existe na memoria](docs/adrs/domain-entities/DE-004-estado-invalido-nunca-existe-na-memoria.md) | Principio fundamental |
-| DE-028 | [ExecutionContext explicito](docs/adrs/domain-entities/DE-028-executioncontext-explicito.md) | Rastreabilidade completa |
-| DE-029 | [TimeProvider encapsulado](docs/adrs/domain-entities/DE-029-timeprovider-encapsulado-no-executioncontext.md) | Testabilidade total |
+> **Lista completa**: [docs/adrs/domain-entities/](docs/adrs/domain-entities/README.md)
 
 ---
 
-## Desenvolvimento Assistido por IA
+## 🧪 Quality Gates
 
-Este projeto valida um modelo de **vibe coding** onde:
+Bedrock aplica **tolerancia zero** em qualidade atraves de multiplas camadas automatizadas:
 
-| Responsabilidade | Quem Faz | Exemplos |
-|------------------|----------|----------|
-| **O QUE e PORQUE** | Humano | Requisitos, decisoes arquiteturais, direcao |
-| **COMO** | IA (Claude Code) | Implementacao, testes, refatoracoes |
+```
+Codigo Fonte
+    │
+    ▼
+┌─────────────────┐   ┌──────────────────┐   ┌─────────────────┐
+│  Testes Unit.    │──▶│  Testes Mutacao   │──▶│  SonarCloud     │
+│  xUnit + Shouldly│   │  Stryker.NET      │   │  Quality Gate   │
+│  100% cobertura  │   │  100% kill rate   │   │  0 bugs/vulns   │
+└─────────────────┘   └──────────────────┘   └─────────────────┘
+    │                                               │
+    ▼                                               ▼
+┌─────────────────┐                         ┌─────────────────┐
+│  Testes Arquit.  │                         │  Pipeline CI    │
+│  (Roslyn)        │                         │  8 jobs         │
+└─────────────────┘                         └─────────────────┘
+```
 
-### Guardrails Estabelecidos
-
-A IA segue regras definidas em:
-
-- [`CLAUDE.md`](CLAUDE.md) - Instrucoes especificas para o code agent
-- ADRs - Decisoes que a IA deve respeitar
-- Code Styles - Convencoes de nomenclatura e estrutura
+| Camada | Ferramenta | Threshold |
+|--------|------------|-----------|
+| Testes Unitarios | xUnit + Shouldly + Moq + Bogus | 100% cobertura de linhas |
+| Testes de Mutacao | Stryker.NET | 100% kill rate |
+| Qualidade de Codigo | SonarCloud | Quality Gate aprovado |
+| Arquitetura | Roslyn CodeAnalysis | Regras estruturais aplicadas |
+| Performance | BenchmarkDotNet | Deteccao de regressao |
+| Integracao | Testcontainers + PostgreSQL | Verificacao ponta a ponta |
 
 ---
 
-## Stack Tecnica
+## 🚀 Comece Aqui
 
-- **.NET 10.0** - Framework base
-- **C# (latest)** - Linguagem principal
-- **xUnit + Shouldly + Moq + Bogus** - Stack de testes
-- **Stryker.NET** - Testes de mutacao (100% kill rate)
-- **SonarCloud** - Qualidade e cobertura
+### Pre-requisitos
 
----
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- Git + Bash (WSL/Git Bash no Windows)
 
-## Configuracao Local
-
-### Arquivo .env
-
-O projeto utiliza um arquivo `.env` na raiz para configuracoes sensiveis. Este arquivo **nao e versionado** (`.gitignore`).
-
-**Criar o arquivo `.env`:**
+### Clone e Execute
 
 ```bash
-# Na raiz do projeto
-touch .env
+git clone https://github.com/CasteloBrancoLab/Bedrock.git
+cd Bedrock
+
+# Pipeline completa: build → test → mutate → report
+./scripts/pipeline.sh
+
+# Ou passos individuais
+./scripts/build.sh          # Compilar
+./scripts/test.sh           # Testes unitarios + cobertura
+./scripts/mutate.sh         # Testes de mutacao
 ```
 
-**Conteudo do arquivo:**
+### Opcional: Integracao com SonarCloud
+
+Crie um arquivo `.env` na raiz do projeto:
 
 ```env
 SONAR_TOKEN=<seu-token-do-sonarcloud>
 ```
 
-**Onde obter o SONAR_TOKEN:**
+> Sem o `SONAR_TOKEN`, a pipeline funciona normalmente — a analise do SonarCloud e simplesmente ignorada.
 
-1. Acesse [SonarCloud](https://sonarcloud.io)
-2. Faca login com sua conta GitHub
-3. Va em **My Account** → **Security**
-4. Gere um novo token em **Generate Tokens**
-5. Copie o token e adicione ao `.env`
+---
 
-> **Nota**: Sem o `SONAR_TOKEN`, a pipeline local funcionara normalmente, mas a etapa de busca de issues do SonarCloud sera ignorada (bypass). Isso permite que qualquer pessoa rode a pipeline local sem precisar de acesso ao SonarCloud.
+## 🛠️ Stack Tecnica
 
-### Claude Code
+| Categoria | Tecnologias |
+|-----------|-------------|
+| **Runtime** | .NET 10.0, C# latest |
+| **Persistencia** | PostgreSQL, Npgsql, ObjectPool |
+| **Serializacao** | System.Text.Json, protobuf-net, Apache Avro, Apache Arrow (Parquet) |
+| **Testes** | xUnit, Shouldly, Moq, Bogus, Stryker.NET, Testcontainers, BenchmarkDotNet |
+| **Qualidade** | SonarCloud, Coverlet, Roslyn CodeAnalysis |
+| **CI/CD** | GitHub Actions (pipeline de 8 jobs), cache de NuGet |
+| **IA** | Claude Code com guardrails via CLAUDE.md |
 
-Este projeto utiliza [Claude Code](https://claude.com/claude-code). Para configurar:
+---
 
-1. Crie `.claude/settings.local.json`:
+## 📁 Estrutura do Projeto
 
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash",
-      "Edit",
-      "Write",
-      "Read",
-      "WebFetch",
-      "WebSearch",
-      "mcp__*"
-    ]
-  }
-}
+```
+Bedrock/
+├── src/BuildingBlocks/          # Codigo fonte do framework
+│   ├── Core/                      Abstracoes fundamentais
+│   ├── Domain/                    Building blocks de dominio
+│   ├── Data/                      Implementacoes base de repositorio
+│   ├── Persistence/               PostgreSQL + abstracoes
+│   ├── Serialization/             JSON, Protobuf, Avro, Parquet
+│   ├── Observability/             Logging + tracing
+│   └── Testing/                   Infraestrutura de testes
+│
+├── src/Samples/ShopDemo/        # Implementacao de referencia (e-commerce)
+│   ├── Customers.Domain/
+│   ├── Orders.Domain/
+│   └── Products.Domain/
+│
+├── tests/
+│   ├── UnitTests/                 Mapeamento 1:1 com src/
+│   ├── MutationTests/             Configs do Stryker por projeto
+│   ├── ArchitectureTests/         Testes estruturais via Roslyn
+│   ├── IntegrationTests/          Testcontainers
+│   └── PerformanceTests/          BenchmarkDotNet
+│
+├── docs/
+│   ├── adrs/                      58 Architecture Decision Records
+│   ├── building-blocks/           Documentacao dos componentes
+│   ├── code-styles/               Convencoes de codigo
+│   └── workflows/                 Processos de desenvolvimento
+│
+└── scripts/                     # Automacao de pipeline local
 ```
 
-> **Nota**: Este arquivo nao e versionado (`.gitignore`).
+---
 
-### Executando a Pipeline Local
+## 📖 Documentacao
 
-```bash
-./scripts/pipeline.sh   # Pipeline completa
-./scripts/test.sh       # Apenas testes
-./scripts/mutate.sh     # Testes de mutacao
-```
+| Topico | Descricao |
+|--------|-----------|
+| [Building Blocks](docs/building-blocks/README.md) | Documentacao dos componentes com exemplos |
+| [ADRs](docs/adrs/domain-entities/README.md) | 58 decisoes arquiteturais com justificativa |
+| [Code Styles](docs/code-styles/README.md) | Convencoes de nomenclatura e padroes |
+| [Workflows](docs/workflows/README.md) | Processos de desenvolvimento e pipelines |
+
+---
+
+## 🤖 Desenvolvimento Assistido por IA
+
+Bedrock valida um modelo de **vibe coding** com separacao clara de responsabilidades:
+
+| | Humano | IA (Claude Code) |
+|---|--------|-------------------|
+| **Papel** | Arquiteto | Implementador |
+| **Define** | O Que e Por Que | Como |
+| **Exemplos** | Requisitos, ADRs, direcao | Codigo, testes, refatoracoes |
+
+A IA opera sob guardrails rigorosos definidos no [`CLAUDE.md`](CLAUDE.md), deve passar por todos os quality gates e seguir cada ADR.
 
 ---
 
 ## Licenca
 
-Veja [LICENSE](LICENSE) para detalhes.
+[Apache License 2.0](LICENSE)
+
+---
+
+<div align="center">
+
+**Construido com disciplina. Testado com rigor. Documentado com intencao.**
+
+</div>
