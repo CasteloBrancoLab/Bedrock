@@ -150,6 +150,43 @@ static void ParseCoverage(string coberturaFile, ProjectData project, SonarExclus
                 CoveredLines = m.Descendants("line").Count(l => int.TryParse(l.Attribute("hits")?.Value, out var h) && h > 0)
             }).ToList();
 
+            // Parse uncovered branches
+            var uncoveredBranches = new List<BranchInfo>();
+            foreach (var branchLine in cls.Descendants("line").Where(l => l.Attribute("branch")?.Value == "True"))
+            {
+                var condCov = branchLine.Attribute("condition-coverage")?.Value ?? "";
+                if (condCov.StartsWith("100%")) continue;
+
+                var lineNum = int.TryParse(branchLine.Attribute("number")?.Value, out var ln) ? ln : 0;
+                var covMatch = Regex.Match(condCov, @"\((\d+)/(\d+)\)");
+                var covered = covMatch.Success ? int.Parse(covMatch.Groups[1].Value) : 0;
+                var total = covMatch.Success ? int.Parse(covMatch.Groups[2].Value) : 0;
+
+                var uncovConds = branchLine.Elements("conditions").Elements("condition")
+                    .Where(c => c.Attribute("coverage")?.Value != "100%")
+                    .Select(c => (
+                        Number: int.TryParse(c.Attribute("number")?.Value, out var cn) ? cn : 0,
+                        Coverage: c.Attribute("coverage")?.Value ?? "0%"
+                    ))
+                    .ToList();
+
+                uncoveredBranches.Add(new BranchInfo
+                {
+                    Line = lineNum,
+                    ConditionCoverage = condCov,
+                    Covered = covered,
+                    Total = total,
+                    UncoveredConditions = uncovConds
+                });
+            }
+
+            // Deduplicate branches (Coverlet can duplicate across packages)
+            uncoveredBranches = uncoveredBranches
+                .GroupBy(b => b.Line)
+                .Select(g => g.First())
+                .OrderBy(b => b.Line)
+                .ToList();
+
             // Build relative path for sonar matching (e.g., "src/BuildingBlocks/Core/Validations/ValidationUtils.cs")
             var relativePath = BuildRelativePath(sourceBase, fileName);
             var sonarStatus = sonarExclusions.Classify(relativePath);
@@ -165,6 +202,7 @@ static void ParseCoverage(string coberturaFile, ProjectData project, SonarExclus
                 TotalLines = totalLines,
                 CoveredLines = coveredLines,
                 UncoveredLines = uncoveredLineNumbers,
+                UncoveredBranches = uncoveredBranches,
                 Methods = methods,
                 SonarStatus = sonarStatus
             });
@@ -420,6 +458,14 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
                 .sonar-info li{margin-bottom:.25rem}
                 .sonar-info code{font-family:monospace;font-size:.8rem;background:var(--border);padding:.1rem .4rem;border-radius:.25rem}
                 .row-sonar-excluded{opacity:.7}
+                .branch-toggle{cursor:pointer;user-select:none}
+                .branch-toggle:hover{filter:brightness(1.2)}
+                .branch-detail-row td{padding:.25rem .75rem!important;border-bottom:none!important}
+                .branch-detail{font-size:.8rem;color:var(--muted);padding:.25rem .5rem}
+                .branch-detail-list{display:flex;flex-wrap:wrap;gap:.5rem;padding:.25rem 0}
+                .branch-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .6rem;border-radius:.375rem;font-size:.75rem;font-family:monospace;background:var(--badge-failed-bg);color:var(--badge-failed-text);border:1px solid var(--failed)}
+                .branch-chip.partial{background:var(--badge-skipped-bg);color:var(--badge-skipped-text);border-color:var(--skipped)}
+                .branch-detail-row.collapsed{display:none}
                 @media print{body{background:#fff;font-size:12px}.container{max-width:none;padding:1rem}.card,.project-group,.chart-section,.coverage-chart-section{box-shadow:none;border:1px solid var(--border)}.project-group.collapsed .project-content{max-height:none}.project-toggle{display:none} }
             </style>
         </head>
@@ -691,12 +737,17 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
 
             var rowClass = cls.SonarStatus == SonarClassStatus.Excluded ? " class=\"row-sonar-excluded\"" : "";
 
+            var hasBranches = cls.UncoveredBranches.Count > 0;
+            var branchCellHtml = hasBranches
+                ? $"""<span class="branch-toggle" onclick="this.closest('tr').nextElementSibling.classList.toggle('collapsed')" title="Clique para ver branches">{CoverageBarHtml(cls.BranchRate * 100)} <span style="font-size:.7rem">▶</span></span>"""
+                : CoverageBarHtml(cls.BranchRate * 100);
+
             sb.Append($"""
                                     <tr{rowClass}>
                                         <td class="mono">{WebUtility.HtmlEncode(ExtractSimpleName(cls.FullName))}</td>
                                         <td class="mono" style="color:var(--muted);font-size:.75rem">{WebUtility.HtmlEncode(cls.FileName)}</td>
                                         <td class="center">{CoverageBarHtml(cls.LineRate * 100)}</td>
-                                        <td class="center">{CoverageBarHtml(cls.BranchRate * 100)}</td>
+                                        <td class="center">{branchCellHtml}</td>
                                         <td class="center">{cls.Complexity}</td>
                                         <td class="uncovered-lines">{WebUtility.HtmlEncode(uncovered)}</td>
             """);
@@ -714,6 +765,19 @@ static string GenerateHtml(List<ProjectData> projects, string branch, string com
             }
 
             sb.Append("</tr>");
+
+            // Expandable branch detail row
+            if (hasBranches)
+            {
+                var colSpan = hasSonarColumn ? 7 : 6;
+                sb.Append($"""<tr class="branch-detail-row collapsed"><td colspan="{colSpan}"><div class="branch-detail"><div class="branch-detail-list">""");
+                foreach (var br in cls.UncoveredBranches)
+                {
+                    var chipClass = br.Covered > 0 ? "branch-chip partial" : "branch-chip";
+                    sb.Append($"""<span class="{chipClass}">L{br.Line} {br.ConditionCoverage}</span>""");
+                }
+                sb.Append("</div></div></td></tr>");
+            }
         }
 
         sb.Append("</tbody></table></div>");
@@ -952,6 +1016,7 @@ internal sealed class ClassData
     public int TotalLines { get; set; }
     public int CoveredLines { get; set; }
     public List<int> UncoveredLines { get; set; } = [];
+    public List<BranchInfo> UncoveredBranches { get; set; } = [];
     public List<MethodData> Methods { get; set; } = [];
     public SonarClassStatus SonarStatus { get; set; } = SonarClassStatus.Analyzed;
 }
@@ -963,6 +1028,15 @@ internal sealed class MethodData
     public double BranchRate { get; set; }
     public int Lines { get; set; }
     public int CoveredLines { get; set; }
+}
+
+internal sealed class BranchInfo
+{
+    public int Line { get; set; }
+    public string ConditionCoverage { get; set; } = "";
+    public int Covered { get; set; }
+    public int Total { get; set; }
+    public List<(int Number, string Coverage)> UncoveredConditions { get; set; } = [];
 }
 
 internal sealed class TestData
