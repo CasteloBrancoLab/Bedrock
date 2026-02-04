@@ -62,8 +62,10 @@ public abstract class DomainEntityRuleBase : Rule
 
     /// <summary>
     /// Verifica se o tipo herda de EntityBase (genérico ou não).
+    /// Público para permitir uso por regras que estendem <see cref="Rule"/> diretamente
+    /// (ex: regras para classes abstratas que são filtradas por <see cref="DomainEntityRuleBase"/>).
     /// </summary>
-    protected static bool InheritsFromEntityBase(INamedTypeSymbol type)
+    public static bool InheritsFromEntityBase(INamedTypeSymbol type)
     {
         var current = type.BaseType;
         while (current is not null)
