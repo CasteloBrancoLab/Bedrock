@@ -7,7 +7,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// A criação de instâncias deve ser feita via factory methods estáticos.
 /// Exceções: classes abstratas, estáticas, records, enums, interfaces, structs.
 /// </summary>
-public sealed class DE002_PrivateConstructorRule : Rule
+public sealed class DE002_PrivateConstructorRule : DomainEntityRuleBase
 {
     // Properties
     public override string Name => "DE002_PrivateConstructor";
@@ -15,14 +15,14 @@ public sealed class DE002_PrivateConstructorRule : Rule
     public override Severity DefaultSeverity => Severity.Error;
     public override string AdrPath => "docs/adrs/domain-entities/DE-002-construtores-privados-com-factory-methods.md";
 
-    protected override Violation? AnalyzeType(TypeContext context)
+    /// <summary>
+    /// Aplica-se a todas as classes concretas, não apenas EntityBase.
+    /// </summary>
+    protected override bool RequiresEntityBaseInheritance => false;
+
+    protected override Violation? AnalyzeEntityType(TypeContext context)
     {
         var type = context.Type;
-
-        // Ignorar: abstratos, estáticos, records, enums, interfaces, structs
-        if (type.IsAbstract || type.IsStatic ||
-            type.IsRecord || type.TypeKind != TypeKind.Class)
-            return null;
 
         // Verificar construtores de instância (ignorar estáticos)
         var instanceConstructors = type.InstanceConstructors;

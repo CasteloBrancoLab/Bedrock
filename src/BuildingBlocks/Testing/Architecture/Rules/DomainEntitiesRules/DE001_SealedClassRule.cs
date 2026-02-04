@@ -6,7 +6,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// Regra DE-001: Classes concretas que não são herdadas por nenhuma outra classe
 /// devem ser sealed. Exceções: classes abstratas e classes de teste.
 /// </summary>
-public sealed class DE001_SealedClassRule : Rule
+public sealed class DE001_SealedClassRule : DomainEntityRuleBase
 {
     // Properties
     public override string Name => "DE001_SealedClass";
@@ -14,13 +14,17 @@ public sealed class DE001_SealedClassRule : Rule
     public override Severity DefaultSeverity => Severity.Error;
     public override string AdrPath => "docs/adrs/domain-entities/DE-001-entidades-devem-ser-sealed.md";
 
-    protected override Violation? AnalyzeType(TypeContext context)
+    /// <summary>
+    /// Aplica-se a todas as classes concretas, não apenas EntityBase.
+    /// </summary>
+    protected override bool RequiresEntityBaseInheritance => false;
+
+    protected override Violation? AnalyzeEntityType(TypeContext context)
     {
         var type = context.Type;
 
-        // Ignorar: abstratos, sealed, estáticos, records, enums, interfaces, structs
-        if (type.IsAbstract || type.IsSealed || type.IsStatic ||
-            type.IsRecord || type.TypeKind != TypeKind.Class)
+        // Ignorar classes já sealed
+        if (type.IsSealed)
             return null;
 
         // Verificar se o tipo é herdado (cross-project via Roslyn ou via source grep)
