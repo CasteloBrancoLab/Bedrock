@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
+  "stryker-config": {
+    "project": "Bedrock.BuildingBlocks.Testing.csproj",
+    "test-projects": [
+      "../../../UnitTests/BuildingBlocks/Testing.Architecture/Bedrock.UnitTests.BuildingBlocks.Testing.Architecture.csproj"
+    ],
+    "mutate": [
+      "Architecture/**/*.cs"
+    ],
+    "reporters": ["html", "progress"],
+    "thresholds": {
+      "high": 100,
+      "low": 100,
+      "break": 100
+    }
+  }
+}
