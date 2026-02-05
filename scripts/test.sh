@@ -28,7 +28,7 @@ for project in $(find tests/UnitTests -name "*.csproj"); do
         --results-directory "artifacts/coverage/raw/$name" \
         --logger "trx;LogFileName=results.trx" \
         -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura \
-           DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[Bedrock.BuildingBlocks.Testing]*,[Bedrock.Templates.*]*,[Bedrock.Samples.*]*"
+           DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.TestBase,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.ServiceCollectionFixture,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.Attributes.*,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.Benchmarks.*,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.Integration.*,[Bedrock.Templates.*]*,[Bedrock.Samples.*]*"
 
     # Copy coverage file to a known location
     coverage_file=$(find "artifacts/coverage/raw/$name" -name "coverage.cobertura.xml" 2>/dev/null | head -1)
