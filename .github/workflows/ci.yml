@@ -364,7 +364,7 @@ jobs:
           for project in $(find tests/PerformanceTests -name "*.csproj"); do
             name=$(basename "$(dirname "$project")")
             echo "::group::Benchmarks for $name"
-            dotnet run --project "$project" -c Release --no-build || FAILED=1
+            dotnet run --project "$project" -c Release --no-build -- --artifacts "$GITHUB_WORKSPACE/artifacts/benchmark/$name" || FAILED=1
             echo "::endgroup::"
           done
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
@@ -376,7 +376,7 @@ jobs:
           name: benchmark-results
           path: artifacts/benchmark/
           retention-days: 1
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
     outputs:
       failed: ${{ steps.bench.outputs.failed }}
@@ -429,6 +429,7 @@ jobs:
 
       - name: Download Integration Results
         uses: actions/download-artifact@v4
+        if: ${{ needs.integration.result == 'success' || needs.integration.result == 'failure' }}
         with:
           name: integration-results
           path: artifacts/test-results/
@@ -436,6 +437,7 @@ jobs:
 
       - name: Download Benchmark Results
         uses: actions/download-artifact@v4
+        if: ${{ needs.benchmarks.result == 'success' || needs.benchmarks.result == 'failure' }}
         with:
           name: benchmark-results
           path: artifacts/benchmark/
