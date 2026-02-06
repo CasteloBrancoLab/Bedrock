@@ -364,9 +364,14 @@ jobs:
           for project in $(find tests/PerformanceTests -name "*.csproj"); do
             name=$(basename "$(dirname "$project")")
             echo "::group::Benchmarks for $name"
-            dotnet run --project "$project" -c Release --no-build -- --artifacts "$GITHUB_WORKSPACE/artifacts/benchmark/$name" || FAILED=1
+            dotnet run --project "$project" -c Release --no-build || FAILED=1
             echo "::endgroup::"
           done
+          # Copy benchmark files from pending (where SustainedBenchmarkRunner outputs)
+          if [ -d "artifacts/pending" ]; then
+            cp -f artifacts/pending/benchmark_*.txt artifacts/benchmark/ 2>/dev/null || true
+            cp -f artifacts/pending/benchmark_*_samples.json artifacts/benchmark/ 2>/dev/null || true
+          fi
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
 
       - name: Upload Benchmark Results
