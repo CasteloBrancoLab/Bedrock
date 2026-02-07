@@ -15,10 +15,13 @@ var gitCommit = args.Length > 4 ? args[4] : "unknown";
 Console.WriteLine(">>> Gerando Relatorio de Benchmarks...");
 
 // 1. Read pending benchmark files (LLM-friendly format)
+// Look in both pendingDir (local runs) and benchmarkDir (CI - downloaded from artifact)
 var benchmarkResults = new List<BenchmarkResult>();
-if (Directory.Exists(pendingDir))
+var dirsToSearch = new[] { pendingDir, benchmarkDir }.Where(Directory.Exists).Distinct();
+
+foreach (var dir in dirsToSearch)
 {
-    foreach (var file in Directory.GetFiles(pendingDir, "benchmark_*.txt").OrderBy(f => f))
+    foreach (var file in Directory.GetFiles(dir, "benchmark_*.txt").OrderBy(f => f))
     {
         var result = ParsePendingFile(file);
         if (result is not null)

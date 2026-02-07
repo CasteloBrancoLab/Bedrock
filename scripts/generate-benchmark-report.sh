@@ -21,10 +21,12 @@ echo ">>> Gerando Relatorio de Benchmarks..."
 mkdir -p "$REPORT_DIR"
 
 # Verificar se ha resultados de benchmarks
+# SustainedBenchmarkRunner outputs to pending/ locally, but CI copies to benchmark/
 HAS_PENDING=$(find "$PENDING_DIR" -name "benchmark_*.txt" 2>/dev/null | head -1)
+HAS_BENCHMARK=$(find "$BENCHMARK_DIR" -name "benchmark_*.txt" 2>/dev/null | head -1)
 HAS_BDN=$(find "$BENCHMARK_DIR" -name "*-report-full.json" 2>/dev/null | head -1)
 
-if [ -z "$HAS_PENDING" ] && [ -z "$HAS_BDN" ]; then
+if [ -z "$HAS_PENDING" ] && [ -z "$HAS_BENCHMARK" ] && [ -z "$HAS_BDN" ]; then
     echo "Nenhum resultado de benchmark encontrado."
     echo "  Diretorio de pendencias: $PENDING_DIR"
     echo "  Diretorio de benchmarks: $BENCHMARK_DIR"
