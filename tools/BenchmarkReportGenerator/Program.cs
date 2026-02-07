@@ -19,9 +19,9 @@ Console.WriteLine(">>> Gerando Relatorio de Benchmarks...");
 var benchmarkResults = new List<BenchmarkResult>();
 var dirsToSearch = new[] { pendingDir, benchmarkDir }.Where(Directory.Exists).Distinct();
 
-foreach (var dir in dirsToSearch)
+foreach (var searchDir in dirsToSearch)
 {
-    foreach (var file in Directory.GetFiles(dir, "benchmark_*.txt").OrderBy(f => f))
+    foreach (var file in Directory.GetFiles(searchDir, "benchmark_*.txt").OrderBy(f => f))
     {
         var result = ParsePendingFile(file);
         if (result is not null)
