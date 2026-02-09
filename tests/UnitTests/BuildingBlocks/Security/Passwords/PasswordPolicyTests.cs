@@ -176,6 +176,30 @@ public class PasswordPolicyTests : TestBase
     }
 
     [Fact]
+    public void ValidatePassword_WithoutSpaces_WhenNotAllowed_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating execution context and disabling spaces");
+        var executionContext = CreateTestExecutionContext();
+        SaveAndChangeMetadata(allowSpaces: false);
+
+        try
+        {
+            // Act
+            LogAct("Validating password without spaces when spaces disallowed");
+            bool result = PasswordPolicy.ValidatePassword(executionContext, "ValidPass123!");
+
+            // Assert
+            LogAssert("Verifying validation passes");
+            result.ShouldBeTrue();
+        }
+        finally
+        {
+            RestoreMetadata();
+        }
+    }
+
+    [Fact]
     public void ValidatePassword_WithoutUppercase_ShouldReturnFalse()
     {
         // Arrange
