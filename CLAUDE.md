@@ -497,3 +497,12 @@ Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Ne
 ```
 
 > **Nota**: Os artefatos são gerados em formato texto para consumo programático. Relatórios HTML são gerados apenas no GitHub Actions.
+
+## Active Technologies
+- C# / .NET 10.0 + Bedrock BuildingBlocks (Core, Domain.Entities, Data, Persistence.PostgreSql, Observability, Testing) (137-auth-scaffolding)
+- N/A (scaffolding apenas — sem entidades nem persistência nesta issue) (137-auth-scaffolding)
+- C# / .NET 10.0 + Bedrock.BuildingBlocks.Core, Bedrock.BuildingBlocks.Domain, Bedrock.BuildingBlocks.Domain.Entities, Bedrock.BuildingBlocks.Testing, Konscious.Security.Cryptography (Argon2id) (001-auth-domain-model)
+- N/A (domain model apenas — persistência é escopo de outra issue) (001-auth-domain-model)
+
+## Recent Changes
+- 137-auth-scaffolding: Added C# / .NET 10.0 + Bedrock BuildingBlocks (Core, Domain.Entities, Data, Persistence.PostgreSql, Observability, Testing)
