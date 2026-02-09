@@ -23,6 +23,11 @@ public class PasswordPolicyMetadataTests : TestBase
         PasswordPolicyMetadata.MinLength.ShouldBe(12);
         PasswordPolicyMetadata.MaxLength.ShouldBe(128);
         PasswordPolicyMetadata.AllowSpaces.ShouldBeTrue();
+        PasswordPolicyMetadata.RequireUppercase.ShouldBeTrue();
+        PasswordPolicyMetadata.RequireLowercase.ShouldBeTrue();
+        PasswordPolicyMetadata.RequireDigit.ShouldBeTrue();
+        PasswordPolicyMetadata.RequireSpecialCharacter.ShouldBeTrue();
+        PasswordPolicyMetadata.MinUniqueCharacters.ShouldBe(4);
     }
 
     [Fact]
@@ -33,22 +38,35 @@ public class PasswordPolicyMetadataTests : TestBase
         int originalMinLength = PasswordPolicyMetadata.MinLength;
         int originalMaxLength = PasswordPolicyMetadata.MaxLength;
         bool originalAllowSpaces = PasswordPolicyMetadata.AllowSpaces;
+        bool originalRequireUppercase = PasswordPolicyMetadata.RequireUppercase;
+        bool originalRequireLowercase = PasswordPolicyMetadata.RequireLowercase;
+        bool originalRequireDigit = PasswordPolicyMetadata.RequireDigit;
+        bool originalRequireSpecialCharacter = PasswordPolicyMetadata.RequireSpecialCharacter;
+        int originalMinUniqueCharacters = PasswordPolicyMetadata.MinUniqueCharacters;
 
         try
         {
             // Act
             LogAct("Changing metadata");
-            PasswordPolicyMetadata.ChangeMetadata(8, 64, false);
+            PasswordPolicyMetadata.ChangeMetadata(8, 64, false, false, false, false, false, 2);
 
             // Assert
             LogAssert("Verifying changed values");
             PasswordPolicyMetadata.MinLength.ShouldBe(8);
             PasswordPolicyMetadata.MaxLength.ShouldBe(64);
             PasswordPolicyMetadata.AllowSpaces.ShouldBeFalse();
+            PasswordPolicyMetadata.RequireUppercase.ShouldBeFalse();
+            PasswordPolicyMetadata.RequireLowercase.ShouldBeFalse();
+            PasswordPolicyMetadata.RequireDigit.ShouldBeFalse();
+            PasswordPolicyMetadata.RequireSpecialCharacter.ShouldBeFalse();
+            PasswordPolicyMetadata.MinUniqueCharacters.ShouldBe(2);
         }
         finally
         {
-            PasswordPolicyMetadata.ChangeMetadata(originalMinLength, originalMaxLength, originalAllowSpaces);
+            PasswordPolicyMetadata.ChangeMetadata(
+                originalMinLength, originalMaxLength, originalAllowSpaces,
+                originalRequireUppercase, originalRequireLowercase, originalRequireDigit,
+                originalRequireSpecialCharacter, originalMinUniqueCharacters);
         }
     }
 }
