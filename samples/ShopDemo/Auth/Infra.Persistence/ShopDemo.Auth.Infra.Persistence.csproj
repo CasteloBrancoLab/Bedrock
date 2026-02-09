@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Infra.Data\ShopDemo.Auth.Infra.Data.csproj" />
+    <ProjectReference Include="..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj" />
+    <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Persistence.PostgreSql\Bedrock.BuildingBlocks.Persistence.PostgreSql.csproj" />
+  </ItemGroup>
+
+</Project>

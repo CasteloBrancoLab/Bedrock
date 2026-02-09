@@ -4,7 +4,7 @@ using Xunit;
 namespace Bedrock.ArchitectureTests.Templates.Domain.Entities.Fixtures;
 
 /// <summary>
-/// Fixture que carrega a compilação do projeto Templates.Domain.Entities para análise arquitetural.
+/// Fixture que carrega a compilação dos projetos Domain.Entities para análise arquitetural.
 /// </summary>
 public sealed class DomainEntitiesArchFixture
     : RuleFixture
@@ -13,7 +13,8 @@ public sealed class DomainEntitiesArchFixture
     {
         return
         [
-            Path.Combine(rootDir, "src", "templates", "Domain.Entities", "Templates.Domain.Entities.csproj")
+            Path.Combine(rootDir, "src", "templates", "Domain.Entities", "Templates.Domain.Entities.csproj"),
+            Path.Combine(rootDir, "samples", "ShopDemo", "Auth", "Domain.Entities", "ShopDemo.Auth.Domain.Entities.csproj")
         ];
     }
 }
