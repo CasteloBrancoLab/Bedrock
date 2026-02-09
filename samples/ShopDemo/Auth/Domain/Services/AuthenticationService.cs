@@ -1,5 +1,6 @@
 using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Security.Passwords;
+using Bedrock.BuildingBlocks.Security.Passwords.Interfaces;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
 using ShopDemo.Auth.Domain.Repositories;

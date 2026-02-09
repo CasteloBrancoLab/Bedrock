@@ -2,6 +2,7 @@ using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Security.Passwords;
+using Bedrock.BuildingBlocks.Security.Passwords.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.Users;

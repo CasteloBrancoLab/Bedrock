@@ -10,6 +10,7 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 
 | Prefixo | Categoria | Descrição | Status |
 |---------|-----------|-----------|--------|
+| **CS** | [Code Style](./code-style/README.md) | Organização de código, convenções de namespace e estrutura de diretórios | 1 ADR |
 | **DE** | [Domain Entities](./domain-entities/README.md) | Entidades de domínio, agregados e value objects | 58 ADRs |
 | **RE** | Repositories | Persistência e acesso a dados | Em breve |
 | **AS** | Application Services | Serviços de aplicação e casos de uso | Em breve |
@@ -25,6 +26,7 @@ Cada ADR segue o padrão:
 ```
 
 Exemplos:
+- `CS-001-interfaces-em-namespace-interfaces.md` - Code Style
 - `DE-001-entidades-devem-ser-sealed.md` - Domain Entities
 - `RE-001-repository-pattern.md` - Repositories
 - `AS-001-cqrs-segregation.md` - Application Services
@@ -139,6 +141,10 @@ Links para implementações de referência no repositório.
 ```
 
 ## Navegação Rápida
+
+### Code Style (CS)
+- [CS-001: Interfaces em Namespace Interfaces](./code-style/CS-001-interfaces-em-namespace-interfaces.md)
+- [Ver todas as ADRs de Code Style](./code-style/)
 
 ### Domain Entities (DE)
 - [DE-001: Entidades Devem Ser Sealed](./domain-entities/DE-001-entidades-devem-ser-sealed.md)

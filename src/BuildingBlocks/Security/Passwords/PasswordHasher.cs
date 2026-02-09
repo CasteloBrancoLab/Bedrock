@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Bedrock.BuildingBlocks.Security.Passwords.Interfaces;
 using Konscious.Security.Cryptography;
 
 namespace Bedrock.BuildingBlocks.Security.Passwords;

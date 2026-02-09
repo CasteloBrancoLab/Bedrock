@@ -2,20 +2,16 @@
   ============================================================================
   Sync Impact Report
   ============================================================================
-  Version change: 1.5.0 → 1.6.0
-  Bump rationale: MINOR — adição do princípio BB-XI "Templates como
-    Lei de Implementação" documentando o papel dos templates em
-    src/templates/ como guia normativo para novas implementações.
-    Cobre: 4 arquétipos de entidade, marcadores LLM (LLM_RULE,
-    LLM_GUIDANCE, LLM_NOTE, LLM_ANTIPATTERN), camada de
-    infraestrutura (DataModel, Factory, Repository, Bootstrapper),
-    e os princípios fundamentais codificados nos templates
-    (validação obrigatória, imutabilidade, factory methods,
-    metadata como fonte única, operador &, sealed/abstract,
-    Input objects, coleções encapsuladas, acesso SQL direto).
-  Modified principles: Nenhum
-  Added sections:
-    - BB-XI. Templates como Lei de Implementação (novo princípio)
+  Version change: 1.7.0 → 1.8.0
+  Bump rationale: MINOR — adição de categoria CodeStyleRules (CS)
+    ao framework de análise arquitetural Roslyn, com primeira
+    regra CS001 (Interfaces em Interfaces/ namespace). BB-VII
+    e Restrições Técnicas atualizados para referenciar CS001+
+    ao lado de DE001+. ADR CS-001 criada em docs/adrs/code-style/.
+  Modified principles:
+    - BB-VII. Arquitetura Verificada por Código (expandido com
+      categorias DE e CS de regras Roslyn)
+  Added sections: Nenhuma
   Removed sections: Nenhuma
   Templates requiring updates:
     - .specify/templates/plan-template.md       ✅ compatível
@@ -23,6 +19,14 @@
     - .specify/templates/tasks-template.md       ✅ compatível
     - .specify/templates/checklist-template.md   ✅ compatível
     - .specify/templates/agent-file-template.md  ✅ compatível
+  Code changes:
+    - src/BuildingBlocks/Testing/Architecture/Rules/CodeStyleRules/
+      CS001_InterfacesInInterfacesNamespaceRule.cs (nova regra)
+    - tests/UnitTests/BuildingBlocks/Testing.Architecture/Rules/
+      CS001_InterfacesInInterfacesNamespaceRuleTests.cs (testes)
+    - docs/adrs/code-style/CS-001-interfaces-em-namespace-interfaces.md
+    - docs/adrs/code-style/README.md
+    - docs/adrs/README.md (adicionada categoria CS)
   Follow-up TODOs: Nenhum
   ============================================================================
 -->
@@ -158,10 +162,24 @@ Abstractions -> Implementação.
 - Dependências circulares são proibidas.
 - Contratos públicos (interfaces, tipos) DEVEM ser estáveis;
   breaking changes DEVEM ser documentados e justificados.
+- Toda interface (`I*.cs`) DEVE ser colocada em uma subpasta
+  `Interfaces/` dentro do diretório funcional correspondente,
+  refletindo no namespace. Exemplos:
+  - `Passwords/Interfaces/IPasswordHasher.cs`
+    → namespace `...Passwords.Interfaces`
+  - `Repositories/Interfaces/IPostgreSqlRepository.cs`
+    → namespace `...Repositories.Interfaces`
+  - `Users/Interfaces/IUser.cs`
+    → namespace `...Users.Interfaces`
+- A pasta `Interfaces/` DEVE conter SOMENTE interfaces.
+  Implementações concretas ficam no diretório pai.
 
 **Razão**: Modularidade permite que consumidores adotem apenas os
 blocos necessários. Contratos estáveis protegem contra regressões
-em cascata.
+em cascata. A convenção `Interfaces/` como subpasta padronizada
+garante separação visual e de namespace entre contratos e
+implementações, facilitando navegação e evitando mistura de
+responsabilidades no mesmo diretório.
 
 ### V. Automação como Garantia
 
@@ -371,10 +389,15 @@ Regras arquiteturais DEVEM ser verificadas automaticamente por
 analisadores Roslyn. Convenções documentadas que não são
 verificadas por código são recomendações, não regras.
 
-- Regras arquiteturais Roslyn (atualmente DE001+) DEVEM ser
-  executadas como testes unitários no pipeline. O conjunto
-  de regras está em evolução e será expandido conforme novos
-  padrões forem estabelecidos.
+- Regras arquiteturais Roslyn DEVEM ser executadas como testes
+  unitários no pipeline. Categorias atuais:
+  - **DE** (Domain Entities): DE001+ — regras para entidades
+    de domínio (sealed, factory methods, imutabilidade, etc.).
+  - **CS** (Code Style): CS001+ — regras de estilo de código
+    aplicáveis a qualquer tipo em qualquer projeto (interfaces
+    em Interfaces/, etc.).
+  O conjunto de regras está em evolução e será expandido
+  conforme novos padrões forem estabelecidos.
 - Cada regra DEVE ter: severity, caminho de ADR associado e
   LLM hints para correção assistida.
 - Violações são reportadas com arquivo, linha e mensagem
@@ -991,7 +1014,7 @@ as invariantes de direção de dependência sejam respeitadas.
 - **Análise estática**: SonarCloud (issues DEVEM ser resolvidas ou
   justificadas como falso positivo)
 - **Análise arquitetural**: Roslyn analyzers (conjunto de regras
-  em evolução, atualmente DE001+)
+  em evolução: DE001+ para Domain Entities, CS001+ para Code Style)
 - **Diagramas**: Mermaid (obrigatório em issues e documentação
   técnica)
 - **Gestão de tarefas**: GitHub Issues (ver seção
@@ -1164,4 +1187,4 @@ Em caso de conflito entre esta constituição e qualquer outro documento
   projeto contém orientações operacionais detalhadas para o code
   agent, derivadas desta constituição.
 
-**Version**: 1.6.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-08
+**Version**: 1.8.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09

@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Security.Passwords;
+namespace Bedrock.BuildingBlocks.Security.Passwords.Interfaces;
 
 public interface IPasswordHasher
 {
