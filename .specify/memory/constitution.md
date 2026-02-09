@@ -2,16 +2,18 @@
   ============================================================================
   Sync Impact Report
   ============================================================================
-  Version change: 1.7.0 → 1.8.0
-  Bump rationale: MINOR — adição de categoria CodeStyleRules (CS)
-    ao framework de análise arquitetural Roslyn, com primeira
-    regra CS001 (Interfaces em Interfaces/ namespace). BB-VII
-    e Restrições Técnicas atualizados para referenciar CS001+
-    ao lado de DE001+. ADR CS-001 criada em docs/adrs/code-style/.
+  Version change: 1.8.0 → 1.9.0
+  Bump rationale: MINOR — expansão material de BB-VII com
+    disciplina de organização dos testes arquiteturais.
+    Documenta convenção de classe consolidada por categoria
+    (uma classe com N [Fact] prefixados, não N arquivos),
+    padrão de fixture por categoria, e estrutura de diretórios.
   Modified principles:
-    - BB-VII. Arquitetura Verificada por Código (expandido com
-      categorias DE e CS de regras Roslyn)
-  Added sections: Nenhuma
+    - BB-VII. Arquitetura Verificada por Código (adicionada
+      subseção "Organização dos testes arquiteturais" com
+      convenções de classe consolidada, prefixo de código,
+      regions por blocos de 10, fixture por categoria)
+  Added sections: Nenhuma (subseção dentro de BB-VII)
   Removed sections: Nenhuma
   Templates requiring updates:
     - .specify/templates/plan-template.md       ✅ compatível
@@ -19,14 +21,14 @@
     - .specify/templates/tasks-template.md       ✅ compatível
     - .specify/templates/checklist-template.md   ✅ compatível
     - .specify/templates/agent-file-template.md  ✅ compatível
-  Code changes:
-    - src/BuildingBlocks/Testing/Architecture/Rules/CodeStyleRules/
-      CS001_InterfacesInInterfacesNamespaceRule.cs (nova regra)
-    - tests/UnitTests/BuildingBlocks/Testing.Architecture/Rules/
-      CS001_InterfacesInInterfacesNamespaceRuleTests.cs (testes)
-    - docs/adrs/code-style/CS-001-interfaces-em-namespace-interfaces.md
-    - docs/adrs/code-style/README.md
-    - docs/adrs/README.md (adicionada categoria CS)
+  Code changes (já commitados):
+    - tests/ArchitectureTests/Templates/Domain.Entities/
+      DomainEntitiesRuleTests.cs (consolidação de 58 arquivos)
+    - tests/ArchitectureTests/Templates/Domain.Entities/
+      CodeStyleRuleTests.cs (nova classe CS001+)
+    - tests/ArchitectureTests/Templates/Domain.Entities/
+      Fixtures/CodeStyleArchFixture.cs (nova fixture)
+    - 58 arquivos individuais de teste DE removidos
   Follow-up TODOs: Nenhum
   ============================================================================
 -->
@@ -405,9 +407,44 @@ verificadas por código são recomendações, não regras.
 - Novas regras arquiteturais DEVEM ser acompanhadas de
   testes unitários que validem detecção e não-detecção.
 
+**Organização dos testes arquiteturais:**
+
+Testes arquiteturais residem em `tests/ArchitectureTests/`
+e validam que o código dos projetos cumpre as regras Roslyn.
+
+- Cada categoria de regra DEVE ter uma única classe de teste
+  consolidada, NÃO um arquivo por regra:
+  - `DomainEntitiesRuleTests` — todas as regras DE001–DE058.
+  - `CodeStyleRuleTests` — todas as regras CS001+.
+- Cada `[Fact]` DEVE ser prefixado com o código da regra
+  (ex: `DE001_`, `CS001_`) e ordenado numericamente para
+  facilitar localização.
+- Métodos DEVEM ser organizados com `#region` em blocos de
+  10 regras (ex: `#region DE001–DE010`).
+- Cada categoria DEVE ter sua própria fixture (herdando
+  `RuleFixture`) que define os projetos a escanear via
+  `GetProjectPaths()`.
+- Testes usam `AssertNoViolations(new RuleClass())` —
+  a infraestrutura base (`RuleTestBase<TFixture>`) gera
+  relatórios e pendências em `artifacts/` automaticamente.
+- Novas categorias de regra exigem: fixture +
+  `[CollectionDefinition]` + classe de teste, tudo no
+  mesmo projeto de testes arquiteturais.
+
+```
+tests/ArchitectureTests/Templates/Domain.Entities/
+├── Fixtures/
+│   ├── DomainEntitiesArchFixture.cs   # Escaneia templates e samples
+│   └── CodeStyleArchFixture.cs        # Escaneia BBs e samples
+├── DomainEntitiesRuleTests.cs         # 58 [Fact] DE001–DE058
+└── CodeStyleRuleTests.cs              # [Fact] CS001+
+```
+
 **Razão**: Documentação desatualiza; código não. Regras
 verificadas por analisadores garantem compliance contínuo sem
-depender de revisão manual.
+depender de revisão manual. A consolidação em uma classe por
+categoria elimina proliferação de arquivos idênticos e facilita
+navegação — cada regra é apenas um `[Fact]` prefixado.
 
 ### BB-VIII. Camadas de Infraestrutura por Template Method
 
@@ -1187,4 +1224,4 @@ Em caso de conflito entre esta constituição e qualquer outro documento
   projeto contém orientações operacionais detalhadas para o code
   agent, derivadas desta constituição.
 
-**Version**: 1.8.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
+**Version**: 1.9.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
