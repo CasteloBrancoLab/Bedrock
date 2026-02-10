@@ -7,7 +7,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Bedrock.UnitTests.BuildingBlocks.Testing.Architecture.Rules;
+namespace Bedrock.UnitTests.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 
 public class DE058_ProcessValidateSetForAssociatedAggregateRootsRuleTests : TestBase
 {

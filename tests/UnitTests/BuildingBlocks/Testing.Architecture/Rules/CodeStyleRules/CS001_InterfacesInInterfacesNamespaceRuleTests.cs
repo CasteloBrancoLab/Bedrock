@@ -7,7 +7,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Bedrock.UnitTests.BuildingBlocks.Testing.Architecture.Rules;
+namespace Bedrock.UnitTests.BuildingBlocks.Testing.Architecture.Rules.CodeStyleRules;
 
 public class CS001_InterfacesInInterfacesNamespaceRuleTests : TestBase
 {
