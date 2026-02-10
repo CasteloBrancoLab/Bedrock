@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Bedrock.UnitTests.BuildingBlocks.Security.Passwords;
 
+[Collection("PasswordPolicy")]
 public class PasswordPolicyMetadataTests : TestBase
 {
     public PasswordPolicyMetadataTests(ITestOutputHelper outputHelper) : base(outputHelper)
