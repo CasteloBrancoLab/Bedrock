@@ -7,7 +7,7 @@ using Bedrock.BuildingBlocks.Data.Repositories;
 using Bedrock.BuildingBlocks.Domain.Entities;
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
 using Bedrock.BuildingBlocks.Domain.Entities.Models;
-using Bedrock.BuildingBlocks.Domain.Repositories;
+using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;

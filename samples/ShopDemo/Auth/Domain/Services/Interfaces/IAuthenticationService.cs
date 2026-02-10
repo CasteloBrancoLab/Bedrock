@@ -1,6 +1,6 @@
 using ShopDemo.Auth.Domain.Entities.Users;
 
-namespace ShopDemo.Auth.Domain.Services;
+namespace ShopDemo.Auth.Domain.Services.Interfaces;
 
 public interface IAuthenticationService
 {

@@ -1,7 +1,7 @@
-using Bedrock.BuildingBlocks.Domain.Repositories;
+using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using ShopDemo.Auth.Domain.Entities.Users;
-using ShopDemo.Auth.Domain.Repositories;
+using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;

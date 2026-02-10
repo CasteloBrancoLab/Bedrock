@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.Paginations;
-using Bedrock.BuildingBlocks.Domain.Repositories;
-using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories;
+using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
+using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories.Interfaces;
 using Templates.Domain.Entities.SimpleAggregateRoots;
 using Templates.Infra.Data.PostgreSql.DataModels;
 using Templates.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;

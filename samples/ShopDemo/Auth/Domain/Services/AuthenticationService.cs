@@ -3,7 +3,8 @@ using Bedrock.BuildingBlocks.Security.Passwords;
 using Bedrock.BuildingBlocks.Security.Passwords.Interfaces;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
-using ShopDemo.Auth.Domain.Repositories;
+using ShopDemo.Auth.Domain.Repositories.Interfaces;
+using ShopDemo.Auth.Domain.Services.Interfaces;
 
 namespace ShopDemo.Auth.Domain.Services;
 

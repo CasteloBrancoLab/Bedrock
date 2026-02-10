@@ -1,4 +1,4 @@
-using Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork;
+using Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork.Interfaces;
 using Npgsql;
 
 namespace Bedrock.BuildingBlocks.Persistence.PostgreSql.UnitOfWork.Interfaces;

@@ -1,4 +1,4 @@
-using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories;
+using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 
 namespace Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModelRepositories.Interfaces;

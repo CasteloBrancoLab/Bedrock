@@ -2,7 +2,7 @@ using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
 
-namespace Bedrock.BuildingBlocks.Domain.Repositories;
+namespace Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 
 /*
 ═══════════════════════════════════════════════════════════════════════════════

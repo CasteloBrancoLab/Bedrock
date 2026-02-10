@@ -7,8 +7,9 @@ using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
-using ShopDemo.Auth.Domain.Repositories;
+using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Services;
+using ShopDemo.Auth.Domain.Services.Interfaces;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -84,7 +85,7 @@ public class AuthenticationServiceTests : TestBase
         LogAssert("Verifying user was created");
         result.ShouldNotBeNull();
         result.Email.Value.ShouldBe("test@example.com");
-        result.Status.ShouldBe(ShopDemo.Auth.Domain.Entities.Users.Enums.UserStatus.Active);
+        result.Status.ShouldBe(ShopDemo.Core.Entities.Users.Enums.UserStatus.Active);
         _passwordHasherMock.Verify(x => x.HashPassword(executionContext, password), Times.Once);
         _userRepositoryMock.Verify(x => x.RegisterNewAsync(executionContext, It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
     }

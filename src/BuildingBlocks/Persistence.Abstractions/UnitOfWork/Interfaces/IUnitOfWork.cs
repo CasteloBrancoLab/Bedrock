@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork;
+namespace Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork.Interfaces;
 
 /// <summary>
 /// Defines the contract for unit of work pattern implementations.

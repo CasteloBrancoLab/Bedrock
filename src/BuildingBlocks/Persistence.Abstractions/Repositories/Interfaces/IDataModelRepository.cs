@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 using Bedrock.BuildingBlocks.Core.Paginations;
 
-namespace Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories;
+namespace Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories.Interfaces;
 
 /// <summary>
 /// Marker interface for data model repositories at the persistence layer.

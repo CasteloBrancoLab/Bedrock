@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Persistence.Abstractions.Connections;
+namespace Bedrock.BuildingBlocks.Persistence.Abstractions.Connections.Interfaces;
 
 public interface IConnection : IDisposable
 {

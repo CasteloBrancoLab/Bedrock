@@ -1,8 +1,8 @@
 using Bedrock.BuildingBlocks.Core.EmailAddresses;
-using Bedrock.BuildingBlocks.Domain.Repositories;
+using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Entities.Users;
 
-namespace ShopDemo.Auth.Domain.Repositories;
+namespace ShopDemo.Auth.Domain.Repositories.Interfaces;
 
 public interface IUserRepository : IRepository<User>
 {

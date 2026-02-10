@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
-using Bedrock.BuildingBlocks.Domain.Repositories;
+using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Observability.ExtensionMethods;
 using Microsoft.Extensions.Logging;
 

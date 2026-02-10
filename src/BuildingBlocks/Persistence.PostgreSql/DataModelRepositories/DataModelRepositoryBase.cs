@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts;
 using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Observability.ExtensionMethods;
-using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories;
+using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModelRepositories.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
