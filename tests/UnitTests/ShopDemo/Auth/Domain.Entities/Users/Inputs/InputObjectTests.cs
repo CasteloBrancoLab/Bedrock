@@ -5,7 +5,7 @@ using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Testing;
 using ShopDemo.Auth.Domain.Entities.Users;
-using ShopDemo.Auth.Domain.Entities.Users.Enums;
+using ShopDemo.Core.Entities.Users.Enums;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
 using Shouldly;
 using Xunit;

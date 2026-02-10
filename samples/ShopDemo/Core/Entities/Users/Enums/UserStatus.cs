@@ -1,4 +1,4 @@
-namespace ShopDemo.Auth.Domain.Entities.Users.Enums;
+namespace ShopDemo.Core.Entities.Users.Enums;
 
 public enum UserStatus : byte
 {

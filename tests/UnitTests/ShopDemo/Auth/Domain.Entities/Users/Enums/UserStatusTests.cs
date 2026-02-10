@@ -1,5 +1,5 @@
 using Bedrock.BuildingBlocks.Testing;
-using ShopDemo.Auth.Domain.Entities.Users.Enums;
+using ShopDemo.Core.Entities.Users.Enums;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;

@@ -383,4 +383,14 @@ public sealed class DomainEntitiesRuleTests : RuleTestBase<DomainEntitiesArchFix
     }
 
     #endregion
+
+    #region DE059
+
+    [Fact]
+    public void DE059_Metadata_deve_ser_classe_aninhada_da_entidade()
+    {
+        AssertNoViolations(new DE059_NestedMetadataClassRule());
+    }
+
+    #endregion
 }

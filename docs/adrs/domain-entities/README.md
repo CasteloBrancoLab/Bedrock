@@ -127,6 +127,12 @@ Decisões arquiteturais relacionadas a **entidades de domínio**, agregados e va
 | [DE-057](./DE-057-metadata-aggregate-roots-associadas-apenas-isrequired.md) | Metadata de Aggregate Roots Associadas - Apenas IsRequired | Aceita |
 | [DE-058](./DE-058-padroes-process-validate-set-para-aggregate-roots-associadas.md) | Padrões Process, Validate e Set para Aggregate Roots Associadas | Aceita |
 
+### Estrutura de Metadados
+
+| ADR | Título | Status |
+|-----|--------|--------|
+| [DE-059](./DE-059-metadata-deve-ser-classe-aninhada.md) | Metadados Devem Ser Classe Aninhada da Entidade | Aceita |
+
 ---
 
 ## Fonte

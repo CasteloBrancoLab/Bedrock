@@ -1,6 +1,6 @@
 using Bedrock.BuildingBlocks.Testing;
-using ShopDemo.Auth.Domain.Entities.Users;
 using Shouldly;
+using UserMetadata = ShopDemo.Auth.Domain.Entities.Users.User.UserMetadata;
 using Xunit;
 using Xunit.Abstractions;
 
