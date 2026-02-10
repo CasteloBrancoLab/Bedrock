@@ -459,6 +459,35 @@ public class PasswordPolicyTests : TestBase
     }
 
     [Fact]
+    public void ValidatePassword_WithExactlyMinUniqueCharacters_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating execution context with minUniqueCharacters = 3");
+        var executionContext = CreateTestExecutionContext();
+        SaveAndChangeMetadata(
+            requireUppercase: false,
+            requireLowercase: false,
+            requireDigit: false,
+            requireSpecialCharacter: false,
+            minUniqueCharacters: 3);
+
+        try
+        {
+            // Act
+            LogAct("Validating password with exactly 3 unique characters");
+            bool result = PasswordPolicy.ValidatePassword(executionContext, "abcabcabcabc");
+
+            // Assert
+            LogAssert("Verifying boundary passes with >= (not >)");
+            result.ShouldBeTrue();
+        }
+        finally
+        {
+            RestoreMetadata();
+        }
+    }
+
+    [Fact]
     public void ValidatePassword_MinUniqueDisabled_ShouldPassWithRepeatedChars()
     {
         // Arrange

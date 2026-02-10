@@ -140,6 +140,7 @@ public static class PasswordPolicy
         ExecutionContext executionContext,
         string password)
     {
+        // Stryker disable once Equality : <= 0 e < 0 sao equivalentes - HashSet.Count nunca e negativo
         if (PasswordPolicyMetadata.MinUniqueCharacters <= 0)
             return true;
 
