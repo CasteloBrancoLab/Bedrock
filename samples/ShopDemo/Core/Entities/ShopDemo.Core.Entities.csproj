@@ -15,6 +15,8 @@
     <Folder Include="Orders\Enums\" />
     <Folder Include="Persons\Enums\" />
     <Folder Include="Products\" />
+    <Folder Include="Users\" />
+    <Folder Include="Users\Enums\" />
   </ItemGroup>
 
 </Project>

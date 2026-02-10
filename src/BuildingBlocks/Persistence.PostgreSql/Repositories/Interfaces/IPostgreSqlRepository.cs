@@ -1,5 +1,5 @@
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
-using Bedrock.BuildingBlocks.Domain.Repositories;
+using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 
 namespace Bedrock.BuildingBlocks.Persistence.PostgreSql.Repositories.Interfaces;
 

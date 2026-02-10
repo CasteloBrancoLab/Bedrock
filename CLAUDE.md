@@ -403,9 +403,24 @@ MESSAGE: <descrição-do-problema>
 
 #### Instruções para Code Agent
 
-**IMPORTANTE**: Antes de commitar qualquer código, o code agent DEVE:
+**Fluxo escalonado durante o desenvolvimento:**
 
-1. Executar `./scripts/pipeline.sh`
+O code agent DEVE usar o comando adequado para cada fase do
+desenvolvimento, evitando rodar a pipeline completa em
+iterações intermediárias:
+
+| Fase | Comando | Quando usar |
+|------|---------|-------------|
+| Build rápido | `dotnet build` | Após qualquer alteração de código |
+| Testes focados | `dotnet test <projeto>` | Após escrever/alterar testes |
+| Pipeline completa | `./scripts/pipeline.sh` | **Uma vez no final**, antes de abrir a PR |
+
+Commits intermediários na branch de trabalho NÃO exigem
+pipeline completa — basta build e testes focados.
+
+**IMPORTANTE**: Antes de abrir a PR, o code agent DEVE:
+
+1. Executar `./scripts/pipeline.sh` (pipeline completa)
 2. Verificar `artifacts/pending/SUMMARY.txt`
 3. Se houver pendências:
    - **Mutantes**: Ler `artifacts/pending/mutant_*.txt` e corrigir testes
@@ -414,7 +429,7 @@ MESSAGE: <descrição-do-problema>
    - Repetir até atingir **100%** de cobertura
    - Repetir até atingir **100%** de mutação
    - Repetir até não ter mais issue do SonarCloud para resolver
-4. Só commitar quando a pipeline passar completamente
+4. Só abrir a PR quando a pipeline passar completamente
 
 ### Limite de Retentativas
 
@@ -470,30 +485,42 @@ Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Ne
 ┌──────────────────────────────────────────────────────────┐
 │  FLUXO OBRIGATÓRIO DO CODE AGENT                         │
 ├──────────────────────────────────────────────────────────┤
+│  DURANTE O DESENVOLVIMENTO (iterações rápidas):          │
 │  1. Implementar código                                   │
+│     → dotnet build (verificar compilação)                │
 │  2. Implementar testes                                   │
-│  3. Executar: ./scripts/pipeline.sh                      │
-│  4. Se FAILED ou com pendências (max 5 tentativas):      │
+│     → dotnet test <projeto> (verificar testes)           │
+│  3. Repetir 1-2 até implementação completa               │
+│                                                          │
+│  ANTES DA PR (pipeline completa, uma vez):                │
+│  4. Executar: ./scripts/pipeline.sh                      │
+│  5. Se FAILED ou com pendências (max 5 tentativas):      │
 │     - Ler artifacts/pending/SUMMARY.txt                  │
 │     - Ler artifacts/pending/mutant_*.txt                 │
 │     - Ler artifacts/pending/coverage_*.txt               │
 │     - Ler artifacts/pending/sonar_*.txt                  │
-│     - Corrigir testes para matar mutantes                │
-│     - Adicionar testes para cobertura                    │
-│     - Resolver issues do SonarCloud (ou justificar)      │
-│     - Voltar ao passo 3                                  │
-│  5. Se SUCCESS: commitar e push                          │
-│  6. Criar PR: gh pr create                               │
-│  7. Verificar pipeline: gh pr checks <number>            │
-│  8. Se pipeline PASSOU:                                  │
+│     - Corrigir e voltar ao passo 4                       │
+│  6. Se SUCCESS: commitar e push                          │
+│  7. Criar PR: gh pr create                               │
+│  8. Verificar pipeline: gh pr checks <number>            │
+│  9. Se pipeline PASSOU:                                  │
 │     - gh pr merge <number> --squash --delete-branch      │
 │     - git checkout main && git pull                      │
 │     - git branch -d <branch-local>                       │
-│  9. Se pipeline FALHOU (max 5 tentativas):               │
+│ 10. Se pipeline FALHOU (max 5 tentativas):               │
 │     - Analisar: gh run view <run-id> --log-failed        │
-│     - Corrigir e voltar ao passo 3                       │
-│ 10. Se atingiu limite: PARAR e informar o usuário        │
+│     - Corrigir e voltar ao passo 4                       │
+│ 11. Se atingiu limite: PARAR e informar o usuário        │
 └──────────────────────────────────────────────────────────┘
 ```
 
 > **Nota**: Os artefatos são gerados em formato texto para consumo programático. Relatórios HTML são gerados apenas no GitHub Actions.
+
+## Active Technologies
+- C# / .NET 10.0 + Bedrock BuildingBlocks (Core, Domain.Entities, Data, Persistence.PostgreSql, Observability, Testing) (137-auth-scaffolding)
+- N/A (scaffolding apenas — sem entidades nem persistência nesta issue) (137-auth-scaffolding)
+- C# / .NET 10.0 + Bedrock.BuildingBlocks.Core, Bedrock.BuildingBlocks.Domain, Bedrock.BuildingBlocks.Domain.Entities, Bedrock.BuildingBlocks.Testing, Konscious.Security.Cryptography (Argon2id) (001-auth-domain-model)
+- N/A (domain model apenas — persistência é escopo de outra issue) (001-auth-domain-model)
+
+## Recent Changes
+- 137-auth-scaffolding: Added C# / .NET 10.0 + Bedrock BuildingBlocks (Core, Domain.Entities, Data, Persistence.PostgreSql, Observability, Testing)

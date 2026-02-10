@@ -2,20 +2,17 @@
   ============================================================================
   Sync Impact Report
   ============================================================================
-  Version change: 1.5.0 → 1.6.0
-  Bump rationale: MINOR — adição do princípio BB-XI "Templates como
-    Lei de Implementação" documentando o papel dos templates em
-    src/templates/ como guia normativo para novas implementações.
-    Cobre: 4 arquétipos de entidade, marcadores LLM (LLM_RULE,
-    LLM_GUIDANCE, LLM_NOTE, LLM_ANTIPATTERN), camada de
-    infraestrutura (DataModel, Factory, Repository, Bootstrapper),
-    e os princípios fundamentais codificados nos templates
-    (validação obrigatória, imutabilidade, factory methods,
-    metadata como fonte única, operador &, sealed/abstract,
-    Input objects, coleções encapsuladas, acesso SQL direto).
-  Modified principles: Nenhum
-  Added sections:
-    - BB-XI. Templates como Lei de Implementação (novo princípio)
+  Version change: 1.9.0 → 1.10.0
+  Bump rationale: MINOR — introdução de fluxo escalonado de
+    desenvolvimento no Princípio I. Pipeline completa agora é
+    exigida apenas antes de abrir PR, não antes de cada commit.
+    Durante o desenvolvimento, build e testes focados são
+    suficientes para commits intermediários na branch.
+  Modified principles:
+    - I. Qualidade Inegociável (subseção "Pipeline" expandida
+      para fluxo escalonado: build/test durante dev, pipeline
+      completa somente antes da PR)
+  Added sections: Nenhuma
   Removed sections: Nenhuma
   Templates requiring updates:
     - .specify/templates/plan-template.md       ✅ compatível
@@ -23,6 +20,9 @@
     - .specify/templates/tasks-template.md       ✅ compatível
     - .specify/templates/checklist-template.md   ✅ compatível
     - .specify/templates/agent-file-template.md  ✅ compatível
+  Other files updated:
+    - CLAUDE.md (seção "Instruções para Code Agent" e diagrama
+      de fluxo atualizados com fluxo escalonado)
   Follow-up TODOs: Nenhum
   ============================================================================
 -->
@@ -73,10 +73,17 @@ Todo teste unitário DEVE cobrir, quando aplicável:
     específicos, documentados com comentário descrevendo o
     mutante alvo.
 
-**Pipeline:**
+**Pipeline (fluxo escalonado):**
 
-- A pipeline local (`./scripts/pipeline.sh`) DEVE passar
-  completamente antes de qualquer commit.
+- Durante o desenvolvimento, o code agent DEVE usar comandos
+  leves para feedback rápido:
+  - `dotnet build` — após qualquer alteração de código.
+  - `dotnet test <projeto>` — após escrever ou alterar testes.
+- Commits intermediários na branch de trabalho NÃO exigem
+  pipeline completa — basta build e testes focados.
+- A pipeline local completa (`./scripts/pipeline.sh`) DEVE
+  passar antes de abrir a PR. Isso inclui cobertura, mutação
+  e análise do SonarCloud.
 
 **Autonomia do code agent para exclusões:**
 
@@ -158,10 +165,24 @@ Abstractions -> Implementação.
 - Dependências circulares são proibidas.
 - Contratos públicos (interfaces, tipos) DEVEM ser estáveis;
   breaking changes DEVEM ser documentados e justificados.
+- Toda interface (`I*.cs`) DEVE ser colocada em uma subpasta
+  `Interfaces/` dentro do diretório funcional correspondente,
+  refletindo no namespace. Exemplos:
+  - `Passwords/Interfaces/IPasswordHasher.cs`
+    → namespace `...Passwords.Interfaces`
+  - `Repositories/Interfaces/IPostgreSqlRepository.cs`
+    → namespace `...Repositories.Interfaces`
+  - `Users/Interfaces/IUser.cs`
+    → namespace `...Users.Interfaces`
+- A pasta `Interfaces/` DEVE conter SOMENTE interfaces.
+  Implementações concretas ficam no diretório pai.
 
 **Razão**: Modularidade permite que consumidores adotem apenas os
 blocos necessários. Contratos estáveis protegem contra regressões
-em cascata.
+em cascata. A convenção `Interfaces/` como subpasta padronizada
+garante separação visual e de namespace entre contratos e
+implementações, facilitando navegação e evitando mistura de
+responsabilidades no mesmo diretório.
 
 ### V. Automação como Garantia
 
@@ -371,10 +392,15 @@ Regras arquiteturais DEVEM ser verificadas automaticamente por
 analisadores Roslyn. Convenções documentadas que não são
 verificadas por código são recomendações, não regras.
 
-- Regras arquiteturais Roslyn (atualmente DE001+) DEVEM ser
-  executadas como testes unitários no pipeline. O conjunto
-  de regras está em evolução e será expandido conforme novos
-  padrões forem estabelecidos.
+- Regras arquiteturais Roslyn DEVEM ser executadas como testes
+  unitários no pipeline. Categorias atuais:
+  - **DE** (Domain Entities): DE001+ — regras para entidades
+    de domínio (sealed, factory methods, imutabilidade, etc.).
+  - **CS** (Code Style): CS001+ — regras de estilo de código
+    aplicáveis a qualquer tipo em qualquer projeto (interfaces
+    em Interfaces/, etc.).
+  O conjunto de regras está em evolução e será expandido
+  conforme novos padrões forem estabelecidos.
 - Cada regra DEVE ter: severity, caminho de ADR associado e
   LLM hints para correção assistida.
 - Violações são reportadas com arquivo, linha e mensagem
@@ -382,9 +408,44 @@ verificadas por código são recomendações, não regras.
 - Novas regras arquiteturais DEVEM ser acompanhadas de
   testes unitários que validem detecção e não-detecção.
 
+**Organização dos testes arquiteturais:**
+
+Testes arquiteturais residem em `tests/ArchitectureTests/`
+e validam que o código dos projetos cumpre as regras Roslyn.
+
+- Cada categoria de regra DEVE ter uma única classe de teste
+  consolidada, NÃO um arquivo por regra:
+  - `DomainEntitiesRuleTests` — todas as regras DE001–DE058.
+  - `CodeStyleRuleTests` — todas as regras CS001+.
+- Cada `[Fact]` DEVE ser prefixado com o código da regra
+  (ex: `DE001_`, `CS001_`) e ordenado numericamente para
+  facilitar localização.
+- Métodos DEVEM ser organizados com `#region` em blocos de
+  10 regras (ex: `#region DE001–DE010`).
+- Cada categoria DEVE ter sua própria fixture (herdando
+  `RuleFixture`) que define os projetos a escanear via
+  `GetProjectPaths()`.
+- Testes usam `AssertNoViolations(new RuleClass())` —
+  a infraestrutura base (`RuleTestBase<TFixture>`) gera
+  relatórios e pendências em `artifacts/` automaticamente.
+- Novas categorias de regra exigem: fixture +
+  `[CollectionDefinition]` + classe de teste, tudo no
+  mesmo projeto de testes arquiteturais.
+
+```
+tests/ArchitectureTests/Templates/Domain.Entities/
+├── Fixtures/
+│   ├── DomainEntitiesArchFixture.cs   # Escaneia templates e samples
+│   └── CodeStyleArchFixture.cs        # Escaneia BBs e samples
+├── DomainEntitiesRuleTests.cs         # 58 [Fact] DE001–DE058
+└── CodeStyleRuleTests.cs              # [Fact] CS001+
+```
+
 **Razão**: Documentação desatualiza; código não. Regras
 verificadas por analisadores garantem compliance contínuo sem
-depender de revisão manual.
+depender de revisão manual. A consolidação em uma classe por
+categoria elimina proliferação de arquivos idênticos e facilita
+navegação — cada regra é apenas um `[Fact]` prefixado.
 
 ### BB-VIII. Camadas de Infraestrutura por Template Method
 
@@ -991,7 +1052,7 @@ as invariantes de direção de dependência sejam respeitadas.
 - **Análise estática**: SonarCloud (issues DEVEM ser resolvidas ou
   justificadas como falso positivo)
 - **Análise arquitetural**: Roslyn analyzers (conjunto de regras
-  em evolução, atualmente DE001+)
+  em evolução: DE001+ para Domain Entities, CS001+ para Code Style)
 - **Diagramas**: Mermaid (obrigatório em issues e documentação
   técnica)
 - **Gestão de tarefas**: GitHub Issues (ver seção
@@ -1007,10 +1068,11 @@ O ciclo de vida de uma mudança DEVE seguir o pipeline:
 backlog → ready → in-progress → review → approved → merged
 ```
 
-1. Implementar código e testes.
-2. Pipeline local DEVE passar (100% cobertura, 100% mutação, zero
-   issues SonarCloud aplicáveis).
-3. Commit e push.
+1. Implementar código e testes (usar `dotnet build` e
+   `dotnet test <projeto>` para feedback rápido).
+2. Commits intermediários na branch conforme necessário.
+3. Pipeline local DEVE passar antes de abrir PR (100%
+   cobertura, 100% mutação, zero issues SonarCloud aplicáveis).
 4. PR criado com `gh pr create` (body contém `Closes #<issue>`).
 5. Pipeline CI DEVE passar.
 6. Squash merge com `gh pr merge --squash --delete-branch`.
@@ -1164,4 +1226,4 @@ Em caso de conflito entre esta constituição e qualquer outro documento
   projeto contém orientações operacionais detalhadas para o code
   agent, derivadas desta constituição.
 
-**Version**: 1.6.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-08
+**Version**: 1.10.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
