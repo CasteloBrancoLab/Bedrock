@@ -17,4 +17,10 @@ public sealed class CodeStyleRuleTests : RuleTestBase<CodeStyleArchFixture>
     {
         AssertNoViolations(new CS001_InterfacesInInterfacesNamespaceRule());
     }
+
+    [Fact]
+    public void CS002_Lambdas_inline_devem_ser_static_em_metodos_do_projeto()
+    {
+        AssertNoViolations(new CS002_StaticLambdasInProjectMethodsRule());
+    }
 }
