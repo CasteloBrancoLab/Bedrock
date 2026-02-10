@@ -2,18 +2,17 @@
   ============================================================================
   Sync Impact Report
   ============================================================================
-  Version change: 1.8.0 → 1.9.0
-  Bump rationale: MINOR — expansão material de BB-VII com
-    disciplina de organização dos testes arquiteturais.
-    Documenta convenção de classe consolidada por categoria
-    (uma classe com N [Fact] prefixados, não N arquivos),
-    padrão de fixture por categoria, e estrutura de diretórios.
+  Version change: 1.9.0 → 1.10.0
+  Bump rationale: MINOR — introdução de fluxo escalonado de
+    desenvolvimento no Princípio I. Pipeline completa agora é
+    exigida apenas antes de abrir PR, não antes de cada commit.
+    Durante o desenvolvimento, build e testes focados são
+    suficientes para commits intermediários na branch.
   Modified principles:
-    - BB-VII. Arquitetura Verificada por Código (adicionada
-      subseção "Organização dos testes arquiteturais" com
-      convenções de classe consolidada, prefixo de código,
-      regions por blocos de 10, fixture por categoria)
-  Added sections: Nenhuma (subseção dentro de BB-VII)
+    - I. Qualidade Inegociável (subseção "Pipeline" expandida
+      para fluxo escalonado: build/test durante dev, pipeline
+      completa somente antes da PR)
+  Added sections: Nenhuma
   Removed sections: Nenhuma
   Templates requiring updates:
     - .specify/templates/plan-template.md       ✅ compatível
@@ -21,14 +20,9 @@
     - .specify/templates/tasks-template.md       ✅ compatível
     - .specify/templates/checklist-template.md   ✅ compatível
     - .specify/templates/agent-file-template.md  ✅ compatível
-  Code changes (já commitados):
-    - tests/ArchitectureTests/Templates/Domain.Entities/
-      DomainEntitiesRuleTests.cs (consolidação de 58 arquivos)
-    - tests/ArchitectureTests/Templates/Domain.Entities/
-      CodeStyleRuleTests.cs (nova classe CS001+)
-    - tests/ArchitectureTests/Templates/Domain.Entities/
-      Fixtures/CodeStyleArchFixture.cs (nova fixture)
-    - 58 arquivos individuais de teste DE removidos
+  Other files updated:
+    - CLAUDE.md (seção "Instruções para Code Agent" e diagrama
+      de fluxo atualizados com fluxo escalonado)
   Follow-up TODOs: Nenhum
   ============================================================================
 -->
@@ -79,10 +73,17 @@ Todo teste unitário DEVE cobrir, quando aplicável:
     específicos, documentados com comentário descrevendo o
     mutante alvo.
 
-**Pipeline:**
+**Pipeline (fluxo escalonado):**
 
-- A pipeline local (`./scripts/pipeline.sh`) DEVE passar
-  completamente antes de qualquer commit.
+- Durante o desenvolvimento, o code agent DEVE usar comandos
+  leves para feedback rápido:
+  - `dotnet build` — após qualquer alteração de código.
+  - `dotnet test <projeto>` — após escrever ou alterar testes.
+- Commits intermediários na branch de trabalho NÃO exigem
+  pipeline completa — basta build e testes focados.
+- A pipeline local completa (`./scripts/pipeline.sh`) DEVE
+  passar antes de abrir a PR. Isso inclui cobertura, mutação
+  e análise do SonarCloud.
 
 **Autonomia do code agent para exclusões:**
 
@@ -1067,10 +1068,11 @@ O ciclo de vida de uma mudança DEVE seguir o pipeline:
 backlog → ready → in-progress → review → approved → merged
 ```
 
-1. Implementar código e testes.
-2. Pipeline local DEVE passar (100% cobertura, 100% mutação, zero
-   issues SonarCloud aplicáveis).
-3. Commit e push.
+1. Implementar código e testes (usar `dotnet build` e
+   `dotnet test <projeto>` para feedback rápido).
+2. Commits intermediários na branch conforme necessário.
+3. Pipeline local DEVE passar antes de abrir PR (100%
+   cobertura, 100% mutação, zero issues SonarCloud aplicáveis).
 4. PR criado com `gh pr create` (body contém `Closes #<issue>`).
 5. Pipeline CI DEVE passar.
 6. Squash merge com `gh pr merge --squash --delete-branch`.
@@ -1224,4 +1226,4 @@ Em caso de conflito entre esta constituição e qualquer outro documento
   projeto contém orientações operacionais detalhadas para o code
   agent, derivadas desta constituição.
 
-**Version**: 1.9.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
+**Version**: 1.10.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
