@@ -2,20 +2,19 @@
   ============================================================================
   Sync Impact Report
   ============================================================================
-  Version change: 1.10.0 → 1.10.1
-  Bump rationale: PATCH — correções e clarificações em BB-VII
-    e BB-IX decorrentes do PR #173 (fix: merge architecture
-    report across test collections).
+  Version change: 1.10.1 → 1.11.0
+  Bump rationale: MINOR — adição de regra Roslyn CS002 (static
+    lambdas em métodos do projeto) com impacto em BB-I e BB-VII.
   Modified principles:
+    - BB-I. Performance como Requisito:
+      - Adicionada referência à regra CS002 como enforcement
+        automático da proibição de closures em hot paths.
     - BB-VII. Arquitetura Verificada por Código:
-      - Atualizado DE001–DE058 → DE001–DE059 no diagrama.
-      - Adicionada nota sobre ViolationManager com estado
-        estático compartilhado e thread-safety via Lock para
-        consolidar resultados de múltiplas fixtures/collections.
-    - BB-IX. Disciplina de Testes Unitários:
-      - Adicionada regra: classes de teste que compartilham
-        estado estático DEVEM usar [Collection] para evitar
-        race conditions na execução paralela do xUnit.
+      - Atualizada descrição de CS para incluir CS002 (static
+        lambdas), com detalhes sobre escopo, detecção de
+        namespace raiz e mecanismo de supressão via comentários.
+      - Atualizado diagrama: CodeStyleRuleTests agora lista
+        CS001–CS002+.
   Added sections: Nenhuma
   Removed sections: Nenhuma
   Templates requiring updates:
@@ -226,6 +225,8 @@ zero-allocation no hot path. Performance não é otimização prematura;
   de interface em struct DEVE ser evitado.
 - Closures que capturam variáveis (lambdas com estado) DEVEM ser
   substituídas por métodos estáticos ou delegates sem captura.
+  Toda lambda inline passada como argumento a um método do projeto
+  DEVE usar o modificador `static` (verificado pela regra CS002).
 - Concatenação de strings com `+` ou interpolação sem handler é
   proibida — usar `string.Create()` com `SpanAction` ou
   interpolated string handler.
@@ -399,7 +400,12 @@ verificadas por código são recomendações, não regras.
     de domínio (sealed, factory methods, imutabilidade, etc.).
   - **CS** (Code Style): CS001+ — regras de estilo de código
     aplicáveis a qualquer tipo em qualquer projeto (interfaces
-    em Interfaces/, etc.).
+    em Interfaces/, static lambdas em métodos do projeto, etc.).
+    A regra CS002 detecta lambdas não-static passadas como
+    argumento a métodos cujo tipo pertence ao namespace raiz
+    do projeto (derivado de `AssemblyName`). Suporta supressão
+    via `// CS002 disable once : razão` e blocos
+    `// CS002 disable` / `// CS002 restore`.
   O conjunto de regras está em evolução e será expandido
   conforme novos padrões forem estabelecidos.
 - Cada regra DEVE ter: severity, caminho de ADR associado e
@@ -455,7 +461,7 @@ tests/ArchitectureTests/Templates/Domain.Entities/
 │   ├── DomainEntitiesArchFixture.cs   # Escaneia templates e samples
 │   └── CodeStyleArchFixture.cs        # Escaneia BBs e samples
 ├── DomainEntitiesRuleTests.cs         # 59 [Fact] DE001–DE059
-└── CodeStyleRuleTests.cs              # [Fact] CS001+
+└── CodeStyleRuleTests.cs              # [Fact] CS001–CS002+
 ```
 
 **Razão**: Documentação desatualiza; código não. Regras
@@ -1262,4 +1268,4 @@ Em caso de conflito entre esta constituição e qualquer outro documento
   projeto contém orientações operacionais detalhadas para o code
   agent, derivadas desta constituição.
 
-**Version**: 1.10.1 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
+**Version**: 1.11.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-10
