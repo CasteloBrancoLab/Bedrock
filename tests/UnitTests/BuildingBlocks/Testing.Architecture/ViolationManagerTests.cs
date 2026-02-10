@@ -11,6 +11,7 @@ public class ViolationManagerTests : TestBase
 {
     public ViolationManagerTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
+        ViolationManager.ResetSharedState();
     }
 
     [Fact]
