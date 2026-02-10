@@ -2,16 +2,20 @@
   ============================================================================
   Sync Impact Report
   ============================================================================
-  Version change: 1.9.0 → 1.10.0
-  Bump rationale: MINOR — introdução de fluxo escalonado de
-    desenvolvimento no Princípio I. Pipeline completa agora é
-    exigida apenas antes de abrir PR, não antes de cada commit.
-    Durante o desenvolvimento, build e testes focados são
-    suficientes para commits intermediários na branch.
+  Version change: 1.10.0 → 1.10.1
+  Bump rationale: PATCH — correções e clarificações em BB-VII
+    e BB-IX decorrentes do PR #173 (fix: merge architecture
+    report across test collections).
   Modified principles:
-    - I. Qualidade Inegociável (subseção "Pipeline" expandida
-      para fluxo escalonado: build/test durante dev, pipeline
-      completa somente antes da PR)
+    - BB-VII. Arquitetura Verificada por Código:
+      - Atualizado DE001–DE058 → DE001–DE059 no diagrama.
+      - Adicionada nota sobre ViolationManager com estado
+        estático compartilhado e thread-safety via Lock para
+        consolidar resultados de múltiplas fixtures/collections.
+    - BB-IX. Disciplina de Testes Unitários:
+      - Adicionada regra: classes de teste que compartilham
+        estado estático DEVEM usar [Collection] para evitar
+        race conditions na execução paralela do xUnit.
   Added sections: Nenhuma
   Removed sections: Nenhuma
   Templates requiring updates:
@@ -20,9 +24,6 @@
     - .specify/templates/tasks-template.md       ✅ compatível
     - .specify/templates/checklist-template.md   ✅ compatível
     - .specify/templates/agent-file-template.md  ✅ compatível
-  Other files updated:
-    - CLAUDE.md (seção "Instruções para Code Agent" e diagrama
-      de fluxo atualizados com fluxo escalonado)
   Follow-up TODOs: Nenhum
   ============================================================================
 -->
@@ -432,12 +433,28 @@ e validam que o código dos projetos cumpre as regras Roslyn.
   `[CollectionDefinition]` + classe de teste, tudo no
   mesmo projeto de testes arquiteturais.
 
+**ViolationManager — estado estático compartilhado:**
+
+- `ViolationManager` usa estado estático (`_violations`,
+  `_ruleResults`) compartilhado entre todas as instâncias,
+  protegido por `Lock` para thread-safety.
+- Cada fixture (`DomainEntitiesArchFixture`,
+  `CodeStyleArchFixture`) cria sua própria instância de
+  `ViolationManager`, mas todas acumulam resultados no
+  mesmo store estático.
+- Isso garante que o relatório JSON consolidado
+  (`architecture-report.json`) inclui resultados de TODAS
+  as categorias de regra, independente da ordem de execução
+  das collections do xUnit.
+- `ResetSharedState()` DEVE ser chamado nos testes unitários
+  do próprio `ViolationManager` para isolamento.
+
 ```
 tests/ArchitectureTests/Templates/Domain.Entities/
 ├── Fixtures/
 │   ├── DomainEntitiesArchFixture.cs   # Escaneia templates e samples
 │   └── CodeStyleArchFixture.cs        # Escaneia BBs e samples
-├── DomainEntitiesRuleTests.cs         # 58 [Fact] DE001–DE058
+├── DomainEntitiesRuleTests.cs         # 59 [Fact] DE001–DE059
 └── CodeStyleRuleTests.cs              # [Fact] CS001+
 ```
 
@@ -446,6 +463,10 @@ verificadas por analisadores garantem compliance contínuo sem
 depender de revisão manual. A consolidação em uma classe por
 categoria elimina proliferação de arquivos idênticos e facilita
 navegação — cada regra é apenas um `[Fact]` prefixado.
+O estado estático compartilhado no `ViolationManager` garante
+que múltiplas collections do xUnit contribuem para um único
+relatório consolidado, evitando que a última collection
+sobrescreva os resultados das anteriores.
 
 ### BB-VIII. Camadas de Infraestrutura por Template Method
 
@@ -543,6 +564,21 @@ consistência entre todos os BuildingBlocks.
 - `[Theory]` + `[InlineData]` para testes parametrizados.
 - `[Collection]` + `[CollectionDefinition]` para fixtures
   compartilhadas.
+
+**Isolamento de estado estático entre classes de teste:**
+
+- Classes de teste que compartilham estado estático (ex:
+  `PasswordPolicyMetadata`, `ViolationManager`) DEVEM usar
+  `[Collection("NomeDaCollection")]` para impedir que o
+  xUnit as execute em paralelo.
+- Sem `[Collection]`, o xUnit executa classes diferentes
+  em paralelo por padrão, causando race conditions quando
+  uma classe modifica estado estático que outra lê.
+- O padrão save/restore em `try/finally` NÃO é suficiente
+  para isolamento — ele protege contra falhas no teste, mas
+  NÃO contra execução paralela de outra classe.
+- Testes dentro da mesma classe já são serializados pelo
+  xUnit; a proteção é necessária entre classes diferentes.
 
 **Organização interna do teste:**
 
@@ -1226,4 +1262,4 @@ Em caso de conflito entre esta constituição e qualquer outro documento
   projeto contém orientações operacionais detalhadas para o code
   agent, derivadas desta constituição.
 
-**Version**: 1.10.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
+**Version**: 1.10.1 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-09
