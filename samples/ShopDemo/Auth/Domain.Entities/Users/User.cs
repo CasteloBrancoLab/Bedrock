@@ -11,7 +11,6 @@ namespace ShopDemo.Auth.Domain.Entities.Users;
 
 public sealed class User
     : EntityBase<User>,
-    IAggregateRoot,
     IUser
 {
     // Properties
