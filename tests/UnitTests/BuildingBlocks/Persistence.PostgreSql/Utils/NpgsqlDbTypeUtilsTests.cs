@@ -238,6 +238,22 @@ public class NpgsqlDbTypeUtilsTests : TestBase
     }
 
     [Fact]
+    public void MapToNpgsqlDbType_WithByteArray_ShouldReturnBytea()
+    {
+        // Arrange
+        LogArrange("Testing byte[] mapping");
+        var type = typeof(byte[]);
+
+        // Act
+        LogAct("Mapping byte[] to NpgsqlDbType");
+        var result = NpgsqlDbTypeUtils.MapToNpgsqlDbType(type);
+
+        // Assert
+        LogAssert("Verifying result is Bytea");
+        result.ShouldBe(NpgsqlDbType.Bytea);
+    }
+
+    [Fact]
     public void MapToNpgsqlDbType_WithUnsupportedType_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange

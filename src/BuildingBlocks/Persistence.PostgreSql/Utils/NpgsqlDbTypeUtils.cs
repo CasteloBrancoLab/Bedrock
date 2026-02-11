@@ -19,6 +19,7 @@ public static class NpgsqlDbTypeUtils
         [typeof(double)] = NpgsqlDbType.Double,
         [typeof(float)] = NpgsqlDbType.Real,
         [typeof(decimal)] = NpgsqlDbType.Numeric,
+        [typeof(byte[])] = NpgsqlDbType.Bytea,
     };
 
     /// <summary>
