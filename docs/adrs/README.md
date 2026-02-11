@@ -11,7 +11,7 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 | Prefixo | Categoria | Descrição | Status |
 |---------|-----------|-----------|--------|
 | **CS** | [Code Style](./code-style/README.md) | Organização de código, convenções de namespace e estrutura de diretórios | 1 ADR |
-| **DE** | [Domain Entities](./domain-entities/README.md) | Entidades de domínio, agregados e value objects | 58 ADRs |
+| **DE** | [Domain Entities](./domain-entities/README.md) | Entidades de domínio, agregados e value objects | 60 ADRs |
 | **RE** | Repositories | Persistência e acesso a dados | Em breve |
 | **AS** | Application Services | Serviços de aplicação e casos de uso | Em breve |
 | **IN** | Infrastructure | Infraestrutura, cross-cutting concerns | Em breve |

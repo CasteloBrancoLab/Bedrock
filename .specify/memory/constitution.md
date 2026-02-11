@@ -363,6 +363,11 @@ através do seu aggregate root.
   de infraestrutura vazem para a camada de domínio.
 - Nomenclatura de repositório DEVE refletir intenção de
   negócio (behavior-driven), não operações CRUD.
+- Interfaces de domínio (`IUser`, `IOrder`) DEVEM herdar de
+  `IAggregateRoot` quando a entidade é um aggregate root, e
+  de `IEntity` quando é uma entidade interna. A classificação
+  DDD DEVE estar na interface, não apenas na classe concreta.
+  (Ref: ADR DE-060)
 
 **Razão**: Aggregate roots definem limites transacionais claros.
 O Handler Pattern centraliza tratamento de erros e previne
