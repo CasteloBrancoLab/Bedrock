@@ -14,7 +14,7 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 | **DE** | [Domain Entities](./domain-entities/README.md) | Entidades de domínio, agregados e value objects | 60 ADRs |
 | **RE** | Repositories | Persistência e acesso a dados | Em breve |
 | **AS** | Application Services | Serviços de aplicação e casos de uso | Em breve |
-| **IN** | Infrastructure | Infraestrutura, cross-cutting concerns | Em breve |
+| **IN** | [Infrastructure](./infrastructure/README.md) | Infraestrutura, cross-cutting concerns | 5 ADRs |
 | **AP** | API | APIs REST, GraphQL, contratos | Em breve |
 
 ## Convenção de Nomenclatura
@@ -151,6 +151,14 @@ Links para implementações de referência no repositório.
 - [DE-002: Construtores Privados com Factory Methods](./domain-entities/DE-002-construtores-privados-com-factory-methods.md)
 - [DE-003: Imutabilidade Controlada (Clone-Modify-Return)](./domain-entities/DE-003-imutabilidade-controlada-clone-modify-return.md)
 - [Ver todas as ADRs de Domain Entities](./domain-entities/)
+
+### Infrastructure (IN)
+- [IN-001: Camadas Canonicas de um Bounded Context](./infrastructure/IN-001-camadas-canonicas-bounded-context.md)
+- [IN-002: Entidades de Dominio Vivem em Projeto Separado](./infrastructure/IN-002-domain-entities-projeto-separado.md)
+- [IN-003: Domain É um Projeto Separado de Domain.Entities](./infrastructure/IN-003-domain-projeto-separado.md)
+- [IN-004: Modelo de Dados É Detalhe de Implementacao](./infrastructure/IN-004-modelo-dados-detalhe-implementacao.md)
+- [IN-005: Infra.Data Atua como Facade de Persistencia](./infrastructure/IN-005-infra-data-facade-persistencia.md)
+- [Ver todas as ADRs de Infrastructure](./infrastructure/)
 
 ---
 
