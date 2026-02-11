@@ -133,6 +133,12 @@ Decisões arquiteturais relacionadas a **entidades de domínio**, agregados e va
 |-----|--------|--------|
 | [DE-059](./DE-059-metadata-deve-ser-classe-aninhada.md) | Metadados Devem Ser Classe Aninhada da Entidade | Aceita |
 
+### Interfaces de Domínio
+
+| ADR | Título | Status |
+|-----|--------|--------|
+| [DE-060](./DE-060-interface-dominio-deve-declarar-iaggregateroot.md) | Interface de Domínio Deve Declarar IAggregateRoot | Aceita |
+
 ---
 
 ## Fonte

@@ -393,4 +393,14 @@ public sealed class DomainEntitiesRuleTests : RuleTestBase<DomainEntitiesArchFix
     }
 
     #endregion
+
+    #region DE060
+
+    [Fact]
+    public void DE060_Interface_de_dominio_de_aggregate_root_deve_herdar_IAggregateRoot()
+    {
+        AssertNoViolations(new DE060_DomainInterfaceMustDeclareAggregateRootRule());
+    }
+
+    #endregion
 }
