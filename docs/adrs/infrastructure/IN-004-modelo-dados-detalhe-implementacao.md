@@ -83,6 +83,67 @@ um artefato hibrido — parte dominio, parte infraestrutura.
   nao tem significado de negocio.
 - Migracoes de banco impactam diretamente o modelo de dominio.
 
+### Abordagem Alternativa: Fluent Mapping na Camada de Persistencia
+
+Alguns projetos tentam resolver o acoplamento movendo o mapeamento
+para a camada de persistencia via Fluent API (ex: `OnModelCreating`
+no Entity Framework). A entidade de dominio fica limpa — sem
+anotacoes `[Table]`, `[Column]` ou `[Key]`:
+
+```csharp
+// Entidade de dominio — sem anotacoes
+public class User
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; }
+    public string HashedPassword { get; set; }
+}
+
+// Persistencia — mapeamento via Fluent API
+public class UserConfiguration : IEntityTypeConfiguration<User>
+{
+    public void Configure(EntityTypeBuilder<User> builder)
+    {
+        builder.ToTable("users");
+        builder.HasKey(u => u.Id);
+        builder.Property(u => u.Email).HasMaxLength(255);
+        builder.Property(u => u.HashedPassword).HasColumnName("hashed_password");
+    }
+}
+```
+
+### Por Que Ainda Nao Resolve
+
+Fluent mapping elimina as anotacoes, mas **o ORM continua presente**.
+A entidade de dominio ainda é gerenciada pelo ORM em tempo de execucao
+— com proxies, change tracking e gerenciamento de ciclo de vida.
+
+O problema é que pagamos o onus computacional do ORM sem usufruir de
+um dos seus principais beneficios:
+
+- **Custo de RAM**: O ORM mantem snapshots de todas as entidades
+  rastreadas em memoria para detectar mudancas. Em um sistema OLTP com
+  alto volume de operacoes, isso significa milhares de copias de
+  entidades em memoria simultaneamente — um custo significativo de RAM
+  para manter o grafo de change tracking.
+- **Beneficio nao aproveitado**: O change tracking é poderoso quando
+  voce carrega uma entidade, faz varias modificacoes ao longo de uma
+  transacao complexa e quer que o ORM detecte automaticamente o que
+  mudou para gerar o SQL otimizado. Em um sistema OLTP tipico, as
+  operacoes sao curtas e direcionadas: carrega o usuario, valida a
+  senha, retorna. Nao ha uma sessao longa com multiplas modificacoes
+  onde o change tracking agregaria valor real.
+- **Custo sem retorno**: Pagamos o preco (RAM, proxies, overhead de
+  tracking) sem receber o beneficio correspondente. É como alugar um
+  caminhao para transportar uma mochila — a capacidade existe, mas nao
+  é utilizada.
+
+Alem disso, mesmo com fluent mapping, a entidade ainda precisa atender
+requisitos do ORM: setters acessiveis para o tracker popular
+propriedades, construtores sem parametros para instanciacao via
+reflection. O dominio continua moldado pelas necessidades da
+infraestrutura — so que de forma menos visivel.
+
 ## A Decisao
 
 ### Nossa Abordagem
@@ -222,6 +283,66 @@ ser moldado pelas necessidades do ORM, nao pelas regras de negocio.
 4. **Consistencia arquitetural**: Uma unica abordagem para todas as
    tecnologias é mais previsivel do que alternar entre "aqui usamos
    EF Core" e "ali usamos Dapper" dependendo do caso.
+
+5. **Incompatibilidade com o modelo de dominio do Bedrock**: O modelo
+   de dominio do Bedrock segue decisoes arquiteturais documentadas nas
+   ADRs de Domain Entities (DE) que sao fundamentalmente incompativeis
+   com ORMs:
+
+   - **Entidades sealed** ([DE-001](../domain-entities/DE-001-entidades-devem-ser-sealed.md)):
+     ORMs que geram proxies via heranca nao conseguem estender classes
+     `sealed`.
+   - **Construtores privados com factory methods** ([DE-002](../domain-entities/DE-002-construtores-privados-com-factory-methods.md)):
+     ORMs precisam instanciar entidades via reflection com construtores
+     sem parametros. Factory methods nao sao suportados nativamente.
+   - **Imutabilidade controlada (clone-modify-return)** ([DE-003](../domain-entities/DE-003-imutabilidade-controlada-clone-modify-return.md)):
+     O change tracker do ORM depende da mesma instancia sendo
+     modificada para detectar mudancas. Entidades imutaveis que
+     retornam novas instancias a cada modificacao quebram essa
+     premissa fundamental.
+
+   ORMs modernos como Entity Framework permitem mapear algumas
+   construcoes para metodos via Fluent API. Porem, adaptar o modelo
+   de dominio para atender um ORM especifico criaria um lock-in: as
+   entidades passariam a depender das capacidades e limitacoes daquele
+   ORM em particular.
+
+   Para contornar a imutabilidade — modificar o change tracker
+   manualmente, definir quais propriedades foram alteradas, criar
+   comparadores customizados de snapshot, interceptar o pipeline de
+   persistencia — seria necessario tanto codigo extra, tanto setup
+   adicional e tanta customizacao que a justificativa de usar um ORM
+   (simplificar o acesso a dados) se anula. O ORM deixa de simplificar
+   e passa a ser um obstaculo que precisa ser constantemente
+   contornado.
+
+6. **Custo real de alocacao — ORM vs. mapeamento explicito**: A
+   conversao explicita entre DataModel e entidade de dominio via
+   Factory/Adapter parece custosa a primeira vista — sao objetos
+   extras sendo criados. Porem, um ORM aloca significativamente mais
+   objetos internamente do que um mapeamento direto:
+
+   - **Proxies**: O ORM cria uma classe derivada (proxy) para cada
+     entidade rastreada, com interceptadores em cada propriedade.
+   - **Snapshots de change tracking**: Para cada entidade carregada, o
+     ORM mantem uma copia interna dos valores originais (snapshot) para
+     comparacao posterior — essencialmente duplicando cada entidade em
+     memoria.
+   - **Expression trees do LINQ**: Cada query LINQ é compilada em uma
+     arvore de expressoes (`Expression<Func<T, bool>>`) que gera
+     dezenas de objetos intermediarios (nodes da arvore, delegates,
+     closures) antes de ser traduzida para SQL.
+   - **Materializers e identity map**: O pipeline de materializacao
+     (transformar o resultado SQL em objetos) envolve caches internos,
+     identity maps e resolvers de relacionamentos — todos alocando
+     objetos a cada query.
+
+   Uma Factory que faz `new User(dataModel.Email, dataModel.Password)`
+   aloca exatamente o que é necessario: a entidade e seus value
+   objects. Nao ha proxies, nao ha snapshots, nao ha arvores de
+   expressoes. O custo de mapeamento explicito é previsivel e
+   transparente — enquanto o custo do ORM é oculto e
+   desproporcionalmente maior.
 
 > **Nota**: Nao usar ORM nao significa que o ORM é uma tecnologia ruim.
 > Significa que ele nao se encaixa no modelo arquitetural escolhido
