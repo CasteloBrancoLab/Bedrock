@@ -81,7 +81,7 @@ These have no dependencies on domain types.
 
 ## Key Patterns to Follow
 
-- **Template reference**: `src/templates/Infra.Data.PostgreSql/` is the normative source
+- **Template reference**: `src/Templates/Infra.Data.PostgreSql/` is the normative source
 - **Namespace**: `ShopDemo.Auth.Infra.Data.PostgreSql.*` (not `Infra.Data.PostgreSql`)
 - **GlobalUsings**: Already exists — `ExecutionContext = Bedrock.BuildingBlocks.Core.ExecutionContexts.ExecutionContext`
 - **Sealed classes**: All implementation classes must be `sealed`

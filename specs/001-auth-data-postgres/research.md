@@ -7,7 +7,7 @@
 
 ### R1: Template Pattern Mapping
 
-**Decision**: Follow `src/templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming.
+**Decision**: Follow `src/Templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming.
 
 **Rationale**: Constitution BB-XI mandates templates as normative reference. The template provides a complete, tested pattern for all persistence artifacts. Deviation would contradict the constitution.
 

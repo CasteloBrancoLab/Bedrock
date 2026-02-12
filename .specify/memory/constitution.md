@@ -828,7 +828,7 @@ sendo verificado sem precisar navegar para a fixture.
 
 ### BB-XI. Templates como Lei de Implementação
 
-O diretório `src/templates/` contém templates de implementação
+O diretório `src/Templates/` contém templates de implementação
 que são o guia normativo para toda nova entidade, repositório e
 camada de infraestrutura. Templates DEVEM ser consultados ANTES
 de qualquer implementação nova e seguidos como referência
@@ -840,7 +840,7 @@ obrigatória.
 > podem ser adicionados conforme padrões são estabelecidos.
 
 ```
-src/templates/
+src/Templates/
 ├── Domain.Entities/
 │   ├── SimpleAggregateRoots/      # AR sealed simples
 │   ├── AbstractAggregateRoots/    # AR com herança

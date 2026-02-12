@@ -18,7 +18,7 @@
 - **Source**: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/` and `samples/ShopDemo/Auth/Infra.Data/`
 - **Unit Tests**: `tests/UnitTests/ShopDemo/Auth/Infra.Data.PostgreSql/` and `tests/UnitTests/ShopDemo/Auth/Infra.Data/`
 - **Mutation Tests**: `tests/MutationTests/ShopDemo/Auth/Infra.Data.PostgreSql/` and `tests/MutationTests/ShopDemo/Auth/Infra.Data/`
-- **Template Reference**: `src/templates/Infra.Data.PostgreSql/` (normative source per BB-XI)
+- **Template Reference**: `src/Templates/Infra.Data.PostgreSql/` (normative source per BB-XI)
 
 ---
 
@@ -281,7 +281,7 @@ Execute sequentially Phase 1 → 2 → 3 → 4 → 5 → 6 → 7, using `dotnet 
 
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
-- Template reference files are in `src/templates/Infra.Data.PostgreSql/` — consult them for exact code patterns
+- Template reference files are in `src/Templates/Infra.Data.PostgreSql/` — consult them for exact code patterns
 - All classes must be `sealed` (constitution BB-III)
 - All interfaces must be in `Interfaces/` subdirectory (constitution BB-IV)
 - All lambdas passed to project methods must use `static` modifier (Roslyn rule CS002)

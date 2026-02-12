@@ -313,6 +313,6 @@ Task T037-T041: Security tests
 - [Story] label maps task to specific user story for traceability
 - Each user story is independently completable and testable
 - Commit after each phase passes pipeline validation
-- The SimpleAggregateRoot template at `src/templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` is the reference implementation for User entity
+- The SimpleAggregateRoot template at `src/Templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` is the reference implementation for User entity
 - Domain.Entities must NEVER reference Security building block — this is verified in Phase 8 (T052)
 - Auth mutation test stryker configs already exist from issue #137 scaffolding

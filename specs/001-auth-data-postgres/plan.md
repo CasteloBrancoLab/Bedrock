@@ -41,7 +41,7 @@ Implement the PostgreSQL data access layer for the User aggregate root (auth dom
 | BB-VIII. Camadas de Infraestrutura por Template Method | PASS | RepositoryBase wraps error handling. DataModelRepositoryBase provides CRUD. |
 | BB-IX. Disciplina de Testes Unitários | PASS | TestBase inheritance, AAA with LogArrange/LogAct/LogAssert, Shouldly, regions. |
 | BB-X. Disciplina de Testes de Integração | N/A | Integration tests are out of scope for this issue (unit tests only). |
-| BB-XI. Templates como Lei de Implementação | PASS | Implementation follows `src/templates/Infra.Data.PostgreSql/` exactly. |
+| BB-XI. Templates como Lei de Implementação | PASS | Implementation follows `src/Templates/Infra.Data.PostgreSql/` exactly. |
 
 **Gate Result: PASS** — No violations. Proceed to Phase 0.
 
@@ -131,7 +131,7 @@ tests/MutationTests/ShopDemo/Auth/
     └── stryker-config.json
 ```
 
-**Structure Decision**: Follows existing ShopDemo.Auth scaffolding (issue #137). The two infrastructure projects (`Infra.Data` and `Infra.Data.PostgreSql`) already exist with .csproj and GlobalUsings. This plan adds implementation files following the `src/templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming conventions (`Infra.Data.PostgreSql` instead of `Infra.Data.PostgreSql`).
+**Structure Decision**: Follows existing ShopDemo.Auth scaffolding (issue #137). The two infrastructure projects (`Infra.Data` and `Infra.Data.PostgreSql`) already exist with .csproj and GlobalUsings. This plan adds implementation files following the `src/Templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming conventions (`Infra.Data.PostgreSql` instead of `Infra.Data.PostgreSql`).
 
 ## Complexity Tracking
 

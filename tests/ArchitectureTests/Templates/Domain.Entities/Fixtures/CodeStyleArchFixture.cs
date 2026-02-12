@@ -18,7 +18,7 @@ public sealed class CodeStyleArchFixture
         var searchDirs = new[]
         {
             Path.Combine(rootDir, "src", "BuildingBlocks"),
-            Path.Combine(rootDir, "src", "templates"),
+            Path.Combine(rootDir, "src", "Templates"),
             Path.Combine(rootDir, "samples"),
         };
 

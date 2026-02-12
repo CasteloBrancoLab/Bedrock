@@ -218,5 +218,5 @@ trabalha apenas lendo seus parametros.
 ## Referencias no Codigo
 
 - `src/BuildingBlocks/Testing/Architecture/Rules/CodeStyleRules/CS002_StaticLambdasInProjectMethodsRule.cs` — Regra Roslyn (a implementar)
-- `src/templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` — Exemplo do padrao static lambda em RegisterChangeInternal
-- `src/templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` — Exemplo do padrao static lambda em RegisterNewInternal
+- `src/Templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` — Exemplo do padrao static lambda em RegisterChangeInternal
+- `src/Templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` — Exemplo do padrao static lambda em RegisterNewInternal

@@ -252,7 +252,7 @@ graph TD
   connections, data models e unit of work especificos.
 - **Troca de tecnologia isolada**: Para suportar MongoDB, basta criar
   `Infra.Data.MongoDB` sem tocar em `Infra.Data`.
-- **Alinhamento com templates**: O diretorio `src/templates/` do
+- **Alinhamento com templates**: O diretorio `src/Templates/` do
   Bedrock segue exatamente esta convencao.
 
 ## Consequencias
@@ -335,6 +335,6 @@ Dependency Rule é respeitada.
 
 ## Referencias no Codigo
 
-- Template de referencia: `src/templates/Infra.Data.PostgreSql/`
+- Template de referencia: `src/Templates/Infra.Data.PostgreSql/`
 - Implementacao de exemplo: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/`
 - Camada abstrata de exemplo: `samples/ShopDemo/Auth/Infra.Data/`
