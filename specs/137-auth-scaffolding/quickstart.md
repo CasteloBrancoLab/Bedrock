@@ -48,13 +48,13 @@ Resultado esperado: pipeline passa completamente.
 ### 5. Verificar estrutura de diretórios
 
 ```bash
-find samples/ShopDemo/Auth -name "*.csproj" | sort
+find src/ShopDemo/Auth -name "*.csproj" | sort
 find tests/UnitTests/ShopDemo/Auth -name "*.csproj" | sort
 find tests/MutationTests/ShopDemo/Auth -name "*.json" | sort
 ```
 
 Resultado esperado:
-- 5 arquivos `.csproj` em `samples/ShopDemo/Auth/`
+- 5 arquivos `.csproj` em `src/ShopDemo/Auth/`
 - 5 arquivos `.csproj` em `tests/UnitTests/ShopDemo/Auth/`
 - 5 arquivos `stryker-config.json` em `tests/MutationTests/ShopDemo/Auth/`
 

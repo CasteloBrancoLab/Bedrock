@@ -15,7 +15,7 @@
 
 ## Path Conventions
 
-- **Source**: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/` and `samples/ShopDemo/Auth/Infra.Data/`
+- **Source**: `src/ShopDemo/Auth/Infra.Data.PostgreSql/` and `src/ShopDemo/Auth/Infra.Data/`
 - **Unit Tests**: `tests/UnitTests/ShopDemo/Auth/Infra.Data.PostgreSql/` and `tests/UnitTests/ShopDemo/Auth/Infra.Data/`
 - **Mutation Tests**: `tests/MutationTests/ShopDemo/Auth/Infra.Data.PostgreSql/` and `tests/MutationTests/ShopDemo/Auth/Infra.Data/`
 - **Template Reference**: `src/Templates/Infra.Data.PostgreSql/` (normative source per BB-XI)
@@ -26,8 +26,8 @@
 
 **Purpose**: Update existing .csproj files and create test project structure
 
-- [ ] T001 Add Observability project reference to `samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj` (per research R7)
-- [ ] T002 Add Infra.Data.PostgreSql project reference to `samples/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.Infra.Data.csproj` (UserRepository depends on IUserPostgreSqlRepository)
+- [ ] T001 Add Observability project reference to `src/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj` (per research R7)
+- [ ] T002 Add Infra.Data.PostgreSql project reference to `src/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.Infra.Data.csproj` (UserRepository depends on IUserPostgreSqlRepository)
 - [ ] T003 [P] Create unit test project `tests/UnitTests/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.UnitTests.Infra.Data.PostgreSql.csproj` with references to xUnit, Shouldly, Moq, Bogus, Coverlet, Bedrock.BuildingBlocks.Testing, and ShopDemo.Auth.Infra.Data.PostgreSql
 - [ ] T004 [P] Create unit test project `tests/UnitTests/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.UnitTests.Infra.Data.csproj` with references to xUnit, Shouldly, Moq, Bogus, Coverlet, Bedrock.BuildingBlocks.Testing, and ShopDemo.Auth.Infra.Data
 - [ ] T005 Register both new test projects in `Bedrock.sln`
@@ -43,22 +43,22 @@
 
 ### Connection + UnitOfWork (no domain dependencies)
 
-- [ ] T007 [P] Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Connections/Interfaces/IAuthPostgreSqlConnection.cs` — interface extending `IPostgreSqlConnection` (follow `ITemplatesPostgreSqlConnection` template)
-- [ ] T008 [P] Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs` — interface extending `IPostgreSqlUnitOfWork` (follow `ITemplatesPostgreSqlUnitOfWork` template)
-- [ ] T009 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Connections/AuthPostgreSqlConnection.cs` — sealed class extending `PostgreSqlConnectionBase`, implementing `IAuthPostgreSqlConnection`, with config key `ConnectionStrings:AuthPostgreSql` (follow `TemplatesPostgreSqlConnection` template)
-- [ ] T010 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/UnitOfWork/AuthPostgreSqlUnitOfWork.cs` — sealed class extending `PostgreSqlUnitOfWorkBase`, implementing `IAuthPostgreSqlUnitOfWork`, with name `AuthPostgreSqlUnitOfWork` (follow `TemplatesPostgreSqlUnitOfWork` template)
+- [ ] T007 [P] Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Connections/Interfaces/IAuthPostgreSqlConnection.cs` — interface extending `IPostgreSqlConnection` (follow `ITemplatesPostgreSqlConnection` template)
+- [ ] T008 [P] Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs` — interface extending `IPostgreSqlUnitOfWork` (follow `ITemplatesPostgreSqlUnitOfWork` template)
+- [ ] T009 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Connections/AuthPostgreSqlConnection.cs` — sealed class extending `PostgreSqlConnectionBase`, implementing `IAuthPostgreSqlConnection`, with config key `ConnectionStrings:AuthPostgreSql` (follow `TemplatesPostgreSqlConnection` template)
+- [ ] T010 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/UnitOfWork/AuthPostgreSqlUnitOfWork.cs` — sealed class extending `PostgreSqlUnitOfWorkBase`, implementing `IAuthPostgreSqlUnitOfWork`, with name `AuthPostgreSqlUnitOfWork` (follow `TemplatesPostgreSqlUnitOfWork` template)
 
 ### DataModel + Mapper
 
-- [ ] T011 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModels/UserDataModel.cs` — class extending `DataModelBase` with properties: `Username` (string), `Email` (string), `PasswordHash` (byte[]), `Status` (short). Per data-model.md column mapping.
-- [ ] T012 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Mappers/UserDataModelMapper.cs` — sealed class extending `DataModelMapperBase<UserDataModel>`. Configure table `public.auth_users`, map 4 columns (Username, Email, PasswordHash, Status). Implement `MapBinaryImporter` with all 14 columns (10 base + 4 entity). Use NpgsqlDbType.Bytea for PasswordHash, NpgsqlDbType.Smallint for Status. Follow `SimpleAggregateRootDataModelMapper` template.
+- [ ] T011 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModels/UserDataModel.cs` — class extending `DataModelBase` with properties: `Username` (string), `Email` (string), `PasswordHash` (byte[]), `Status` (short). Per data-model.md column mapping.
+- [ ] T012 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Mappers/UserDataModelMapper.cs` — sealed class extending `DataModelMapperBase<UserDataModel>`. Configure table `public.auth_users`, map 4 columns (Username, Email, PasswordHash, Status). Implement `MapBinaryImporter` with all 14 columns (10 base + 4 entity). Use NpgsqlDbType.Bytea for PasswordHash, NpgsqlDbType.Smallint for Status. Follow `SimpleAggregateRootDataModelMapper` template.
 
 ### Factories + Adapter
 
-- [ ] T013 [P] Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Factories/UserDataModelFactory.cs` — static class with `Create(User entity)` using `DataModelBaseFactory.Create<>()` for base fields, then mapping Username, Email.Value, PasswordHash.Value.ToArray(), (short)Status. Follow `SimpleAggregateRootDataModelFactory` template.
-- [ ] T014 [P] Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Factories/UserFactory.cs` — static class with `Create(UserDataModel dataModel)` reconstructing `EntityInfo` from DataModelBase fields, then calling `User.CreateFromExistingInfo()` with `EmailAddress.CreateNew(email)`, `PasswordHash.CreateNew(hash)`, `(UserStatus)status`. Follow `SimpleAggregateRootFactory` template.
-- [ ] T015 [P] Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Adapters/UserDataModelAdapter.cs` — static class with `Adapt(UserDataModel, User)` using `DataModelBaseAdapter.Adapt()` for base fields, then mapping Username, Email.Value, PasswordHash.Value.ToArray(), (short)Status. Follow `SimpleAggregateRootDataModelAdapter` template.
-- [ ] T016 Verify Infra.Data.PostgreSql compiles: `dotnet build samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
+- [ ] T013 [P] Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Factories/UserDataModelFactory.cs` — static class with `Create(User entity)` using `DataModelBaseFactory.Create<>()` for base fields, then mapping Username, Email.Value, PasswordHash.Value.ToArray(), (short)Status. Follow `SimpleAggregateRootDataModelFactory` template.
+- [ ] T014 [P] Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Factories/UserFactory.cs` — static class with `Create(UserDataModel dataModel)` reconstructing `EntityInfo` from DataModelBase fields, then calling `User.CreateFromExistingInfo()` with `EmailAddress.CreateNew(email)`, `PasswordHash.CreateNew(hash)`, `(UserStatus)status`. Follow `SimpleAggregateRootFactory` template.
+- [ ] T015 [P] Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Adapters/UserDataModelAdapter.cs` — static class with `Adapt(UserDataModel, User)` using `DataModelBaseAdapter.Adapt()` for base fields, then mapping Username, Email.Value, PasswordHash.Value.ToArray(), (short)Status. Follow `SimpleAggregateRootDataModelAdapter` template.
+- [ ] T016 Verify Infra.Data.PostgreSql compiles: `dotnet build src/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 **Checkpoint**: All foundational persistence infrastructure compiled. Ready for repository layer.
 
@@ -72,12 +72,12 @@
 
 ### Implementation
 
-- [ ] T017 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs` — interface extending `IPostgreSqlDataModelRepository<UserDataModel>` with custom method signatures: `GetByEmailAsync`, `GetByUsernameAsync`, `ExistsByEmailAsync`, `ExistsByUsernameAsync` (all using raw types: string for email/username). Per contracts/repository-contracts.md Layer 3.
-- [ ] T018 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — sealed class extending `DataModelRepositoryBase<UserDataModel>`, implementing `IUserDataModelRepository`. Constructor receives `ILogger<UserDataModelRepository>`, `IAuthPostgreSqlUnitOfWork`, `IDataModelMapper<UserDataModel>`. Leave custom query methods with `throw new NotImplementedException()` for now (implemented in Phase 4/5). Follow `SimpleAggregateRootDataModelRepository` template for base class wiring.
-- [ ] T019 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/Interfaces/IUserPostgreSqlRepository.cs` — interface extending `IPostgreSqlRepository<User>` with custom method signatures: `GetByEmailAsync(ExecutionContext, EmailAddress, CancellationToken)`, `GetByUsernameAsync(ExecutionContext, string, CancellationToken)`, `ExistsByEmailAsync(ExecutionContext, EmailAddress, CancellationToken)`, `ExistsByUsernameAsync(ExecutionContext, string, CancellationToken)`. Per contracts/repository-contracts.md Layer 2.
-- [ ] T020 Create `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — sealed class implementing `IUserPostgreSqlRepository`. Wraps `IUserDataModelRepository`. Implement base methods: `GetByIdAsync` (uses UserFactory.Create for reconstitution), `ExistsAsync` (delegates to DataModelRepository), `RegisterNewAsync` (uses UserDataModelFactory.Create then InsertAsync), `EnumerateAllAsync` and `EnumerateModifiedSinceAsync` with handler pattern. Leave custom query methods with `throw new NotImplementedException()` for now. Follow `SimpleAggregateRootPostgreSqlRepository` template.
-- [ ] T021 Create `samples/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs` — sealed class extending `RepositoryBase<User>`, implementing `IUserRepository`. Wraps `IUserPostgreSqlRepository`. Implement all abstract internal methods delegating to the PostgreSql repository. Implement custom methods (GetByEmailAsync, GetByUsernameAsync, ExistsByEmailAsync, ExistsByUsernameAsync) with try-catch error handling following `RepositoryBase` template method pattern. Follow `SimpleAggregateRootRepository` template pattern but with full implementation delegating to PostgreSql repository.
-- [ ] T022 Verify both projects compile: `dotnet build samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj && dotnet build samples/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.Infra.Data.csproj`
+- [ ] T017 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs` — interface extending `IPostgreSqlDataModelRepository<UserDataModel>` with custom method signatures: `GetByEmailAsync`, `GetByUsernameAsync`, `ExistsByEmailAsync`, `ExistsByUsernameAsync` (all using raw types: string for email/username). Per contracts/repository-contracts.md Layer 3.
+- [ ] T018 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — sealed class extending `DataModelRepositoryBase<UserDataModel>`, implementing `IUserDataModelRepository`. Constructor receives `ILogger<UserDataModelRepository>`, `IAuthPostgreSqlUnitOfWork`, `IDataModelMapper<UserDataModel>`. Leave custom query methods with `throw new NotImplementedException()` for now (implemented in Phase 4/5). Follow `SimpleAggregateRootDataModelRepository` template for base class wiring.
+- [ ] T019 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/Interfaces/IUserPostgreSqlRepository.cs` — interface extending `IPostgreSqlRepository<User>` with custom method signatures: `GetByEmailAsync(ExecutionContext, EmailAddress, CancellationToken)`, `GetByUsernameAsync(ExecutionContext, string, CancellationToken)`, `ExistsByEmailAsync(ExecutionContext, EmailAddress, CancellationToken)`, `ExistsByUsernameAsync(ExecutionContext, string, CancellationToken)`. Per contracts/repository-contracts.md Layer 2.
+- [ ] T020 Create `src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — sealed class implementing `IUserPostgreSqlRepository`. Wraps `IUserDataModelRepository`. Implement base methods: `GetByIdAsync` (uses UserFactory.Create for reconstitution), `ExistsAsync` (delegates to DataModelRepository), `RegisterNewAsync` (uses UserDataModelFactory.Create then InsertAsync), `EnumerateAllAsync` and `EnumerateModifiedSinceAsync` with handler pattern. Leave custom query methods with `throw new NotImplementedException()` for now. Follow `SimpleAggregateRootPostgreSqlRepository` template.
+- [ ] T021 Create `src/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs` — sealed class extending `RepositoryBase<User>`, implementing `IUserRepository`. Wraps `IUserPostgreSqlRepository`. Implement all abstract internal methods delegating to the PostgreSql repository. Implement custom methods (GetByEmailAsync, GetByUsernameAsync, ExistsByEmailAsync, ExistsByUsernameAsync) with try-catch error handling following `RepositoryBase` template method pattern. Follow `SimpleAggregateRootRepository` template pattern but with full implementation delegating to PostgreSql repository.
+- [ ] T022 Verify both projects compile: `dotnet build src/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj && dotnet build src/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.Infra.Data.csproj`
 
 ### Unit Tests for US1 + US5
 
@@ -105,9 +105,9 @@
 
 ### Implementation
 
-- [ ] T034 [US2] Implement `GetByEmailAsync` in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT * FROM auth_users WHERE email = @email AND tenant_code = @tenant LIMIT 1`. Use mapper for column names, UnitOfWork for connection. Include try-catch with logging following DataModelRepositoryBase error handling pattern.
-- [ ] T035 [US2] Implement `GetByEmailAsync` in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — delegate to DataModelRepository.GetByEmailAsync, convert result via UserFactory.Create if not null.
-- [ ] T036 Verify compile: `dotnet build samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
+- [ ] T034 [US2] Implement `GetByEmailAsync` in `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT * FROM auth_users WHERE email = @email AND tenant_code = @tenant LIMIT 1`. Use mapper for column names, UnitOfWork for connection. Include try-catch with logging following DataModelRepositoryBase error handling pattern.
+- [ ] T035 [US2] Implement `GetByEmailAsync` in `src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — delegate to DataModelRepository.GetByEmailAsync, convert result via UserFactory.Create if not null.
+- [ ] T036 Verify compile: `dotnet build src/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Unit Tests for US2
 
@@ -128,12 +128,12 @@
 
 ### Implementation
 
-- [ ] T041 [P] [US3] Implement `GetByUsernameAsync` in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT * FROM auth_users WHERE username = @username AND tenant_code = @tenant LIMIT 1`. Same pattern as GetByEmailAsync.
-- [ ] T042 [P] [US4] Implement `ExistsByEmailAsync` in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT EXISTS(SELECT 1 FROM auth_users WHERE email = @email AND tenant_code = @tenant)`. Return boolean.
-- [ ] T043 [P] [US4] Implement `ExistsByUsernameAsync` in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT EXISTS(SELECT 1 FROM auth_users WHERE username = @username AND tenant_code = @tenant)`. Return boolean.
-- [ ] T044 [US3] Implement `GetByUsernameAsync` in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — delegate + factory conversion.
-- [ ] T045 [US4] Implement `ExistsByEmailAsync` and `ExistsByUsernameAsync` in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — direct delegation to DataModelRepository.
-- [ ] T046 Verify compile: `dotnet build samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
+- [ ] T041 [P] [US3] Implement `GetByUsernameAsync` in `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT * FROM auth_users WHERE username = @username AND tenant_code = @tenant LIMIT 1`. Same pattern as GetByEmailAsync.
+- [ ] T042 [P] [US4] Implement `ExistsByEmailAsync` in `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT EXISTS(SELECT 1 FROM auth_users WHERE email = @email AND tenant_code = @tenant)`. Return boolean.
+- [ ] T043 [P] [US4] Implement `ExistsByUsernameAsync` in `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs` — SQL: `SELECT EXISTS(SELECT 1 FROM auth_users WHERE username = @username AND tenant_code = @tenant)`. Return boolean.
+- [ ] T044 [US3] Implement `GetByUsernameAsync` in `src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — delegate + factory conversion.
+- [ ] T045 [US4] Implement `ExistsByEmailAsync` and `ExistsByUsernameAsync` in `src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — direct delegation to DataModelRepository.
+- [ ] T046 Verify compile: `dotnet build src/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Unit Tests for US3 + US4
 
@@ -157,8 +157,8 @@
 
 ### Implementation
 
-- [ ] T054 [US6] Implement `UpdateAsync` method in `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — use UserDataModelAdapter.Adapt to update DataModel from entity, then delegate to DataModelRepository.UpdateAsync with expected entity version for optimistic concurrency.
-- [ ] T055 Verify compile: `dotnet build samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
+- [ ] T054 [US6] Implement `UpdateAsync` method in `src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs` — use UserDataModelAdapter.Adapt to update DataModel from entity, then delegate to DataModelRepository.UpdateAsync with expected entity version for optimistic concurrency.
+- [ ] T055 Verify compile: `dotnet build src/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Unit Tests for US6
 

@@ -6,7 +6,7 @@
 ## Layer 1: Domain Repository (existing)
 
 ```csharp
-// File: samples/ShopDemo/Auth/Domain/Repositories/Interfaces/IUserRepository.cs
+// File: src/ShopDemo/Auth/Domain/Repositories/Interfaces/IUserRepository.cs
 // Status: ALREADY IMPLEMENTED
 
 namespace ShopDemo.Auth.Domain.Repositories.Interfaces;
@@ -38,7 +38,7 @@ public interface IUserRepository : IRepository<User>
 ## Layer 2: PostgreSQL Repository Interface (new)
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/Interfaces/IUserPostgreSqlRepository.cs
+// File: src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/Interfaces/IUserPostgreSqlRepository.cs
 
 namespace ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 
@@ -70,7 +70,7 @@ public interface IUserPostgreSqlRepository
 ## Layer 3: DataModel Repository Interface (new)
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs
+// File: src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs
 
 namespace ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
 
@@ -102,7 +102,7 @@ public interface IUserDataModelRepository
 ## Layer 4: Connection and UnitOfWork Interfaces (new)
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/Connections/Interfaces/IAuthPostgreSqlConnection.cs
+// File: src/ShopDemo/Auth/Infra.Data.PostgreSql/Connections/Interfaces/IAuthPostgreSqlConnection.cs
 
 namespace ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
 
@@ -113,7 +113,7 @@ public interface IAuthPostgreSqlConnection
 ```
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs
+// File: src/ShopDemo/Auth/Infra.Data.PostgreSql/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs
 
 namespace ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork.Interfaces;
 

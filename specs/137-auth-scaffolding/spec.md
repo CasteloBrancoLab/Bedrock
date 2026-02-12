@@ -16,7 +16,7 @@
 
 ### User Story 1 - Criar Projetos src do Auth (Priority: P1)
 
-Como desenvolvedor, preciso que a estrutura de projetos src do Auth exista em `samples/ShopDemo/Auth/` seguindo as convenções do ShopDemo (namespace `ShopDemo.Auth.*`), com as 5 camadas definidas na issue #136 e referências corretas entre camadas e aos BuildingBlocks.
+Como desenvolvedor, preciso que a estrutura de projetos src do Auth exista em `src/ShopDemo/Auth/` seguindo as convenções do ShopDemo (namespace `ShopDemo.Auth.*`), com as 5 camadas definidas na issue #136 e referências corretas entre camadas e aos BuildingBlocks.
 
 **Why this priority**: Sem os projetos src, nenhuma das 20 sub-issues subsequentes (#138-#157) pode começar. É o pré-requisito absoluto de toda a implementação do Auth Service.
 
@@ -24,7 +24,7 @@ Como desenvolvedor, preciso que a estrutura de projetos src do Auth exista em `s
 
 **Acceptance Scenarios**:
 
-1. **Given** a solution Bedrock sem projetos Auth, **When** os projetos são criados em `samples/ShopDemo/Auth/`, **Then** existem 5 projetos src (`Domain.Entities`, `Application`, `Infra.Data`, `Infra.Data.PostgreSql`, `Api`) com namespaces `ShopDemo.Auth.*`
+1. **Given** a solution Bedrock sem projetos Auth, **When** os projetos são criados em `src/ShopDemo/Auth/`, **Then** existem 5 projetos src (`Domain.Entities`, `Application`, `Infra.Data`, `Infra.Data.PostgreSql`, `Api`) com namespaces `ShopDemo.Auth.*`
 2. **Given** os projetos src criados, **When** `dotnet build` é executado, **Then** a compilação passa sem erros
 3. **Given** os projetos src criados, **When** as referências são inspecionadas, **Then** cada camada referencia apenas as camadas permitidas (Domain não referencia nada acima; Application referencia Domain; Infra.Data referencia Domain; Infra.Data.PostgreSql referencia Infra.Data e Domain; Api referencia Application)
 4. **Given** os projetos src criados, **When** as referências aos BuildingBlocks são inspecionadas, **Then** cada projeto referencia o BuildingBlock correspondente à sua camada
@@ -82,19 +82,19 @@ Como desenvolvedor, preciso que todos os projetos sejam adicionados à solution 
 
 - O que acontece se um projeto Auth já existir na solution? Verificar antes de adicionar e pular se já existir.
 - Como a estrutura vazia afeta métricas de cobertura? Projetos vazios (sem código) não devem quebrar a pipeline — podem ser ignorados pelo Coverlet/Stryker se não tiverem código testável.
-- As referências relativas entre camadas funcionam a partir de `samples/ShopDemo/Auth/`? Sim, as referências aos BuildingBlocks devem usar caminhos relativos corretos (ex: `../../../../src/BuildingBlocks/...`).
+- As referências relativas entre camadas funcionam a partir de `src/ShopDemo/Auth/`? Sim, as referências aos BuildingBlocks devem usar caminhos relativos corretos (ex: `../../../../src/BuildingBlocks/...`).
 
 ## Clarifications
 
 ### Session 2026-02-08
 
-- Q: O path de Domain.Entities do Auth deve ser registrado no teste de arquitetura? → A: Sim. O path `samples/ShopDemo/Auth/Domain.Entities/ShopDemo.Auth.Domain.Entities.csproj` DEVE ser adicionado ao `DomainEntitiesArchFixture.GetProjectPaths()` em `tests/ArchitectureTests/Templates/Domain.Entities/Fixtures/DomainEntitiesArchFixture.cs` para que as 58 regras arquiteturais (DE001-DE058) validem as entidades do Auth.
+- Q: O path de Domain.Entities do Auth deve ser registrado no teste de arquitetura? → A: Sim. O path `src/ShopDemo/Auth/Domain.Entities/ShopDemo.Auth.Domain.Entities.csproj` DEVE ser adicionado ao `DomainEntitiesArchFixture.GetProjectPaths()` em `tests/ArchitectureTests/Templates/Domain.Entities/Fixtures/DomainEntitiesArchFixture.cs` para que as 58 regras arquiteturais (DE001-DE058) validem as entidades do Auth.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Sistema DEVE criar 6 projetos src em `samples/ShopDemo/Auth/` com namespaces `ShopDemo.Auth.*`:
+- **FR-001**: Sistema DEVE criar 6 projetos src em `src/ShopDemo/Auth/` com namespaces `ShopDemo.Auth.*`:
   - `ShopDemo.Auth.Domain.Entities` — Entities, Value Objects, regras de negócio puras
   - `ShopDemo.Auth.Domain` — Repository interfaces, Domain Services, abstrações de integração
   - `ShopDemo.Auth.Application` — Use Cases, DTOs, Application Services
@@ -123,7 +123,7 @@ Como desenvolvedor, preciso que todos os projetos sejam adicionados à solution 
 ### Estrutura Esperada
 
 ```
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
   Domain.Entities/
     ShopDemo.Auth.Domain.Entities.csproj
     GlobalUsings.cs
@@ -178,7 +178,7 @@ tests/
 |-----------|--------|
 | Namespace src | `ShopDemo.Auth.{Camada}` |
 | Namespace testes | `ShopDemo.UnitTests.Auth.{Camada}` |
-| Pasta src | `samples/ShopDemo/Auth/{Camada}/` |
+| Pasta src | `src/ShopDemo/Auth/{Camada}/` |
 | Pasta testes | `tests/UnitTests/ShopDemo/Auth/{Camada}/` |
 | Pasta mutação | `tests/MutationTests/ShopDemo/Auth/{Camada}/` |
 | Target framework | `net10.0` |

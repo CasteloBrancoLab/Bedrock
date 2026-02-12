@@ -74,7 +74,7 @@ O projeto `{BC}.Domain` é separado de `{BC}.Domain.Entities` e contem:
 - **Especificacoes** (ex: `ActiveUserSpecification`)
 
 ```
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
   Domain.Entities/
     Users/
       User.cs
@@ -204,7 +204,7 @@ dominio, nunca o contrario.
 
 ## Referencias no Codigo
 
-- Implementacao de exemplo: `samples/ShopDemo/Auth/Domain/`
-- Interface de repositorio: `samples/ShopDemo/Auth/Domain/Repositories/Interfaces/IUserRepository.cs`
+- Implementacao de exemplo: `src/ShopDemo/Auth/Domain/`
+- Interface de repositorio: `src/ShopDemo/Auth/Domain/Repositories/Interfaces/IUserRepository.cs`
 - ADR relacionada: [IN-002 — Domain.Entities Projeto Separado](./IN-002-domain-entities-projeto-separado.md)
 - ADR relacionada: [IN-001 — Camadas Canonicas de um Bounded Context](./IN-001-camadas-canonicas-bounded-context.md)

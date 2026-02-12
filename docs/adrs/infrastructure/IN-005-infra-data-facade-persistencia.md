@@ -225,7 +225,7 @@ regras de negocio compartilhadas.
 3. **Expoe operacoes de negocio** (high-level), nao CRUD (low-level).
 
 ```
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
   Domain/
     Repositories/
       Interfaces/
@@ -413,8 +413,8 @@ Robert C. Martin (2017). Repositorios com nomenclatura de negocio
 
 ## Referencias no Codigo
 
-- Facade de exemplo: `samples/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs`
-- Interface de negocio: `samples/ShopDemo/Auth/Domain/Repositories/Interfaces/IUserRepository.cs`
-- Repositorio tecnologico: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs`
+- Facade de exemplo: `src/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs`
+- Interface de negocio: `src/ShopDemo/Auth/Domain/Repositories/Interfaces/IUserRepository.cs`
+- Repositorio tecnologico: `src/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs`
 - ADR relacionada: [IN-003 — Domain Projeto Separado](./IN-003-domain-projeto-separado.md)
 - ADR relacionada: [IN-004 — Modelo de Dados É Detalhe de Implementacao](./IN-004-modelo-dados-detalhe-implementacao.md)

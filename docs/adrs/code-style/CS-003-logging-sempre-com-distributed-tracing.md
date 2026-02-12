@@ -320,4 +320,4 @@ essa diferenca é mensuravel. A comparacao com o `ILogger` padrao:
 - Uso correto (RepositoryBase): `src/BuildingBlocks/Data/Repositories/RepositoryBase.cs` (linhas 129, 150, 171, 192, 222)
 - Uso correto (DataModelRepositoryBase): `src/BuildingBlocks/Persistence.PostgreSql/DataModelRepositories/DataModelRepositoryBase.cs`
 - Uso correto (UnitOfWork): `src/BuildingBlocks/Persistence.PostgreSql/UnitOfWork/PostgreSqlUnitOfWorkBase.cs`
-- Uso correto (Auth UserRepository): `samples/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs` (linhas 44, 67, 90, 113 — usa `Logger.LogExceptionForDistributedTracing`)
+- Uso correto (Auth UserRepository): `src/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs` (linhas 44, 67, 90, 113 — usa `Logger.LogExceptionForDistributedTracing`)

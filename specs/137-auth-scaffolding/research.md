@@ -17,7 +17,7 @@ Scaffolding feature — pesquisa mínima necessária. Todas as decisões técnic
 
 ### D2: Localização dos Projetos
 
-**Decisão**: `samples/ShopDemo/Auth/` (correção do usuário).
+**Decisão**: `src/ShopDemo/Auth/` (correção do usuário).
 **Razão**: O Auth é um módulo do ShopDemo sample, não um BuildingBlock do Bedrock. A issue #137 originalmente propunha `src/Services/Auth/` mas o usuário corrigiu para manter dentro do ShopDemo.
 **Alternativas**: `src/Services/Auth/` (rejeitada — Auth não é um serviço do framework, é um sample).
 

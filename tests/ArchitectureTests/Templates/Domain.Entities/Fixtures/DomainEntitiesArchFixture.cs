@@ -6,7 +6,7 @@ namespace Bedrock.ArchitectureTests.Templates.Domain.Entities.Fixtures;
 /// <summary>
 /// Fixture que carrega a compilação dos projetos Domain.Entities para análise arquitetural.
 /// Descobre automaticamente todos os .csproj que terminam com Domain.Entities em
-/// BuildingBlocks, templates e samples.
+/// BuildingBlocks, Templates e ShopDemo.
 /// </summary>
 public sealed class DomainEntitiesArchFixture
     : RuleFixture
@@ -17,7 +17,7 @@ public sealed class DomainEntitiesArchFixture
         {
             Path.Combine(rootDir, "src", "BuildingBlocks"),
             Path.Combine(rootDir, "src", "Templates"),
-            Path.Combine(rootDir, "samples"),
+            Path.Combine(rootDir, "src", "ShopDemo"),
         };
 
         return searchDirs

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Domain\Bedrock.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Security\Bedrock.BuildingBlocks.Security.csproj" />
+  </ItemGroup>
+
+</Project>

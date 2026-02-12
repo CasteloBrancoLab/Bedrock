@@ -463,8 +463,8 @@ e validam que o código dos projetos cumpre as regras Roslyn.
 ```
 tests/ArchitectureTests/Templates/Domain.Entities/
 ├── Fixtures/
-│   ├── DomainEntitiesArchFixture.cs   # Escaneia templates e samples
-│   └── CodeStyleArchFixture.cs        # Escaneia BBs e samples
+│   ├── DomainEntitiesArchFixture.cs   # Escaneia Templates e ShopDemo
+│   └── CodeStyleArchFixture.cs        # Escaneia BBs e ShopDemo
 ├── DomainEntitiesRuleTests.cs         # 59 [Fact] DE001–DE059
 └── CodeStyleRuleTests.cs              # [Fact] CS001–CS002+
 ```

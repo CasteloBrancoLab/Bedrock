@@ -5,7 +5,7 @@
 
 ## Summary
 
-Criar a estrutura de projetos (scaffolding) para o Auth Service dentro de `samples/ShopDemo/Auth/`, incluindo 5 projetos src, 5 projetos de testes unitários, 5 configurações de testes de mutação (Stryker), integração na solution Bedrock e registro no fixture de testes de arquitetura. O resultado é uma estrutura vazia que compila e passa na pipeline, pronta para receber as entidades da issue #138+.
+Criar a estrutura de projetos (scaffolding) para o Auth Service dentro de `src/ShopDemo/Auth/`, incluindo 5 projetos src, 5 projetos de testes unitários, 5 configurações de testes de mutação (Stryker), integração na solution Bedrock e registro no fixture de testes de arquitetura. O resultado é uma estrutura vazia que compila e passa na pipeline, pronta para receber as entidades da issue #138+.
 
 ## Technical Context
 
@@ -14,7 +14,7 @@ Criar a estrutura de projetos (scaffolding) para o Auth Service dentro de `sampl
 **Storage**: N/A (scaffolding apenas — sem entidades nem persistência nesta issue)
 **Testing**: xUnit, Shouldly, Stryker.NET, Coverlet
 **Target Platform**: .NET 10.0 class libraries (samples)
-**Project Type**: Modular — segue convenção `samples/ShopDemo/{Module}/`
+**Project Type**: Modular — segue convenção `src/ShopDemo/{Module}/`
 **Performance Goals**: N/A (scaffolding)
 **Constraints**: Projetos vazios DEVEM compilar e a pipeline DEVE passar
 **Scale/Scope**: 5 projetos src + 5 projetos teste + 5 configs Stryker + 1 alteração no fixture de arquitetura = 16 artefatos
@@ -62,7 +62,7 @@ specs/137-auth-scaffolding/
 ### Source Code (repository root)
 
 ```text
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
 ├── Domain.Entities/
 │   ├── ShopDemo.Auth.Domain.Entities.csproj
 │   └── GlobalUsings.cs
@@ -104,7 +104,7 @@ tests/MutationTests/ShopDemo/Auth/
     └── stryker-config.json
 ```
 
-**Structure Decision**: Segue a convenção existente do ShopDemo (`samples/ShopDemo/{Module}/{Layer}/`), com nomenclatura `ShopDemo.Auth.*` análoga a `ShopDemo.Customers.*`, `ShopDemo.Orders.*`, etc.
+**Structure Decision**: Segue a convenção existente do ShopDemo (`src/ShopDemo/{Module}/{Layer}/`), com nomenclatura `ShopDemo.Auth.*` análoga a `ShopDemo.Customers.*`, `ShopDemo.Orders.*`, etc.
 
 ### Referências entre Projetos
 
@@ -138,7 +138,7 @@ ShopDemo.UnitTests.Auth.{Layer}
   → Bedrock.BuildingBlocks.Testing (infraestrutura de teste)
 ```
 
-### Caminhos Relativos (a partir de `samples/ShopDemo/Auth/Domain.Entities/`)
+### Caminhos Relativos (a partir de `src/ShopDemo/Auth/Domain.Entities/`)
 
 | Destino | Caminho Relativo |
 |---------|-----------------|

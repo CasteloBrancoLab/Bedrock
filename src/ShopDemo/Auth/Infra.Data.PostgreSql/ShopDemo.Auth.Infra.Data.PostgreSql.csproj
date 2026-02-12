@@ -7,8 +7,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj" />
-    <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
-    <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Persistence.PostgreSql\Bedrock.BuildingBlocks.Persistence.PostgreSql.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Persistence.PostgreSql\Bedrock.BuildingBlocks.Persistence.PostgreSql.csproj" />
   </ItemGroup>
 
 </Project>

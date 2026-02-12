@@ -201,7 +201,7 @@ externas, evitando que cada camada defina seus proprios modelos de config.
 **Estrutura de diretorios (exemplo para `ShopDemo.Auth`):**
 
 ```
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
   Domain.Entities/
     ShopDemo.Auth.Domain.Entities.csproj
   Domain/
@@ -336,5 +336,5 @@ Dependency Rule é respeitada.
 ## Referencias no Codigo
 
 - Template de referencia: `src/Templates/Infra.Data.PostgreSql/`
-- Implementacao de exemplo: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/`
-- Camada abstrata de exemplo: `samples/ShopDemo/Auth/Infra.Data/`
+- Implementacao de exemplo: `src/ShopDemo/Auth/Infra.Data.PostgreSql/`
+- Camada abstrata de exemplo: `src/ShopDemo/Auth/Infra.Data/`

@@ -6,7 +6,7 @@ namespace Bedrock.ArchitectureTests.Templates.Domain.Entities.Fixtures;
 /// <summary>
 /// Fixture que carrega a compilação dos projetos para análise de regras de code style.
 /// Descobre automaticamente todos os .csproj de BuildingBlocks (exceto Testing),
-/// templates e samples.
+/// Templates e ShopDemo.
 /// </summary>
 public sealed class CodeStyleArchFixture
     : RuleFixture
@@ -19,7 +19,7 @@ public sealed class CodeStyleArchFixture
         {
             Path.Combine(rootDir, "src", "BuildingBlocks"),
             Path.Combine(rootDir, "src", "Templates"),
-            Path.Combine(rootDir, "samples"),
+            Path.Combine(rootDir, "src", "ShopDemo"),
         };
 
         return searchDirs

@@ -113,25 +113,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{5D8CA47B-E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.UnitTests.BuildingBlocks.Data", "tests\UnitTests\BuildingBlocks\Data\Bedrock.UnitTests.BuildingBlocks.Data.csproj", "{05E7AD95-C99A-4463-BF37-14684402B119}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{5D20AA90-6969-D8BD-9DCD-8634F4692FDA}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ShopDemo", "ShopDemo", "{12673C7A-0C8D-FDB4-F9AC-C7A252C19EB6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{114C839D-F470-E1EE-77D7-9D13EDF5C909}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Core.Entities", "samples\ShopDemo\Core\Entities\ShopDemo.Core.Entities.csproj", "{B461A31B-667B-491D-BA13-BA02AB48F3F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Core.Entities", "src\ShopDemo\Core\Entities\ShopDemo.Core.Entities.csproj", "{B461A31B-667B-491D-BA13-BA02AB48F3F2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Customers", "Customers", "{8BB0D6B2-D35E-1409-8952-66D9845B660A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Customers.Domain.Entities", "samples\ShopDemo\Customers\Domain.Entities\ShopDemo.Customers.Domain.Entities.csproj", "{312033B2-6E16-486B-B01F-348F995BF350}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Customers.Domain.Entities", "src\ShopDemo\Customers\Domain.Entities\ShopDemo.Customers.Domain.Entities.csproj", "{312033B2-6E16-486B-B01F-348F995BF350}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Orders", "Orders", "{10C92260-CD76-95D6-562C-1546E4CB9337}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Orders.Domain.Entities", "samples\ShopDemo\Orders\Domain.Entities\ShopDemo.Orders.Domain.Entities.csproj", "{ADCB9E53-396A-4238-8298-E188DB6DDBB6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Orders.Domain.Entities", "src\ShopDemo\Orders\Domain.Entities\ShopDemo.Orders.Domain.Entities.csproj", "{ADCB9E53-396A-4238-8298-E188DB6DDBB6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Products", "Products", "{C5DA9F58-6EF5-CA7E-77BB-49E97011AF6A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Products.Domain.Entities", "samples\ShopDemo\Products\Domain.Entities\ShopDemo.Products.Domain.Entities.csproj", "{93AC2EEF-4A05-4F71-BFD0-A5B4520BD6BC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Products.Domain.Entities", "src\ShopDemo\Products\Domain.Entities\ShopDemo.Products.Domain.Entities.csproj", "{93AC2EEF-4A05-4F71-BFD0-A5B4520BD6BC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationTests", "IntegrationTests", "{E8E5C73E-D978-750B-39D1-CAC571D9166C}"
 EndProject
@@ -183,23 +181,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Auth", "Auth", "{D4C68D19-6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain.Entities", "Domain.Entities", "{9F1DCDC4-B618-B1FD-1900-353CC23905C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Domain.Entities", "samples\ShopDemo\Auth\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj", "{34094F80-EE0F-4848-A164-7D1675D37B15}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Domain.Entities", "src\ShopDemo\Auth\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj", "{34094F80-EE0F-4848-A164-7D1675D37B15}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{FA8BBC0B-FC1C-EF08-098F-2121CC0A8D6B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Application", "samples\ShopDemo\Auth\Application\ShopDemo.Auth.Application.csproj", "{7278F700-F3A9-45C7-A9ED-117DCC931BD3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Application", "src\ShopDemo\Auth\Application\ShopDemo.Auth.Application.csproj", "{7278F700-F3A9-45C7-A9ED-117DCC931BD3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Data", "Infra.Data", "{EE4A3605-0186-DC53-31C1-50D2F6E5DE82}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Infra.Data", "samples\ShopDemo\Auth\Infra.Data\ShopDemo.Auth.Infra.Data.csproj", "{FC8F1CA6-96BF-4C4F-8963-D270645B5128}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Infra.Data", "src\ShopDemo\Auth\Infra.Data\ShopDemo.Auth.Infra.Data.csproj", "{FC8F1CA6-96BF-4C4F-8963-D270645B5128}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Data.PostgreSql", "Infra.Data.PostgreSql", "{9EE35860-B444-FE70-055A-C0CB96953E42}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Infra.Data.PostgreSql", "samples\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj", "{4F6E101C-53F6-420C-A681-6655C7FD82FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Infra.Data.PostgreSql", "src\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj", "{4F6E101C-53F6-420C-A681-6655C7FD82FC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{91EA58FA-43FF-83B8-02B7-4A30C74DAEC5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Api", "samples\ShopDemo\Auth\Api\ShopDemo.Auth.Api.csproj", "{1BEC22F4-2CCE-418B-B724-CDB0EDFF4102}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Api", "src\ShopDemo\Auth\Api\ShopDemo.Auth.Api.csproj", "{1BEC22F4-2CCE-418B-B724-CDB0EDFF4102}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ShopDemo", "ShopDemo", "{A7374888-226D-DD48-9E1A-211CE4D62549}"
 EndProject
@@ -227,7 +225,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.UnitTests.Auth.Api
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{5842F1CF-D525-93C9-BE60-10CCB1192CF1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Domain", "samples\ShopDemo\Auth\Domain\ShopDemo.Auth.Domain.csproj", "{B9D44108-736D-4635-8A8C-96D915241927}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Domain", "src\ShopDemo\Auth\Domain\ShopDemo.Auth.Domain.csproj", "{B9D44108-736D-4635-8A8C-96D915241927}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{B65CCD56-6353-0DC2-A41B-E852EEBB4F4E}"
 EndProject
@@ -933,7 +931,7 @@ Global
 		{714CABF2-9BCF-4114-9014-D0083D79D165} = {2B0C0EB5-6966-D40B-34A7-1AA5AB90FFC9}
 		{5D8CA47B-E09A-2C70-7701-1DFA746E0656} = {A7B8C9D0-E1F2-3456-0123-567890123456}
 		{05E7AD95-C99A-4463-BF37-14684402B119} = {5D8CA47B-E09A-2C70-7701-1DFA746E0656}
-		{12673C7A-0C8D-FDB4-F9AC-C7A252C19EB6} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
+		{12673C7A-0C8D-FDB4-F9AC-C7A252C19EB6} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 		{114C839D-F470-E1EE-77D7-9D13EDF5C909} = {12673C7A-0C8D-FDB4-F9AC-C7A252C19EB6}
 		{B461A31B-667B-491D-BA13-BA02AB48F3F2} = {114C839D-F470-E1EE-77D7-9D13EDF5C909}
 		{8BB0D6B2-D35E-1409-8952-66D9845B660A} = {12673C7A-0C8D-FDB4-F9AC-C7A252C19EB6}

@@ -247,5 +247,5 @@ public sealed class User : EntityBase<User>, IAggregateRoot, IUser { }
 ## Referências no Código
 
 - [IAggregateRoot.cs](../../../src/BuildingBlocks/Domain.Entities/Interfaces/IAggregateRoot.cs) - Definicao da interface
-- [IUser.cs](../../../samples/ShopDemo/Auth/Domain.Entities/Users/Interfaces/IUser.cs) - Exemplo correto: interface herdando IAggregateRoot
-- [User.cs](../../../samples/ShopDemo/Auth/Domain.Entities/Users/User.cs) - Classe que implementa IUser (IAggregateRoot propagado via interface)
+- [IUser.cs](../../../src/ShopDemo/Auth/Domain.Entities/Users/Interfaces/IUser.cs) - Exemplo correto: interface herdando IAggregateRoot
+- [User.cs](../../../src/ShopDemo/Auth/Domain.Entities/Users/User.cs) - Classe que implementa IUser (IAggregateRoot propagado via interface)

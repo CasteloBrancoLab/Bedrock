@@ -62,7 +62,7 @@ specs/001-auth-data-postgres/
 ### Source Code (repository root)
 
 ```text
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
 ├── Infra.Data/                                    # Data access abstraction
 │   ├── Repositories/
 │   │   └── UserRepository.cs                      # RepositoryBase<User> → IUserRepository

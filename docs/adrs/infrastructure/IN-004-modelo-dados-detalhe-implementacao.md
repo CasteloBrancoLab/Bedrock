@@ -156,7 +156,7 @@ tecnologica.
 **Estrutura para a mesma entidade `User`:**
 
 ```
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
   Domain.Entities/
     Users/
       User.cs                              # Entidade de dominio — zero conhecimento de banco
@@ -434,8 +434,8 @@ contaminar o nucleo.
 
 ## Referencias no Codigo
 
-- DataModel de exemplo: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModels/UserDataModel.cs`
-- Factory de exemplo: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Factories/UserFactory.cs`
-- Adapter de exemplo: `samples/ShopDemo/Auth/Infra.Data.PostgreSql/Adapters/UserDataModelAdapter.cs`
+- DataModel de exemplo: `src/ShopDemo/Auth/Infra.Data.PostgreSql/DataModels/UserDataModel.cs`
+- Factory de exemplo: `src/ShopDemo/Auth/Infra.Data.PostgreSql/Factories/UserFactory.cs`
+- Adapter de exemplo: `src/ShopDemo/Auth/Infra.Data.PostgreSql/Adapters/UserDataModelAdapter.cs`
 - ADR relacionada: [IN-002 — Domain.Entities Projeto Separado](./IN-002-domain-entities-projeto-separado.md)
 - ADR relacionada: [IN-003 — Domain Projeto Separado](./IN-003-domain-projeto-separado.md)

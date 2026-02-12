@@ -17,20 +17,20 @@
 
 ## Phase 1: User Story 1 - Criar Projetos src do Auth (Priority: P1)
 
-**Goal**: Criar os 5 projetos src em `samples/ShopDemo/Auth/` com referências corretas entre camadas e aos BuildingBlocks
+**Goal**: Criar os 5 projetos src em `src/ShopDemo/Auth/` com referências corretas entre camadas e aos BuildingBlocks
 
 **Independent Test**: `dotnet build Bedrock.sln` compila sem erros com todos os projetos src Auth
 
-- [ ] T001 [P] [US1] Criar `samples/ShopDemo/Auth/Domain.Entities/ShopDemo.Auth.Domain.Entities.csproj` com referências a `ShopDemo.Core.Entities` e `Bedrock.BuildingBlocks.Domain.Entities`
-- [ ] T002 [P] [US1] Criar `samples/ShopDemo/Auth/Domain.Entities/GlobalUsings.cs`
-- [ ] T003 [P] [US1] Criar `samples/ShopDemo/Auth/Application/ShopDemo.Auth.Application.csproj` com referência a `ShopDemo.Auth.Domain.Entities`
-- [ ] T004 [P] [US1] Criar `samples/ShopDemo/Auth/Application/GlobalUsings.cs`
-- [ ] T005 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.Infra.Data.csproj` com referências a `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Data`
-- [ ] T006 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data/GlobalUsings.cs`
-- [ ] T007 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj` com referências a `ShopDemo.Auth.Infra.Data`, `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Persistence.PostgreSql`
-- [ ] T008 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data.PostgreSql/GlobalUsings.cs`
-- [ ] T009 [P] [US1] Criar `samples/ShopDemo/Auth/Api/ShopDemo.Auth.Api.csproj` com referências a `ShopDemo.Auth.Application` e `Bedrock.BuildingBlocks.Observability`
-- [ ] T010 [P] [US1] Criar `samples/ShopDemo/Auth/Api/GlobalUsings.cs`
+- [ ] T001 [P] [US1] Criar `src/ShopDemo/Auth/Domain.Entities/ShopDemo.Auth.Domain.Entities.csproj` com referências a `ShopDemo.Core.Entities` e `Bedrock.BuildingBlocks.Domain.Entities`
+- [ ] T002 [P] [US1] Criar `src/ShopDemo/Auth/Domain.Entities/GlobalUsings.cs`
+- [ ] T003 [P] [US1] Criar `src/ShopDemo/Auth/Application/ShopDemo.Auth.Application.csproj` com referência a `ShopDemo.Auth.Domain.Entities`
+- [ ] T004 [P] [US1] Criar `src/ShopDemo/Auth/Application/GlobalUsings.cs`
+- [ ] T005 [P] [US1] Criar `src/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.Infra.Data.csproj` com referências a `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Data`
+- [ ] T006 [P] [US1] Criar `src/ShopDemo/Auth/Infra.Data/GlobalUsings.cs`
+- [ ] T007 [P] [US1] Criar `src/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj` com referências a `ShopDemo.Auth.Infra.Data`, `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Persistence.PostgreSql`
+- [ ] T008 [P] [US1] Criar `src/ShopDemo/Auth/Infra.Data.PostgreSql/GlobalUsings.cs`
+- [ ] T009 [P] [US1] Criar `src/ShopDemo/Auth/Api/ShopDemo.Auth.Api.csproj` com referências a `ShopDemo.Auth.Application` e `Bedrock.BuildingBlocks.Observability`
+- [ ] T010 [P] [US1] Criar `src/ShopDemo/Auth/Api/GlobalUsings.cs`
 - [ ] T011 [US1] Adicionar os 5 projetos src à solution `Bedrock.sln` via `dotnet sln add`
 - [ ] T012 [US1] Verificar compilação: executar `dotnet build Bedrock.sln` e confirmar sucesso
 
@@ -80,7 +80,7 @@
 
 - [ ] T025 [US4] Adicionar path `ShopDemo.Auth.Domain.Entities` ao `DomainEntitiesArchFixture.GetProjectPaths()` em `tests/ArchitectureTests/Templates/Domain.Entities/Fixtures/DomainEntitiesArchFixture.cs`
 - [ ] T026 [US4] Executar `./scripts/pipeline.sh` e confirmar que a pipeline passa completamente com a estrutura vazia
-- [ ] T027 [US4] Executar validação quickstart: `dotnet sln list | grep -i Auth` confirma 10 projetos, `find samples/ShopDemo/Auth -name "*.csproj"` confirma 5, `find tests -path "*/ShopDemo/Auth/*" -name "*.csproj"` confirma 5, `find tests -path "*/ShopDemo/Auth/*" -name "stryker-config.json"` confirma 5
+- [ ] T027 [US4] Executar validação quickstart: `dotnet sln list | grep -i Auth` confirma 10 projetos, `find src/ShopDemo/Auth -name "*.csproj"` confirma 5, `find tests -path "*/ShopDemo/Auth/*" -name "*.csproj"` confirma 5, `find tests -path "*/ShopDemo/Auth/*" -name "stryker-config.json"` confirma 5
 
 **Checkpoint**: Pipeline completa passa. Estrutura pronta para issue #138.
 
@@ -157,15 +157,15 @@ Todos os `.csproj` DEVEM usar caminhos relativos conforme documentado no plan.md
 
 | De (teste) | Para | Caminho Relativo |
 |------------|------|-----------------|
-| `UnitTests/.../Domain.Entities` | `Auth Domain.Entities` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj` |
+| `UnitTests/.../Domain.Entities` | `Auth Domain.Entities` | `..\..\..\..\..\..\src\ShopDemo\Auth\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj` |
 | `UnitTests/.../Domain.Entities` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
-| `UnitTests/.../Application` | `Auth Application` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Application\ShopDemo.Auth.Application.csproj` |
+| `UnitTests/.../Application` | `Auth Application` | `..\..\..\..\..\..\src\ShopDemo\Auth\Application\ShopDemo.Auth.Application.csproj` |
 | `UnitTests/.../Application` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
-| `UnitTests/.../Infra.Data` | `Auth Infra.Data` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Infra.Data\ShopDemo.Auth.Infra.Data.csproj` |
+| `UnitTests/.../Infra.Data` | `Auth Infra.Data` | `..\..\..\..\..\..\src\ShopDemo\Auth\Infra.Data\ShopDemo.Auth.Infra.Data.csproj` |
 | `UnitTests/.../Infra.Data` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
-| `UnitTests/.../Infra.Data.PostgreSql` | `Auth Infra.Data.PostgreSql` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj` |
+| `UnitTests/.../Infra.Data.PostgreSql` | `Auth Infra.Data.PostgreSql` | `..\..\..\..\..\..\src\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj` |
 | `UnitTests/.../Infra.Data.PostgreSql` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
-| `UnitTests/.../Api` | `Auth Api` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Api\ShopDemo.Auth.Api.csproj` |
+| `UnitTests/.../Api` | `Auth Api` | `..\..\..\..\..\..\src\ShopDemo\Auth\Api\ShopDemo.Auth.Api.csproj` |
 | `UnitTests/.../Api` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
 
 ### Stryker Config — Caminhos Relativos

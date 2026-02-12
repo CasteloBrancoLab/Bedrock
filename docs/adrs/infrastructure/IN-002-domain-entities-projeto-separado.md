@@ -82,7 +82,7 @@ Entidades de dominio vivem em um projeto separado chamado
 - **Interfaces de entidade** (ex: `IUser`, `IAggregateRoot`)
 
 ```
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
   Domain.Entities/
     ShopDemo.Auth.Domain.Entities.csproj
     Users/
@@ -233,6 +233,6 @@ essa regra literalmente.
 
 ## Referencias no Codigo
 
-- Implementacao de exemplo: `samples/ShopDemo/Auth/Domain.Entities/`
-- Entidade de referencia: `samples/ShopDemo/Auth/Domain.Entities/Users/User.cs`
+- Implementacao de exemplo: `src/ShopDemo/Auth/Domain.Entities/`
+- Entidade de referencia: `src/ShopDemo/Auth/Domain.Entities/Users/User.cs`
 - ADR relacionada: [IN-001 — Camadas Canonicas de um Bounded Context](./IN-001-camadas-canonicas-bounded-context.md)
