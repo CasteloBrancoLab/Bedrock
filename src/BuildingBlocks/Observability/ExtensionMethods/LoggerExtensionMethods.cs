@@ -769,6 +769,7 @@ public static class LoggerExtensionMethods
         using (logger.BeginScope(new ExecutionContextScope(executionContext)))
         {
 #pragma warning disable CA1848, CA2254 // Message template is intentionally dynamic in this wrapper method
+            // CS003 disable once : implementação core do pattern ForDistributedTracing — único ponto legítimo que chama ILogger.Log
             logger.Log(logLevel, exception, message, args);
 #pragma warning restore CA1848, CA2254
         }

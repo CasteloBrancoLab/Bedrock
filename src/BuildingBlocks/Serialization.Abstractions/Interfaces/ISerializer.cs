@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Serialization.Abstractions;
+namespace Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 
 /// <summary>
 /// Base interface for all serializers providing generic serialization and deserialization operations.

@@ -23,4 +23,10 @@ public sealed class CodeStyleRuleTests : RuleTestBase<CodeStyleArchFixture>
     {
         AssertNoViolations(new CS002_StaticLambdasInProjectMethodsRule());
     }
+
+    [Fact]
+    public void CS003_Logging_deve_usar_variantes_ForDistributedTracing()
+    {
+        AssertNoViolations(new CS003_LoggingWithDistributedTracingRule());
+    }
 }

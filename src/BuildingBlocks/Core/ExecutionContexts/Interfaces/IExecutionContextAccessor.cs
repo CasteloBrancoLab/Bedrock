@@ -1,4 +1,6 @@
-namespace Bedrock.BuildingBlocks.Core.ExecutionContexts;
+using Bedrock.BuildingBlocks.Core.ExecutionContexts;
+
+namespace Bedrock.BuildingBlocks.Core.ExecutionContexts.Interfaces;
 
 public interface IExecutionContextAccessor
 {

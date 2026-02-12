@@ -1,6 +1,6 @@
 using Bedrock.BuildingBlocks.Domain.Entities;
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
-using ShopDemo.Core.Entities.Products;
+using ShopDemo.Core.Entities.Products.Interfaces;
 
 namespace ShopDemo.Products.Domain.Entities.Products;
 

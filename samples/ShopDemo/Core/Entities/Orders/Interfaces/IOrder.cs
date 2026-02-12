@@ -1,8 +1,8 @@
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
-using ShopDemo.Core.Entities.Customers;
+using ShopDemo.Core.Entities.Customers.Interfaces;
 using ShopDemo.Core.Entities.Orders.Enums;
 
-namespace ShopDemo.Core.Entities.Orders;
+namespace ShopDemo.Core.Entities.Orders.Interfaces;
 
 public interface IOrder
     : IEntity

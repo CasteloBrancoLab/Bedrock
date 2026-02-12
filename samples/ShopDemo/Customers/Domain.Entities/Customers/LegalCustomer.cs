@@ -1,6 +1,6 @@
 using Bedrock.BuildingBlocks.Core.PhoneNumbers;
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
-using ShopDemo.Core.Entities.Customers;
+using ShopDemo.Core.Entities.Customers.Interfaces;
 using ShopDemo.Core.Entities.Persons.Enums;
 
 namespace ShopDemo.Customers.Domain.Entities.Customers;

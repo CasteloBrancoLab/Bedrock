@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Serialization.Abstractions;
+namespace Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 
 /// <summary>
 /// Interface for binary serializers that output byte arrays (e.g., Avro, Protobuf, Parquet).

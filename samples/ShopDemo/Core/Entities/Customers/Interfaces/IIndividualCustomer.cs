@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Core.BirthDates;
 using Bedrock.BuildingBlocks.Core.PhoneNumbers;
 
-namespace ShopDemo.Core.Entities.Customers;
+namespace ShopDemo.Core.Entities.Customers.Interfaces;
 
 public interface IIndividualCustomer
     : ICustomer

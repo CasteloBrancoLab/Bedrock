@@ -191,12 +191,12 @@ public abstract class DataModelRepositoryBase<TDataModel>
     {
         try
         {
-            WhereClause whereClause = _mapper.Where(x => x.Id);
+            WhereClause whereClause = _mapper.Where(static x => x.Id);
             string commandText = _mapper.GenerateSelectCommand(whereClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
-            _mapper.AddParameterForCommand(command, x => x.Id, id);
+            _mapper.AddParameterForCommand(command, static x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, static x => x.Id, id);
 
             await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
 
@@ -240,7 +240,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             string commandText = _mapper.GenerateSelectCommand(paginationInfo);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, static x => x.TenantCode, executionContext.TenantInfo.Code);
 
             await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             await ExecuteReaderWithHandlerAsync(reader, handler, cancellationToken).ConfigureAwait(false);
@@ -271,12 +271,12 @@ public abstract class DataModelRepositoryBase<TDataModel>
     {
         try
         {
-            WhereClause whereClause = _mapper.Where(x => x.Id);
+            WhereClause whereClause = _mapper.Where(static x => x.Id);
             string commandText = _mapper.GenerateExistsCommand(whereClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
-            _mapper.AddParameterForCommand(command, x => x.Id, id);
+            _mapper.AddParameterForCommand(command, static x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, static x => x.Id, id);
 
             object? result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
 
@@ -344,7 +344,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             // Generate UPDATE command with EntityVersion check for optimistic concurrency.
             // Use a parameter suffix to avoid conflict between SET and WHERE EntityVersion values.
             const string ExpectedVersionSuffix = "_expected";
-            WhereClause versionClause = _mapper.WhereWithParameterSuffix(x => x.EntityVersion, ExpectedVersionSuffix, RelationalOperator.Equal);
+            WhereClause versionClause = _mapper.WhereWithParameterSuffix(static x => x.EntityVersion, ExpectedVersionSuffix, RelationalOperator.Equal);
             string commandText = _mapper.GenerateUpdateCommand(versionClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
@@ -352,7 +352,7 @@ public abstract class DataModelRepositoryBase<TDataModel>
             _mapper.ConfigureCommandFromDataModelBase(command, _mapper, dataModel);
 
             // Add the expected version parameter for the WHERE clause with suffix
-            _mapper.AddParameterForCommandWithSuffix(command, x => x.EntityVersion, ExpectedVersionSuffix, expectedVersion);
+            _mapper.AddParameterForCommandWithSuffix(command, static x => x.EntityVersion, ExpectedVersionSuffix, expectedVersion);
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
@@ -387,15 +387,15 @@ public abstract class DataModelRepositoryBase<TDataModel>
         try
         {
             // Generate DELETE command with Id and EntityVersion check for optimistic concurrency
-            WhereClause idClause = _mapper.Where(x => x.Id);
-            WhereClause versionClause = _mapper.Where(x => x.EntityVersion);
+            WhereClause idClause = _mapper.Where(static x => x.Id);
+            WhereClause versionClause = _mapper.Where(static x => x.EntityVersion);
             WhereClause combinedClause = idClause & versionClause;
             string commandText = _mapper.GenerateDeleteCommand(combinedClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
-            _mapper.AddParameterForCommand(command, x => x.Id, id);
-            _mapper.AddParameterForCommand(command, x => x.EntityVersion, expectedVersion);
+            _mapper.AddParameterForCommand(command, static x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, static x => x.Id, id);
+            _mapper.AddParameterForCommand(command, static x => x.EntityVersion, expectedVersion);
 
             int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
 
@@ -428,13 +428,13 @@ public abstract class DataModelRepositoryBase<TDataModel>
     {
         try
         {
-            WhereClause whereClause = _mapper.Where(x => x.LastChangedAt, RelationalOperator.GreaterThanOrEqual);
-            OrderByClause orderByClause = _mapper.OrderByAscending(x => x.LastChangedAt);
+            WhereClause whereClause = _mapper.Where(static x => x.LastChangedAt, RelationalOperator.GreaterThanOrEqual);
+            OrderByClause orderByClause = _mapper.OrderByAscending(static x => x.LastChangedAt);
             string commandText = _mapper.GenerateSelectCommand(whereClause, orderByClause);
 
             using NpgsqlCommand command = _unitOfWork.CreateNpgsqlCommand(commandText);
-            _mapper.AddParameterForCommand(command, x => x.TenantCode, executionContext.TenantInfo.Code);
-            _mapper.AddParameterForCommand(command, x => x.LastChangedAt, since);
+            _mapper.AddParameterForCommand(command, static x => x.TenantCode, executionContext.TenantInfo.Code);
+            _mapper.AddParameterForCommand(command, static x => x.LastChangedAt, since);
 
             await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             await ExecuteReaderWithHandlerAsync(reader, handler, cancellationToken).ConfigureAwait(false);

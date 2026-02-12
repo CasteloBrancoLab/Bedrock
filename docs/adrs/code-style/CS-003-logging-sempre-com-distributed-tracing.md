@@ -23,8 +23,8 @@ qualquer evento em qualquer outro laboratorio.
 
 ### O Problema Tecnico
 
-A API padrao do `ILogger` (`LogError`, `LogWarning`, `LogInformation`,
-etc.) registra mensagens sem nenhum contexto de rastreamento
+A API padrao do `ILogger` (`Log`, `LogError`, `LogWarning`,
+`LogInformation`, etc.) registra mensagens sem nenhum contexto de rastreamento
 distribuido. Num sistema multi-tenant com multiplos servicos, um log
 sem `CorrelationId`, `TenantCode`, `ExecutionUser` e
 `BusinessOperationCode` é praticamente inutil em producao.
@@ -177,7 +177,7 @@ Cada chamada cria um `ILogger.BeginScope` com `ExecutionContextScope`
 | Isento | Codigo de infraestrutura de bootstrap (Program.cs, Startup) onde `ExecutionContext` nao existe |
 | Isento | Playground e apps de console para demonstracao rapida |
 | Isento | Testes unitarios (logging é mock) |
-| Violacao | Usar `LogError`, `LogWarning`, `LogInformation`, etc. do `ILogger` quando `ExecutionContext` está disponivel |
+| Violacao | Usar `Log`, `LogError`, `LogWarning`, `LogInformation`, etc. do `ILogger` quando `ExecutionContext` está disponivel |
 
 ### Por Que Funciona Melhor
 
@@ -320,4 +320,4 @@ essa diferenca é mensuravel. A comparacao com o `ILogger` padrao:
 - Uso correto (RepositoryBase): `src/BuildingBlocks/Data/Repositories/RepositoryBase.cs` (linhas 129, 150, 171, 192, 222)
 - Uso correto (DataModelRepositoryBase): `src/BuildingBlocks/Persistence.PostgreSql/DataModelRepositories/DataModelRepositoryBase.cs`
 - Uso correto (UnitOfWork): `src/BuildingBlocks/Persistence.PostgreSql/UnitOfWork/PostgreSqlUnitOfWorkBase.cs`
-- Violacao de referencia: `samples/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs` (linhas 43, 63, 83, 103 — usa `Logger.LogError` em vez de `Logger.LogExceptionForDistributedTracing`)
+- Uso correto (Auth UserRepository): `samples/ShopDemo/Auth/Infra.Data/Repositories/UserRepository.cs` (linhas 44, 67, 90, 113 — usa `Logger.LogExceptionForDistributedTracing`)

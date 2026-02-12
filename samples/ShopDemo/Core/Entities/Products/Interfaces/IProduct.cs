@@ -1,6 +1,6 @@
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
 
-namespace ShopDemo.Core.Entities.Products;
+namespace ShopDemo.Core.Entities.Products.Interfaces;
 
 public interface IProduct
     : IEntity

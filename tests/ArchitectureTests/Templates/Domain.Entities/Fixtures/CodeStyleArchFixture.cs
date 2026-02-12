@@ -5,22 +5,29 @@ namespace Bedrock.ArchitectureTests.Templates.Domain.Entities.Fixtures;
 
 /// <summary>
 /// Fixture que carrega a compilação dos projetos para análise de regras de code style.
-/// Inclui BuildingBlocks e samples que possuem interfaces.
+/// Descobre automaticamente todos os .csproj de BuildingBlocks (exceto Testing),
+/// templates e samples.
 /// </summary>
 public sealed class CodeStyleArchFixture
     : RuleFixture
 {
+    private static readonly string _separator = Path.DirectorySeparatorChar.ToString();
+
     protected override IReadOnlyList<string> GetProjectPaths(string rootDir)
     {
-        return
-        [
-            Path.Combine(rootDir, "src", "BuildingBlocks", "Security", "Bedrock.BuildingBlocks.Security.csproj"),
-            Path.Combine(rootDir, "src", "BuildingBlocks", "Domain.Entities", "Bedrock.BuildingBlocks.Domain.Entities.csproj"),
-            Path.Combine(rootDir, "src", "BuildingBlocks", "Domain", "Bedrock.BuildingBlocks.Domain.csproj"),
-            Path.Combine(rootDir, "src", "BuildingBlocks", "Persistence.Abstractions", "Bedrock.BuildingBlocks.Persistence.Abstractions.csproj"),
-            Path.Combine(rootDir, "samples", "ShopDemo", "Auth", "Domain.Entities", "ShopDemo.Auth.Domain.Entities.csproj"),
-            Path.Combine(rootDir, "samples", "ShopDemo", "Auth", "Domain", "ShopDemo.Auth.Domain.csproj")
-        ];
+        var searchDirs = new[]
+        {
+            Path.Combine(rootDir, "src", "BuildingBlocks"),
+            Path.Combine(rootDir, "src", "templates"),
+            Path.Combine(rootDir, "samples"),
+        };
+
+        return searchDirs
+            .Where(Directory.Exists)
+            .SelectMany(static dir => Directory.GetFiles(dir, "*.csproj", SearchOption.AllDirectories))
+            .Where(static path => !path.Contains($"{_separator}Testing{_separator}", StringComparison.OrdinalIgnoreCase))
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }
 

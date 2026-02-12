@@ -3,7 +3,7 @@ using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Data.Repositories;
 using Microsoft.Extensions.Logging;
 using Templates.Domain.Entities.SimpleAggregateRoots;
-using Templates.Domain.Repositories;
+using Templates.Domain.Repositories.Interfaces;
 
 namespace Templates.Infra.Data.Repositories;
 

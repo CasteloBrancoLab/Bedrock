@@ -1,4 +1,4 @@
-namespace Bedrock.BuildingBlocks.Serialization.Abstractions;
+namespace Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 
 /// <summary>
 /// Interface for text-based serializers that output strings (e.g., JSON, XML).

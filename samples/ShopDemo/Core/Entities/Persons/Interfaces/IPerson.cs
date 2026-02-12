@@ -3,7 +3,7 @@ using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
 using ShopDemo.Core.Entities.Persons.Enums;
 using ShopDemo.Core.Entities.Persons.ValueObjects;
 
-namespace ShopDemo.Core.Entities.Persons;
+namespace ShopDemo.Core.Entities.Persons.Interfaces;
 
 public interface IPerson
     : IEntity

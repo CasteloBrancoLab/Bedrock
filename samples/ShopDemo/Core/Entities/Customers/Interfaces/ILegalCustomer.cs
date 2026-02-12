@@ -1,9 +1,9 @@
 using Bedrock.BuildingBlocks.Core.PhoneNumbers;
 
-namespace ShopDemo.Core.Entities.Persons;
+namespace ShopDemo.Core.Entities.Customers.Interfaces;
 
-public interface ILegalPerson
-    : IPerson
+public interface ILegalCustomer
+    : ICustomer
 {
     public string LegalName { get; }
     public string TradeName { get; }

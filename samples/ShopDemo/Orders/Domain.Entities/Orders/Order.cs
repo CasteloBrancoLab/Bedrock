@@ -1,7 +1,7 @@
 using System;
 using Bedrock.BuildingBlocks.Domain.Entities;
 using Bedrock.BuildingBlocks.Domain.Entities.Interfaces;
-using ShopDemo.Core.Entities.Orders;
+using ShopDemo.Core.Entities.Orders.Interfaces;
 using ShopDemo.Core.Entities.Orders.Enums;
 using ShopDemo.Orders.Domain.Entities.Customers;
 

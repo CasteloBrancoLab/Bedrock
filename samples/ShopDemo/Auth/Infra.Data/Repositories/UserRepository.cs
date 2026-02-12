@@ -3,6 +3,7 @@ using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Data.Repositories;
 using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
+using Bedrock.BuildingBlocks.Observability.ExtensionMethods;
 using Microsoft.Extensions.Logging;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
@@ -40,7 +41,10 @@ public sealed class UserRepository
         catch (Exception ex)
         {
             // Stryker disable once String : Log message content is not behavior-critical
-            Logger.LogError(ex, "An error occurred while getting user by email.");
+            Logger.LogExceptionForDistributedTracing(
+                executionContext,
+                ex,
+                "An error occurred while getting user by email.");
             return null;
         }
     }
@@ -60,7 +64,10 @@ public sealed class UserRepository
         catch (Exception ex)
         {
             // Stryker disable once String : Log message content is not behavior-critical
-            Logger.LogError(ex, "An error occurred while getting user by username.");
+            Logger.LogExceptionForDistributedTracing(
+                executionContext,
+                ex,
+                "An error occurred while getting user by username.");
             return null;
         }
     }
@@ -80,7 +87,10 @@ public sealed class UserRepository
         catch (Exception ex)
         {
             // Stryker disable once String : Log message content is not behavior-critical
-            Logger.LogError(ex, "An error occurred while checking existence by email.");
+            Logger.LogExceptionForDistributedTracing(
+                executionContext,
+                ex,
+                "An error occurred while checking existence by email.");
             return false;
         }
     }
@@ -100,7 +110,10 @@ public sealed class UserRepository
         catch (Exception ex)
         {
             // Stryker disable once String : Log message content is not behavior-critical
-            Logger.LogError(ex, "An error occurred while checking existence by username.");
+            Logger.LogExceptionForDistributedTracing(
+                executionContext,
+                ex,
+                "An error occurred while checking existence by username.");
             return false;
         }
     }

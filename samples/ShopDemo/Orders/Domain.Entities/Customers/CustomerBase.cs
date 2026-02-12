@@ -1,6 +1,6 @@
 using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Domain.Entities;
-using ShopDemo.Core.Entities.Customers;
+using ShopDemo.Core.Entities.Customers.Interfaces;
 using ShopDemo.Core.Entities.Persons.Enums;
 using ShopDemo.Core.Entities.Persons.ValueObjects;
 

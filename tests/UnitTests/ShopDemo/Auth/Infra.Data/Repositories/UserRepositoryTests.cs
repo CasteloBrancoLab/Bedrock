@@ -26,6 +26,7 @@ public class UserRepositoryTests : TestBase
     public UserRepositoryTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
         _loggerMock = new Mock<ILogger<UserRepository>>();
+        _loggerMock.Setup(static x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _postgreSqlRepositoryMock = new Mock<IUserPostgreSqlRepository>();
         _sut = new UserRepository(_loggerMock.Object, _postgreSqlRepositoryMock.Object);
     }
