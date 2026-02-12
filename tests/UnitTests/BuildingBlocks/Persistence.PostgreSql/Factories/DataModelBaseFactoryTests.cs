@@ -29,7 +29,8 @@ public class DataModelBaseFactoryTests : TestBase
 
         Guid id = Guid.NewGuid();
         Guid tenantCode = Guid.NewGuid();
-        Guid correlationId = Guid.NewGuid();
+        Guid createdCorrelationId = Guid.NewGuid();
+        Guid lastChangedCorrelationId = Guid.NewGuid();
         DateTimeOffset createdAt = DateTimeOffset.UtcNow.AddDays(-1);
         DateTimeOffset lastChangedAt = DateTimeOffset.UtcNow;
         long entityVersion = 12345678L;
@@ -37,12 +38,12 @@ public class DataModelBaseFactoryTests : TestBase
         EntityChangeInfo entityChangeInfo = EntityChangeInfo.CreateFromExistingInfo(
             createdAt: createdAt,
             createdBy: "creator-user",
-            createdCorrelationId: Guid.NewGuid(),
+            createdCorrelationId: createdCorrelationId,
             createdExecutionOrigin: "API",
             createdBusinessOperationCode: "CREATE_ORDER",
             lastChangedAt: lastChangedAt,
             lastChangedBy: "modifier-user",
-            lastChangedCorrelationId: correlationId,
+            lastChangedCorrelationId: lastChangedCorrelationId,
             lastChangedExecutionOrigin: "CLI",
             lastChangedBusinessOperationCode: "UPDATE_ORDER"
         );
@@ -66,10 +67,13 @@ public class DataModelBaseFactoryTests : TestBase
         result.TenantCode.ShouldBe(tenantCode);
         result.CreatedBy.ShouldBe("creator-user");
         result.CreatedAt.ShouldBe(createdAt);
+        result.CreatedCorrelationId.ShouldBe(createdCorrelationId);
+        result.CreatedExecutionOrigin.ShouldBe("API");
+        result.CreatedBusinessOperationCode.ShouldBe("CREATE_ORDER");
         result.LastChangedBy.ShouldBe("modifier-user");
         result.LastChangedAt.ShouldBe(lastChangedAt);
         result.LastChangedExecutionOrigin.ShouldBe("CLI");
-        result.LastChangedCorrelationId.ShouldBe(correlationId);
+        result.LastChangedCorrelationId.ShouldBe(lastChangedCorrelationId);
         result.LastChangedBusinessOperationCode.ShouldBe("UPDATE_ORDER");
         result.EntityVersion.ShouldBe(entityVersion);
     }
@@ -152,6 +156,9 @@ public class DataModelBaseFactoryTests : TestBase
         result.TenantCode.ShouldBe(tenantCode);
         result.CreatedBy.ShouldBe("test-user");
         result.CreatedAt.ShouldBe(timestamp);
+        result.CreatedCorrelationId.ShouldBe(correlationId);
+        result.CreatedExecutionOrigin.ShouldBe("API");
+        result.CreatedBusinessOperationCode.ShouldBe("CREATE_ORDER");
         result.LastChangedBy.ShouldBeNull();
         result.LastChangedAt.ShouldBeNull();
         result.LastChangedExecutionOrigin.ShouldBeNull();

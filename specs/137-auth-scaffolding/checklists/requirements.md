@@ -27,7 +27,7 @@
 - [x] CHK013 Target framework `net10.0` conforme CLAUDE.md
 - [x] CHK014 Relação 1:1 entre projetos src e testes unitários
 - [x] CHK015 Stryker thresholds de 100% conforme CLAUDE.md
-- [x] CHK016 5 camadas definidas: Domain.Entities, Application, Infra.Data, Infra.Persistence, Api
+- [x] CHK016 5 camadas definidas: Domain.Entities, Application, Infra.Data, Infra.Data.PostgreSql, Api
 
 ## Rastreabilidade
 

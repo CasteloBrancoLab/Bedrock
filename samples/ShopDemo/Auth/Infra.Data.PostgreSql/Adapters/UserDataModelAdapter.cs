@@ -1,8 +1,8 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Adapters;
 using ShopDemo.Auth.Domain.Entities.Users;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 
-namespace ShopDemo.Auth.Infra.Persistence.Adapters;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Adapters;
 
 public static class UserDataModelAdapter
 {

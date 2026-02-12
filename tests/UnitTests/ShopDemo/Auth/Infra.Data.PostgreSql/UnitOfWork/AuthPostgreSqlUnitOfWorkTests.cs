@@ -2,13 +2,13 @@ using Bedrock.BuildingBlocks.Persistence.PostgreSql.UnitOfWork;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ShopDemo.Auth.Infra.Persistence.Connections.Interfaces;
-using ShopDemo.Auth.Infra.Persistence.UnitOfWork;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.UnitOfWork;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.UnitOfWork;
 
 public class AuthPostgreSqlUnitOfWorkTests : TestBase
 {

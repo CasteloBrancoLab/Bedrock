@@ -6,7 +6,7 @@ using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
-using ShopDemo.Auth.Infra.Persistence.Repositories.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 
 namespace ShopDemo.Auth.Infra.Data.Repositories;
 

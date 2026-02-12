@@ -4,13 +4,13 @@ using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.Abstractions.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Entities.Users;
-using ShopDemo.Auth.Infra.Persistence.Adapters;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
-using ShopDemo.Auth.Infra.Persistence.DataModelsRepositories.Interfaces;
-using ShopDemo.Auth.Infra.Persistence.Factories;
-using ShopDemo.Auth.Infra.Persistence.Repositories.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Adapters;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Factories;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 
-namespace ShopDemo.Auth.Infra.Persistence.Repositories;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Repositories;
 
 public sealed class UserPostgreSqlRepository
     : IUserPostgreSqlRepository

@@ -10,7 +10,7 @@ using Moq;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
 using ShopDemo.Auth.Infra.Data.Repositories;
-using ShopDemo.Auth.Infra.Persistence.Repositories.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;

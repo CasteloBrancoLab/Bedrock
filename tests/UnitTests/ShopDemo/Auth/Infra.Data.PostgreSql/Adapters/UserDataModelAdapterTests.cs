@@ -7,14 +7,14 @@ using Bedrock.BuildingBlocks.Testing;
 using Bogus;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
-using ShopDemo.Auth.Infra.Persistence.Adapters;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Adapters;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 using ShopDemo.Core.Entities.Users.Enums;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.Adapters;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Adapters;
 
 public class UserDataModelAdapterTests : TestBase
 {

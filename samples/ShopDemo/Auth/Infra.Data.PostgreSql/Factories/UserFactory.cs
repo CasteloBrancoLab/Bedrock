@@ -5,10 +5,10 @@ using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 using ShopDemo.Core.Entities.Users.Enums;
 
-namespace ShopDemo.Auth.Infra.Persistence.Factories;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Factories;
 
 public static class UserFactory
 {
@@ -19,9 +19,9 @@ public static class UserFactory
             tenantInfo: TenantInfo.Create(dataModel.TenantCode),
             createdAt: dataModel.CreatedAt,
             createdBy: dataModel.CreatedBy,
-            createdCorrelationId: Guid.Empty,
-            createdExecutionOrigin: string.Empty,
-            createdBusinessOperationCode: string.Empty,
+            createdCorrelationId: dataModel.CreatedCorrelationId,
+            createdExecutionOrigin: dataModel.CreatedExecutionOrigin,
+            createdBusinessOperationCode: dataModel.CreatedBusinessOperationCode,
             lastChangedAt: dataModel.LastChangedAt,
             lastChangedBy: dataModel.LastChangedBy,
             lastChangedCorrelationId: dataModel.LastChangedCorrelationId,

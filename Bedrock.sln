@@ -193,9 +193,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Data", "Infra.Data", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Infra.Data", "samples\ShopDemo\Auth\Infra.Data\ShopDemo.Auth.Infra.Data.csproj", "{FC8F1CA6-96BF-4C4F-8963-D270645B5128}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Persistence", "Infra.Persistence", "{9EE35860-B444-FE70-055A-C0CB96953E42}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Data.PostgreSql", "Infra.Data.PostgreSql", "{9EE35860-B444-FE70-055A-C0CB96953E42}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Infra.Persistence", "samples\ShopDemo\Auth\Infra.Persistence\ShopDemo.Auth.Infra.Persistence.csproj", "{4F6E101C-53F6-420C-A681-6655C7FD82FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.Auth.Infra.Data.PostgreSql", "samples\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj", "{4F6E101C-53F6-420C-A681-6655C7FD82FC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{91EA58FA-43FF-83B8-02B7-4A30C74DAEC5}"
 EndProject
@@ -217,9 +217,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Data", "Infra.Data", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.UnitTests.Auth.Infra.Data", "tests\UnitTests\ShopDemo\Auth\Infra.Data\ShopDemo.UnitTests.Auth.Infra.Data.csproj", "{FE5F1029-140E-41C8-A4D2-305C76DF85C6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Persistence", "Infra.Persistence", "{3A8A7C5D-D5B6-6813-5005-3B010C96FD3A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra.Data.PostgreSql", "Infra.Data.PostgreSql", "{3A8A7C5D-D5B6-6813-5005-3B010C96FD3A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.UnitTests.Auth.Infra.Persistence", "tests\UnitTests\ShopDemo\Auth\Infra.Persistence\ShopDemo.UnitTests.Auth.Infra.Persistence.csproj", "{C7AD4B83-2436-47C0-BFD3-3C7F9B9E4CE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql", "tests\UnitTests\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.csproj", "{C7AD4B83-2436-47C0-BFD3-3C7F9B9E4CE0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{E7B425C7-5F99-789E-B706-1EAA826DD087}"
 EndProject

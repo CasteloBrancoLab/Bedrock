@@ -24,9 +24,9 @@ Como desenvolvedor, preciso que a estrutura de projetos src do Auth exista em `s
 
 **Acceptance Scenarios**:
 
-1. **Given** a solution Bedrock sem projetos Auth, **When** os projetos são criados em `samples/ShopDemo/Auth/`, **Then** existem 5 projetos src (`Domain.Entities`, `Application`, `Infra.Data`, `Infra.Persistence`, `Api`) com namespaces `ShopDemo.Auth.*`
+1. **Given** a solution Bedrock sem projetos Auth, **When** os projetos são criados em `samples/ShopDemo/Auth/`, **Then** existem 5 projetos src (`Domain.Entities`, `Application`, `Infra.Data`, `Infra.Data.PostgreSql`, `Api`) com namespaces `ShopDemo.Auth.*`
 2. **Given** os projetos src criados, **When** `dotnet build` é executado, **Then** a compilação passa sem erros
-3. **Given** os projetos src criados, **When** as referências são inspecionadas, **Then** cada camada referencia apenas as camadas permitidas (Domain não referencia nada acima; Application referencia Domain; Infra.Data referencia Domain; Infra.Persistence referencia Infra.Data e Domain; Api referencia Application)
+3. **Given** os projetos src criados, **When** as referências são inspecionadas, **Then** cada camada referencia apenas as camadas permitidas (Domain não referencia nada acima; Application referencia Domain; Infra.Data referencia Domain; Infra.Data.PostgreSql referencia Infra.Data e Domain; Api referencia Application)
 4. **Given** os projetos src criados, **When** as referências aos BuildingBlocks são inspecionadas, **Then** cada projeto referencia o BuildingBlock correspondente à sua camada
 
 ---
@@ -99,14 +99,14 @@ Como desenvolvedor, preciso que todos os projetos sejam adicionados à solution 
   - `ShopDemo.Auth.Domain` — Repository interfaces, Domain Services, abstrações de integração
   - `ShopDemo.Auth.Application` — Use Cases, DTOs, Application Services
   - `ShopDemo.Auth.Infra.Data` — Repository implementations, Data Model parsing
-  - `ShopDemo.Auth.Infra.Persistence` — PostgreSQL Data Models, EF Core DbContext, Migrations
+  - `ShopDemo.Auth.Infra.Data.PostgreSql` — PostgreSQL Data Models, EF Core DbContext, Migrations
   - `ShopDemo.Auth.Api` — Controllers, Middleware, Configuration
 - **FR-002**: Sistema DEVE criar referências entre camadas seguindo a arquitetura limpa:
   - `Domain.Entities` → `ShopDemo.Core.Entities` + `Bedrock.BuildingBlocks.Domain.Entities`
   - `Domain` → `Domain.Entities` + `Bedrock.BuildingBlocks.Domain`
   - `Application` → `Domain` + `Domain.Entities`
   - `Infra.Data` → `Domain` + `Domain.Entities` + `Bedrock.BuildingBlocks.Data`
-  - `Infra.Persistence` → `Infra.Data` + `Domain.Entities` + `Bedrock.BuildingBlocks.Persistence.PostgreSql`
+  - `Infra.Data.PostgreSql` → `Infra.Data` + `Domain.Entities` + `Bedrock.BuildingBlocks.Persistence.PostgreSql`
   - `Api` → `Application` + `Bedrock.BuildingBlocks.Observability`
 - **FR-003**: Sistema DEVE criar 6 projetos de testes unitários em relação 1:1 com nomenclatura `ShopDemo.UnitTests.Auth.*`
 - **FR-004**: Sistema DEVE criar 6 configurações de testes de mutação com `stryker-config.json` e thresholds de 100%
@@ -136,8 +136,8 @@ samples/ShopDemo/Auth/
   Infra.Data/
     ShopDemo.Auth.Infra.Data.csproj
     GlobalUsings.cs
-  Infra.Persistence/
-    ShopDemo.Auth.Infra.Persistence.csproj
+  Infra.Data.PostgreSql/
+    ShopDemo.Auth.Infra.Data.PostgreSql.csproj
     GlobalUsings.cs
   Api/
     ShopDemo.Auth.Api.csproj
@@ -153,8 +153,8 @@ tests/
       ShopDemo.UnitTests.Auth.Application.csproj
     Infra.Data/
       ShopDemo.UnitTests.Auth.Infra.Data.csproj
-    Infra.Persistence/
-      ShopDemo.UnitTests.Auth.Infra.Persistence.csproj
+    Infra.Data.PostgreSql/
+      ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.csproj
     Api/
       ShopDemo.UnitTests.Auth.Api.csproj
   MutationTests/ShopDemo/Auth/
@@ -166,7 +166,7 @@ tests/
       stryker-config.json
     Infra.Data/
       stryker-config.json
-    Infra.Persistence/
+    Infra.Data.PostgreSql/
       stryker-config.json
     Api/
       stryker-config.json

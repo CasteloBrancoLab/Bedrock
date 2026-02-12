@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
   "stryker-config": {
-    "project": "ShopDemo.Auth.Infra.Persistence.csproj",
+    "project": "ShopDemo.Auth.Infra.Data.PostgreSql.csproj",
     "test-projects": [
-      "../../../../UnitTests/ShopDemo/Auth/Infra.Persistence/ShopDemo.UnitTests.Auth.Infra.Persistence.csproj"
+      "../../../../UnitTests/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.csproj"
     ],
     "reporters": ["html", "progress"],
     "thresholds": {

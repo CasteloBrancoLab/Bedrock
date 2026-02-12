@@ -27,8 +27,8 @@
 - [ ] T004 [P] [US1] Criar `samples/ShopDemo/Auth/Application/GlobalUsings.cs`
 - [ ] T005 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data/ShopDemo.Auth.Infra.Data.csproj` com referências a `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Data`
 - [ ] T006 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data/GlobalUsings.cs`
-- [ ] T007 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Persistence/ShopDemo.Auth.Infra.Persistence.csproj` com referências a `ShopDemo.Auth.Infra.Data`, `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Persistence.PostgreSql`
-- [ ] T008 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Persistence/GlobalUsings.cs`
+- [ ] T007 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.Auth.Infra.Data.PostgreSql.csproj` com referências a `ShopDemo.Auth.Infra.Data`, `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Persistence.PostgreSql`
+- [ ] T008 [P] [US1] Criar `samples/ShopDemo/Auth/Infra.Data.PostgreSql/GlobalUsings.cs`
 - [ ] T009 [P] [US1] Criar `samples/ShopDemo/Auth/Api/ShopDemo.Auth.Api.csproj` com referências a `ShopDemo.Auth.Application` e `Bedrock.BuildingBlocks.Observability`
 - [ ] T010 [P] [US1] Criar `samples/ShopDemo/Auth/Api/GlobalUsings.cs`
 - [ ] T011 [US1] Adicionar os 5 projetos src à solution `Bedrock.sln` via `dotnet sln add`
@@ -47,7 +47,7 @@
 - [ ] T013 [P] [US2] Criar `tests/UnitTests/ShopDemo/Auth/Domain.Entities/ShopDemo.UnitTests.Auth.Domain.Entities.csproj` com referências a `ShopDemo.Auth.Domain.Entities` e `Bedrock.BuildingBlocks.Testing`
 - [ ] T014 [P] [US2] Criar `tests/UnitTests/ShopDemo/Auth/Application/ShopDemo.UnitTests.Auth.Application.csproj` com referências a `ShopDemo.Auth.Application` e `Bedrock.BuildingBlocks.Testing`
 - [ ] T015 [P] [US2] Criar `tests/UnitTests/ShopDemo/Auth/Infra.Data/ShopDemo.UnitTests.Auth.Infra.Data.csproj` com referências a `ShopDemo.Auth.Infra.Data` e `Bedrock.BuildingBlocks.Testing`
-- [ ] T016 [P] [US2] Criar `tests/UnitTests/ShopDemo/Auth/Infra.Persistence/ShopDemo.UnitTests.Auth.Infra.Persistence.csproj` com referências a `ShopDemo.Auth.Infra.Persistence` e `Bedrock.BuildingBlocks.Testing`
+- [ ] T016 [P] [US2] Criar `tests/UnitTests/ShopDemo/Auth/Infra.Data.PostgreSql/ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.csproj` com referências a `ShopDemo.Auth.Infra.Data.PostgreSql` e `Bedrock.BuildingBlocks.Testing`
 - [ ] T017 [P] [US2] Criar `tests/UnitTests/ShopDemo/Auth/Api/ShopDemo.UnitTests.Auth.Api.csproj` com referências a `ShopDemo.Auth.Api` e `Bedrock.BuildingBlocks.Testing`
 - [ ] T018 [US2] Adicionar os 5 projetos de teste à solution `Bedrock.sln` via `dotnet sln add`
 - [ ] T019 [US2] Verificar testes: executar `dotnet test Bedrock.sln` e confirmar sucesso
@@ -65,7 +65,7 @@
 - [ ] T020 [P] [US3] Criar `tests/MutationTests/ShopDemo/Auth/Domain.Entities/stryker-config.json` referenciando `ShopDemo.Auth.Domain.Entities.csproj` e `ShopDemo.UnitTests.Auth.Domain.Entities.csproj`
 - [ ] T021 [P] [US3] Criar `tests/MutationTests/ShopDemo/Auth/Application/stryker-config.json` referenciando `ShopDemo.Auth.Application.csproj` e `ShopDemo.UnitTests.Auth.Application.csproj`
 - [ ] T022 [P] [US3] Criar `tests/MutationTests/ShopDemo/Auth/Infra.Data/stryker-config.json` referenciando `ShopDemo.Auth.Infra.Data.csproj` e `ShopDemo.UnitTests.Auth.Infra.Data.csproj`
-- [ ] T023 [P] [US3] Criar `tests/MutationTests/ShopDemo/Auth/Infra.Persistence/stryker-config.json` referenciando `ShopDemo.Auth.Infra.Persistence.csproj` e `ShopDemo.UnitTests.Auth.Infra.Persistence.csproj`
+- [ ] T023 [P] [US3] Criar `tests/MutationTests/ShopDemo/Auth/Infra.Data.PostgreSql/stryker-config.json` referenciando `ShopDemo.Auth.Infra.Data.PostgreSql.csproj` e `ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.csproj`
 - [ ] T024 [P] [US3] Criar `tests/MutationTests/ShopDemo/Auth/Api/stryker-config.json` referenciando `ShopDemo.Auth.Api.csproj` e `ShopDemo.UnitTests.Auth.Api.csproj`
 
 **Checkpoint**: Todos os `stryker-config.json` são válidos com thresholds 100/100/100.
@@ -149,9 +149,9 @@ Todos os `.csproj` DEVEM usar caminhos relativos conforme documentado no plan.md
 | `Application` | `Domain.Entities` | `..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj` |
 | `Infra.Data` | `Domain.Entities` | `..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj` |
 | `Infra.Data` | `BB.Data` | `..\..\..\..\src\BuildingBlocks\Data\Bedrock.BuildingBlocks.Data.csproj` |
-| `Infra.Persistence` | `Infra.Data` | `..\Infra.Data\ShopDemo.Auth.Infra.Data.csproj` |
-| `Infra.Persistence` | `Domain.Entities` | `..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj` |
-| `Infra.Persistence` | `BB.Persistence.PostgreSql` | `..\..\..\..\src\BuildingBlocks\Persistence.PostgreSql\Bedrock.BuildingBlocks.Persistence.PostgreSql.csproj` |
+| `Infra.Data.PostgreSql` | `Infra.Data` | `..\Infra.Data\ShopDemo.Auth.Infra.Data.csproj` |
+| `Infra.Data.PostgreSql` | `Domain.Entities` | `..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj` |
+| `Infra.Data.PostgreSql` | `BB.Persistence.PostgreSql` | `..\..\..\..\src\BuildingBlocks\Persistence.PostgreSql\Bedrock.BuildingBlocks.Persistence.PostgreSql.csproj` |
 | `Api` | `Application` | `..\Application\ShopDemo.Auth.Application.csproj` |
 | `Api` | `BB.Observability` | `..\..\..\..\src\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj` |
 
@@ -163,8 +163,8 @@ Todos os `.csproj` DEVEM usar caminhos relativos conforme documentado no plan.md
 | `UnitTests/.../Application` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
 | `UnitTests/.../Infra.Data` | `Auth Infra.Data` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Infra.Data\ShopDemo.Auth.Infra.Data.csproj` |
 | `UnitTests/.../Infra.Data` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
-| `UnitTests/.../Infra.Persistence` | `Auth Infra.Persistence` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Infra.Persistence\ShopDemo.Auth.Infra.Persistence.csproj` |
-| `UnitTests/.../Infra.Persistence` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
+| `UnitTests/.../Infra.Data.PostgreSql` | `Auth Infra.Data.PostgreSql` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj` |
+| `UnitTests/.../Infra.Data.PostgreSql` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
 | `UnitTests/.../Api` | `Auth Api` | `..\..\..\..\..\..\samples\ShopDemo\Auth\Api\ShopDemo.Auth.Api.csproj` |
 | `UnitTests/.../Api` | `BB.Testing` | `..\..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj` |
 

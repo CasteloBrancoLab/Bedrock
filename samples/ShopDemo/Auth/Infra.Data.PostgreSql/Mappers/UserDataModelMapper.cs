@@ -3,9 +3,9 @@ using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Models;
 using Npgsql;
 using NpgsqlTypes;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 
-namespace ShopDemo.Auth.Infra.Persistence.Mappers;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Mappers;
 
 public sealed class UserDataModelMapper
     : DataModelMapperBase<UserDataModel>

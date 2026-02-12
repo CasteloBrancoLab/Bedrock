@@ -1,13 +1,13 @@
 using Bedrock.BuildingBlocks.Testing;
 using Bogus;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
-using ShopDemo.Auth.Infra.Persistence.Factories;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Factories;
 using ShopDemo.Core.Entities.Users.Enums;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.Factories;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Factories;
 
 public class UserFactoryTests : TestBase
 {
@@ -176,10 +176,10 @@ public class UserFactoryTests : TestBase
     }
 
     [Fact]
-    public void Create_ShouldSetCreatedCorrelationIdToGuidEmpty()
+    public void Create_ShouldMapCreatedCorrelationIdFromDataModel()
     {
         // Arrange
-        LogArrange("Creating UserDataModel to verify createdCorrelationId is Guid.Empty");
+        LogArrange("Creating UserDataModel to verify createdCorrelationId is mapped from data model");
         var dataModel = CreateTestDataModel("testuser", "test@example.com", [1, 2, 3], (short)UserStatus.Active);
 
         // Act
@@ -187,15 +187,15 @@ public class UserFactoryTests : TestBase
         var user = UserFactory.Create(dataModel);
 
         // Assert
-        LogAssert("Verifying CreatedCorrelationId is Guid.Empty");
-        user.EntityInfo.EntityChangeInfo.CreatedCorrelationId.ShouldBe(Guid.Empty);
+        LogAssert("Verifying CreatedCorrelationId matches data model");
+        user.EntityInfo.EntityChangeInfo.CreatedCorrelationId.ShouldBe(dataModel.CreatedCorrelationId);
     }
 
     [Fact]
-    public void Create_ShouldSetCreatedExecutionOriginToEmpty()
+    public void Create_ShouldMapCreatedExecutionOriginFromDataModel()
     {
         // Arrange
-        LogArrange("Creating UserDataModel to verify createdExecutionOrigin is string.Empty");
+        LogArrange("Creating UserDataModel to verify createdExecutionOrigin is mapped from data model");
         var dataModel = CreateTestDataModel("testuser", "test@example.com", [1, 2, 3], (short)UserStatus.Active);
 
         // Act
@@ -203,15 +203,15 @@ public class UserFactoryTests : TestBase
         var user = UserFactory.Create(dataModel);
 
         // Assert
-        LogAssert("Verifying CreatedExecutionOrigin is string.Empty");
-        user.EntityInfo.EntityChangeInfo.CreatedExecutionOrigin.ShouldBe(string.Empty);
+        LogAssert("Verifying CreatedExecutionOrigin matches data model");
+        user.EntityInfo.EntityChangeInfo.CreatedExecutionOrigin.ShouldBe(dataModel.CreatedExecutionOrigin);
     }
 
     [Fact]
-    public void Create_ShouldSetCreatedBusinessOperationCodeToEmpty()
+    public void Create_ShouldMapCreatedBusinessOperationCodeFromDataModel()
     {
         // Arrange
-        LogArrange("Creating UserDataModel to verify createdBusinessOperationCode is string.Empty");
+        LogArrange("Creating UserDataModel to verify createdBusinessOperationCode is mapped from data model");
         var dataModel = CreateTestDataModel("testuser", "test@example.com", [1, 2, 3], (short)UserStatus.Active);
 
         // Act
@@ -219,8 +219,8 @@ public class UserFactoryTests : TestBase
         var user = UserFactory.Create(dataModel);
 
         // Assert
-        LogAssert("Verifying CreatedBusinessOperationCode is string.Empty");
-        user.EntityInfo.EntityChangeInfo.CreatedBusinessOperationCode.ShouldBe(string.Empty);
+        LogAssert("Verifying CreatedBusinessOperationCode matches data model");
+        user.EntityInfo.EntityChangeInfo.CreatedBusinessOperationCode.ShouldBe(dataModel.CreatedBusinessOperationCode);
     }
 
     #region Helper Methods
@@ -237,6 +237,9 @@ public class UserFactoryTests : TestBase
             TenantCode = Guid.NewGuid(),
             CreatedBy = "test-creator",
             CreatedAt = DateTimeOffset.UtcNow,
+            CreatedCorrelationId = Guid.NewGuid(),
+            CreatedExecutionOrigin = "UnitTest",
+            CreatedBusinessOperationCode = "CREATE_USER",
             LastChangedBy = null,
             LastChangedAt = null,
             LastChangedExecutionOrigin = null,

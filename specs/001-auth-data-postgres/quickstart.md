@@ -18,41 +18,41 @@ Follow this dependency-ordered sequence. Each step should compile before moving 
 
 These have no dependencies on domain types.
 
-1. `Infra.Persistence/Connections/Interfaces/IAuthPostgreSqlConnection.cs`
-2. `Infra.Persistence/Connections/AuthPostgreSqlConnection.cs`
-3. `Infra.Persistence/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs`
-4. `Infra.Persistence/UnitOfWork/AuthPostgreSqlUnitOfWork.cs`
+1. `Infra.Data.PostgreSql/Connections/Interfaces/IAuthPostgreSqlConnection.cs`
+2. `Infra.Data.PostgreSql/Connections/AuthPostgreSqlConnection.cs`
+3. `Infra.Data.PostgreSql/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs`
+4. `Infra.Data.PostgreSql/UnitOfWork/AuthPostgreSqlUnitOfWork.cs`
 
-**Verify**: `dotnet build ShopDemo.Auth.Infra.Persistence.csproj`
+**Verify**: `dotnet build ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Step 2: DataModel + Mapper
 
-5. `Infra.Persistence/DataModels/UserDataModel.cs`
-6. `Infra.Persistence/Mappers/UserDataModelMapper.cs`
+5. `Infra.Data.PostgreSql/DataModels/UserDataModel.cs`
+6. `Infra.Data.PostgreSql/Mappers/UserDataModelMapper.cs`
 
-**Verify**: `dotnet build ShopDemo.Auth.Infra.Persistence.csproj`
+**Verify**: `dotnet build ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Step 3: Factories + Adapter
 
-7. `Infra.Persistence/Factories/UserDataModelFactory.cs`
-8. `Infra.Persistence/Factories/UserFactory.cs`
-9. `Infra.Persistence/Adapters/UserDataModelAdapter.cs`
+7. `Infra.Data.PostgreSql/Factories/UserDataModelFactory.cs`
+8. `Infra.Data.PostgreSql/Factories/UserFactory.cs`
+9. `Infra.Data.PostgreSql/Adapters/UserDataModelAdapter.cs`
 
-**Verify**: `dotnet build ShopDemo.Auth.Infra.Persistence.csproj`
+**Verify**: `dotnet build ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Step 4: DataModel Repository
 
-10. `Infra.Persistence/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs`
-11. `Infra.Persistence/DataModelsRepositories/UserDataModelRepository.cs`
+10. `Infra.Data.PostgreSql/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs`
+11. `Infra.Data.PostgreSql/DataModelsRepositories/UserDataModelRepository.cs`
 
-**Verify**: `dotnet build ShopDemo.Auth.Infra.Persistence.csproj`
+**Verify**: `dotnet build ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Step 5: PostgreSQL Repository
 
-12. `Infra.Persistence/Repositories/Interfaces/IUserPostgreSqlRepository.cs`
-13. `Infra.Persistence/Repositories/UserPostgreSqlRepository.cs`
+12. `Infra.Data.PostgreSql/Repositories/Interfaces/IUserPostgreSqlRepository.cs`
+13. `Infra.Data.PostgreSql/Repositories/UserPostgreSqlRepository.cs`
 
-**Verify**: `dotnet build ShopDemo.Auth.Infra.Persistence.csproj`
+**Verify**: `dotnet build ShopDemo.Auth.Infra.Data.PostgreSql.csproj`
 
 ### Step 6: Data Repository (abstraction layer)
 
@@ -62,7 +62,7 @@ These have no dependencies on domain types.
 
 ### Step 7: Unit Tests
 
-15. Create test project `ShopDemo.Auth.UnitTests.Infra.Persistence.csproj`
+15. Create test project `ShopDemo.Auth.UnitTests.Infra.Data.PostgreSql.csproj`
 16. Create test project `ShopDemo.Auth.UnitTests.Infra.Data.csproj`
 17. Write tests for each class (see plan.md for file list)
 
@@ -82,7 +82,7 @@ These have no dependencies on domain types.
 ## Key Patterns to Follow
 
 - **Template reference**: `src/templates/Infra.Data.PostgreSql/` is the normative source
-- **Namespace**: `ShopDemo.Auth.Infra.Persistence.*` (not `Infra.Data.PostgreSql`)
+- **Namespace**: `ShopDemo.Auth.Infra.Data.PostgreSql.*` (not `Infra.Data.PostgreSql`)
 - **GlobalUsings**: Already exists — `ExecutionContext = Bedrock.BuildingBlocks.Core.ExecutionContexts.ExecutionContext`
 - **Sealed classes**: All implementation classes must be `sealed`
 - **Interface subfolder**: All interfaces in `Interfaces/` subdirectory

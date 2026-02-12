@@ -1,12 +1,12 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers;
 using Bedrock.BuildingBlocks.Testing;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
-using ShopDemo.Auth.Infra.Persistence.Mappers;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Mappers;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.Mappers;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Mappers;
 
 public class UserDataModelMapperTests : TestBase
 {

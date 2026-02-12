@@ -38,9 +38,9 @@ public interface IUserRepository : IRepository<User>
 ## Layer 2: PostgreSQL Repository Interface (new)
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Persistence/Repositories/Interfaces/IUserPostgreSqlRepository.cs
+// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/Repositories/Interfaces/IUserPostgreSqlRepository.cs
 
-namespace ShopDemo.Auth.Infra.Persistence.Repositories.Interfaces;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 
 public interface IUserPostgreSqlRepository
     : IPostgreSqlRepository<User>
@@ -70,9 +70,9 @@ public interface IUserPostgreSqlRepository
 ## Layer 3: DataModel Repository Interface (new)
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Persistence/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs
+// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/DataModelsRepositories/Interfaces/IUserDataModelRepository.cs
 
-namespace ShopDemo.Auth.Infra.Persistence.DataModelsRepositories.Interfaces;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
 
 public interface IUserDataModelRepository
     : IPostgreSqlDataModelRepository<UserDataModel>
@@ -102,9 +102,9 @@ public interface IUserDataModelRepository
 ## Layer 4: Connection and UnitOfWork Interfaces (new)
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Persistence/Connections/Interfaces/IAuthPostgreSqlConnection.cs
+// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/Connections/Interfaces/IAuthPostgreSqlConnection.cs
 
-namespace ShopDemo.Auth.Infra.Persistence.Connections.Interfaces;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
 
 public interface IAuthPostgreSqlConnection
     : IPostgreSqlConnection
@@ -113,9 +113,9 @@ public interface IAuthPostgreSqlConnection
 ```
 
 ```csharp
-// File: samples/ShopDemo/Auth/Infra.Persistence/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs
+// File: samples/ShopDemo/Auth/Infra.Data.PostgreSql/UnitOfWork/Interfaces/IAuthPostgreSqlUnitOfWork.cs
 
-namespace ShopDemo.Auth.Infra.Persistence.UnitOfWork.Interfaces;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork.Interfaces;
 
 public interface IAuthPostgreSqlUnitOfWork
     : IPostgreSqlUnitOfWork
@@ -130,9 +130,9 @@ IUserRepository (Domain)
     ↑ implemented by
 UserRepository (Infra.Data) → wraps IUserPostgreSqlRepository
     ↑ delegates to
-IUserPostgreSqlRepository (Infra.Persistence) → uses Factories for entity↔DataModel
+IUserPostgreSqlRepository (Infra.Data.PostgreSql) → uses Factories for entity↔DataModel
     ↑ delegates to
-IUserDataModelRepository (Infra.Persistence) → raw DataModel CRUD + custom queries
+IUserDataModelRepository (Infra.Data.PostgreSql) → raw DataModel CRUD + custom queries
     ↑ uses
 IAuthPostgreSqlUnitOfWork → IAuthPostgreSqlConnection → PostgreSQL
 ```

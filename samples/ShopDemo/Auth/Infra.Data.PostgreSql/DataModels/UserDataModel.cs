@@ -1,6 +1,6 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 
-namespace ShopDemo.Auth.Infra.Persistence.DataModels;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 
 public class UserDataModel : DataModelBase
 {

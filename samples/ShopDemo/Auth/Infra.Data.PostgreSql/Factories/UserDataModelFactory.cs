@@ -1,8 +1,8 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Factories;
 using ShopDemo.Auth.Domain.Entities.Users;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 
-namespace ShopDemo.Auth.Infra.Persistence.Factories;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Factories;
 
 public static class UserDataModelFactory
 {

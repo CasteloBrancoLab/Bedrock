@@ -5,11 +5,11 @@ using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Models;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
-using ShopDemo.Auth.Infra.Persistence.DataModelsRepositories.Interfaces;
-using ShopDemo.Auth.Infra.Persistence.UnitOfWork.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork.Interfaces;
 
-namespace ShopDemo.Auth.Infra.Persistence.DataModelsRepositories;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories;
 
 public sealed class UserDataModelRepository
     : DataModelRepositoryBase<UserDataModel>,

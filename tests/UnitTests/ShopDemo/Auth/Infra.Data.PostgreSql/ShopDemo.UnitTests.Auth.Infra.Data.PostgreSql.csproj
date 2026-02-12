@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\src\BuildingBlocks\Testing\Bedrock.BuildingBlocks.Testing.csproj" />
-    <ProjectReference Include="..\..\..\..\..\samples\ShopDemo\Auth\Infra.Persistence\ShopDemo.Auth.Infra.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\..\..\samples\ShopDemo\Auth\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj" />
   </ItemGroup>
 
 </Project>

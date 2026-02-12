@@ -8,13 +8,13 @@ using Bedrock.BuildingBlocks.Testing;
 using Bogus;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
-using ShopDemo.Auth.Infra.Persistence.Factories;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Factories;
 using ShopDemo.Core.Entities.Users.Enums;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.Factories;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Factories;
 
 public class UserDataModelFactoryTests : TestBase
 {

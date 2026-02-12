@@ -1,12 +1,12 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModels;
 using Bedrock.BuildingBlocks.Testing;
 using Bogus;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.DataModels;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.DataModels;
 
 public class UserDataModelTests : TestBase
 {

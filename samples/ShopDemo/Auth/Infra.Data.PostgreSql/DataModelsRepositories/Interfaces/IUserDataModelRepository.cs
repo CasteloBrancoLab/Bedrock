@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.DataModelRepositories.Interfaces;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 
-namespace ShopDemo.Auth.Infra.Persistence.DataModelsRepositories.Interfaces;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
 
 public interface IUserDataModelRepository
     : IPostgreSqlDataModelRepository<UserDataModel>

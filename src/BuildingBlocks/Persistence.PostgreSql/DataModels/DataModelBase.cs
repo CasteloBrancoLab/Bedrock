@@ -6,6 +6,9 @@ public class DataModelBase
     public Guid TenantCode { get; set; }
     public string CreatedBy { get; set; } = null!;
     public DateTimeOffset CreatedAt { get; set; }
+    public Guid CreatedCorrelationId { get; set; }
+    public string CreatedExecutionOrigin { get; set; } = null!;
+    public string CreatedBusinessOperationCode { get; set; } = null!;
     public string? LastChangedBy { get; set; }
     public DateTimeOffset? LastChangedAt { get; set; }
     public string? LastChangedExecutionOrigin { get; set; }

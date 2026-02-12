@@ -6,7 +6,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.Connections;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Connections;
 
 public class AuthPostgreSqlConnectionTests : TestBase
 {
@@ -23,7 +23,7 @@ public class AuthPostgreSqlConnectionTests : TestBase
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection");
-        var connection = new ShopDemo.Auth.Infra.Persistence.Connections.AuthPostgreSqlConnection(
+        var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
             configurationMock.Object);
 
         // Assert
@@ -40,7 +40,7 @@ public class AuthPostgreSqlConnectionTests : TestBase
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection");
-        var connection = new ShopDemo.Auth.Infra.Persistence.Connections.AuthPostgreSqlConnection(
+        var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
             configurationMock.Object);
 
         // Assert
@@ -57,7 +57,7 @@ public class AuthPostgreSqlConnectionTests : TestBase
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection and checking state");
-        var connection = new ShopDemo.Auth.Infra.Persistence.Connections.AuthPostgreSqlConnection(
+        var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
             configurationMock.Object);
 
         // Assert
@@ -74,11 +74,11 @@ public class AuthPostgreSqlConnectionTests : TestBase
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection");
-        var connection = new ShopDemo.Auth.Infra.Persistence.Connections.AuthPostgreSqlConnection(
+        var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
             configurationMock.Object);
 
         // Assert
         LogAssert("Verifying implementation of IAuthPostgreSqlConnection");
-        connection.ShouldBeAssignableTo<ShopDemo.Auth.Infra.Persistence.Connections.Interfaces.IAuthPostgreSqlConnection>();
+        connection.ShouldBeAssignableTo<ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces.IAuthPostgreSqlConnection>();
     }
 }

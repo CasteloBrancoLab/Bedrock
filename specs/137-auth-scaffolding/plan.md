@@ -72,8 +72,8 @@ samples/ShopDemo/Auth/
 ├── Infra.Data/
 │   ├── ShopDemo.Auth.Infra.Data.csproj
 │   └── GlobalUsings.cs
-├── Infra.Persistence/
-│   ├── ShopDemo.Auth.Infra.Persistence.csproj
+├── Infra.Data.PostgreSql/
+│   ├── ShopDemo.Auth.Infra.Data.PostgreSql.csproj
 │   └── GlobalUsings.cs
 └── Api/
     ├── ShopDemo.Auth.Api.csproj
@@ -86,8 +86,8 @@ tests/UnitTests/ShopDemo/Auth/
 │   └── ShopDemo.UnitTests.Auth.Application.csproj
 ├── Infra.Data/
 │   └── ShopDemo.UnitTests.Auth.Infra.Data.csproj
-├── Infra.Persistence/
-│   └── ShopDemo.UnitTests.Auth.Infra.Persistence.csproj
+├── Infra.Data.PostgreSql/
+│   └── ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.csproj
 └── Api/
     └── ShopDemo.UnitTests.Auth.Api.csproj
 
@@ -98,7 +98,7 @@ tests/MutationTests/ShopDemo/Auth/
 │   └── stryker-config.json
 ├── Infra.Data/
 │   └── stryker-config.json
-├── Infra.Persistence/
+├── Infra.Data.PostgreSql/
 │   └── stryker-config.json
 └── Api/
     └── stryker-config.json
@@ -120,7 +120,7 @@ ShopDemo.Auth.Infra.Data
   → ShopDemo.Auth.Domain.Entities
   → Bedrock.BuildingBlocks.Data
 
-ShopDemo.Auth.Infra.Persistence
+ShopDemo.Auth.Infra.Data.PostgreSql
   → ShopDemo.Auth.Infra.Data
   → ShopDemo.Auth.Domain.Entities
   → Bedrock.BuildingBlocks.Persistence.PostgreSql

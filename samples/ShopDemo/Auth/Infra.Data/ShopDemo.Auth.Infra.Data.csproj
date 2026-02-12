@@ -3,7 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Domain\ShopDemo.Auth.Domain.csproj" />
     <ProjectReference Include="..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj" />
-    <ProjectReference Include="..\Infra.Persistence\ShopDemo.Auth.Infra.Persistence.csproj" />
+    <ProjectReference Include="..\Infra.Data.PostgreSql\ShopDemo.Auth.Infra.Data.PostgreSql.csproj" />
     <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Data\Bedrock.BuildingBlocks.Data.csproj" />
   </ItemGroup>
 

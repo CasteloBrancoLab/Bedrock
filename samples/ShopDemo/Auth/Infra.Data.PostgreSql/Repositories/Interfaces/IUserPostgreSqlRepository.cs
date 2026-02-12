@@ -2,7 +2,7 @@ using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Entities.Users;
 
-namespace ShopDemo.Auth.Infra.Persistence.Repositories.Interfaces;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 
 public interface IUserPostgreSqlRepository
     : IPostgreSqlRepository<User>

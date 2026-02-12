@@ -2,9 +2,9 @@ using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Connections;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Connections.Models;
 using Microsoft.Extensions.Configuration;
-using ShopDemo.Auth.Infra.Persistence.Connections.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
 
-namespace ShopDemo.Auth.Infra.Persistence.Connections;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.Connections;
 
 public sealed class AuthPostgreSqlConnection
     : PostgreSqlConnectionBase,

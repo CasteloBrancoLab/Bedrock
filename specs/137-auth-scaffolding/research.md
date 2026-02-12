@@ -23,7 +23,7 @@ Scaffolding feature — pesquisa mínima necessária. Todas as decisões técnic
 
 ### D3: Camadas do Auth
 
-**Decisão**: 5 camadas (Domain.Entities, Application, Infra.Data, Infra.Persistence, Api).
+**Decisão**: 5 camadas (Domain.Entities, Application, Infra.Data, Infra.Data.PostgreSql, Api).
 **Razão**: Definido pela arquitetura na issue #136. Cada camada tem responsabilidade clara na arquitetura limpa.
 **Alternativas**: Nenhuma considerada — arquitetura definida previamente.
 

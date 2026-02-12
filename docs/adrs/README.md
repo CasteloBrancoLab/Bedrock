@@ -10,7 +10,7 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 
 | Prefixo | Categoria | Descrição | Status |
 |---------|-----------|-----------|--------|
-| **CS** | [Code Style](./code-style/README.md) | Organização de código, convenções de namespace e estrutura de diretórios | 1 ADR |
+| **CS** | [Code Style](./code-style/README.md) | Organização de código, convenções de namespace e estrutura de diretórios | 3 ADRs |
 | **DE** | [Domain Entities](./domain-entities/README.md) | Entidades de domínio, agregados e value objects | 60 ADRs |
 | **RE** | Repositories | Persistência e acesso a dados | Em breve |
 | **AS** | Application Services | Serviços de aplicação e casos de uso | Em breve |
@@ -144,6 +144,8 @@ Links para implementações de referência no repositório.
 
 ### Code Style (CS)
 - [CS-001: Interfaces em Namespace Interfaces](./code-style/CS-001-interfaces-em-namespace-interfaces.md)
+- [CS-002: Lambdas Inline Devem Ser Static em Metodos do Projeto](./code-style/CS-002-lambdas-inline-devem-ser-static.md)
+- [CS-003: Logging Sempre com Distributed Tracing](./code-style/CS-003-logging-sempre-com-distributed-tracing.md)
 - [Ver todas as ADRs de Code Style](./code-style/)
 
 ### Domain Entities (DE)

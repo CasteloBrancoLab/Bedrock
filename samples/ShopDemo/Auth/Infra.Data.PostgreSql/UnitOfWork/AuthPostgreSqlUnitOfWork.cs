@@ -1,9 +1,9 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.UnitOfWork;
 using Microsoft.Extensions.Logging;
-using ShopDemo.Auth.Infra.Persistence.Connections.Interfaces;
-using ShopDemo.Auth.Infra.Persistence.UnitOfWork.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork.Interfaces;
 
-namespace ShopDemo.Auth.Infra.Persistence.UnitOfWork;
+namespace ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork;
 
 public sealed class AuthPostgreSqlUnitOfWork
     : PostgreSqlUnitOfWorkBase,

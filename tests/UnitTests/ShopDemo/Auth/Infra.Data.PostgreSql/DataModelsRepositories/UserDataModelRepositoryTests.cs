@@ -3,14 +3,14 @@ using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
-using ShopDemo.Auth.Infra.Persistence.DataModelsRepositories;
-using ShopDemo.Auth.Infra.Persistence.UnitOfWork.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories;
+using ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork.Interfaces;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.DataModelsRepositories;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.DataModelsRepositories;
 
 public class UserDataModelRepositoryTests : TestBase
 {

@@ -12,15 +12,15 @@ using Bogus;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
-using ShopDemo.Auth.Infra.Persistence.DataModels;
-using ShopDemo.Auth.Infra.Persistence.DataModelsRepositories.Interfaces;
-using ShopDemo.Auth.Infra.Persistence.Repositories;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
+using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories;
 using ShopDemo.Core.Entities.Users.Enums;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Infra.Persistence.Repositories;
+namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Repositories;
 
 public class UserPostgreSqlRepositoryTests : TestBase
 {
