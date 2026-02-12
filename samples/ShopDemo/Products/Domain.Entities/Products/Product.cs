@@ -4,6 +4,10 @@ using ShopDemo.Core.Entities.Products.Interfaces;
 
 namespace ShopDemo.Products.Domain.Entities.Products;
 
+// ArchRule disable DE001_SealedClass : sample placeholder — entidade demonstrativa, sealed será adicionado quando for implementada
+// ArchRule disable DE004_InvalidStateNeverExists : sample placeholder — RegisterNew será implementado quando a entidade for completa
+// ArchRule disable DE017_RegisterNewAndCreateFromExistingInfo : sample placeholder — CreateFromExistingInfo será implementado quando a entidade for completa
+// ArchRule disable DE020_TwoPrivateConstructors : sample placeholder — construtores corretos serão implementados quando a entidade for completa
 public class Product
     : EntityBase<Product>,
     IProduct

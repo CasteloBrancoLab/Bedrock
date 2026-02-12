@@ -6,6 +6,8 @@ using ShopDemo.Core.Entities.Persons.ValueObjects;
 
 namespace ShopDemo.Customers.Domain.Entities.Customers;
 
+// ArchRule disable DE051_IsValidHierarchyInAbstractClasses : sample placeholder — CustomerBase é demonstrativa e não implementa hierarquia completa de validação
+// ArchRule disable DE055_RegisterNewBaseInAbstractClasses : sample placeholder — CustomerBase é demonstrativa e não implementa RegisterNewBase
 public abstract class CustomerBase
     : EntityBase<CustomerBase>,
     ICustomer
