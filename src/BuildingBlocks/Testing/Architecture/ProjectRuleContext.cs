@@ -30,4 +30,9 @@ public sealed class ProjectRuleContext
     /// Todos os nomes de projetos no escopo da fixture.
     /// </summary>
     public required IReadOnlySet<string> AllProjectNames { get; init; }
+
+    /// <summary>
+    /// Nomes dos pacotes NuGet referenciados diretamente via PackageReference.
+    /// </summary>
+    public IReadOnlyList<string> DirectPackageReferences { get; init; } = [];
 }

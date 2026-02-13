@@ -37,11 +37,14 @@ public abstract class ProjectRule : Rule
             var references = ParseProjectReferences(csprojPath);
             var relativeCsprojPath = GetRelativePath(csprojPath, rootDir);
 
+            var packages = ParsePackageReferences(csprojPath);
+
             var context = new ProjectRuleContext
             {
                 ProjectName = projectName,
                 CsprojRelativePath = relativeCsprojPath,
                 DirectProjectReferences = references,
+                DirectPackageReferences = packages,
                 RootDir = rootDir,
                 AllProjectNames = allProjectNames
             };
@@ -126,5 +129,32 @@ public abstract class ProjectRule : Rule
         }
 
         return references;
+    }
+
+    /// <summary>
+    /// Parseia um .csproj e retorna os nomes dos pacotes NuGet referenciados via PackageReference.
+    /// </summary>
+    public static IReadOnlyList<string> ParsePackageReferences(string csprojPath)
+    {
+        var packages = new List<string>();
+
+        try
+        {
+            var doc = XDocument.Load(csprojPath);
+            var packageRefs = doc.Descendants("PackageReference");
+
+            foreach (var pr in packageRefs)
+            {
+                var include = pr.Attribute("Include")?.Value;
+                if (!string.IsNullOrEmpty(include))
+                    packages.Add(include);
+            }
+        }
+        catch
+        {
+            // Se nao conseguir parsear o .csproj, retorna lista vazia
+        }
+
+        return packages;
     }
 }

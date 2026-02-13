@@ -19,4 +19,10 @@ public abstract class InfrastructureRuleTestsBase<TFixture> : RuleTestBase<TFixt
     {
         AssertNoViolations(new IN001_CanonicalLayerDependenciesRule());
     }
+
+    [Fact]
+    public void IN002_Domain_Entities_devem_ter_zero_dependencias_externas()
+    {
+        AssertNoViolations(new IN002_DomainEntitiesZeroExternalDependenciesRule());
+    }
 }
