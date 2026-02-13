@@ -4,6 +4,20 @@
 
 Aceita
 
+## Validacao Automatizada
+
+Esta ADR e **informativa** — documenta decisoes de design, nao possui
+rule de arquitetura propria. A restricao principal (dominio nao conhece
+DataModels) ja e garantida indiretamente pelas rules existentes:
+
+- **IN-002**: Impede `*.Domain.Entities` de referenciar `Infra.Data.*`.
+- **IN-003**: Impede `*.Domain` de referenciar `Infra.Data.*`.
+
+As demais diretrizes (estrutura de pastas DataModels/Factories/Adapters,
+convencoes de nomenclatura) sao guidelines organizacionais internas da
+camada `Infra.Data.{Tech}` que nao se traduzem em constraints de
+ProjectReference/PackageReference.
+
 ## Contexto
 
 ### O Problema (Analogia)

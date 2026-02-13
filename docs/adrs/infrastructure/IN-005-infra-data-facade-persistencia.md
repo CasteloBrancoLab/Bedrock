@@ -4,6 +4,21 @@
 
 Aceita
 
+## Validacao Automatizada
+
+Esta ADR e **informativa** — documenta decisoes de design, nao possui
+rule de arquitetura propria. As restricoes de dependencia que ela
+descreve ja sao cobertas pelas rules existentes:
+
+- **IN-001**: Valida o grafo canonico de dependencias entre camadas
+  (`Infra.Data` -> `Domain`, `Domain.Entities`, `Infra.Data.{Tech}`).
+- **IN-003**: Garante que `Domain` nao referencia `Infra.Data`.
+
+As demais diretrizes (Facade pattern, orquestracao de tecnologias,
+nomenclatura de negocio em vez de CRUD) sao convencoes de implementacao
+interna da camada `Infra.Data` que nao se traduzem em constraints de
+ProjectReference/PackageReference.
+
 ## Contexto
 
 ### O Problema (Analogia)
