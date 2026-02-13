@@ -68,17 +68,17 @@ public sealed class IN001_CanonicalLayerDependenciesRule : InfrastructureRuleBas
         (".Api", BoundedContextLayer.Api),
     ];
 
-    protected override IReadOnlyList<Violation> AnalyzeProjectReferences(ProjectRuleContext context)
+    protected override IReadOnlyList<ProjectReferenceCheckResult> AnalyzeProjectReferences(ProjectRuleContext context)
     {
-        var violations = new List<Violation>();
+        var results = new List<ProjectReferenceCheckResult>();
 
         var sourceLayer = ClassifyLayer(context.ProjectName);
         if (sourceLayer == BoundedContextLayer.Unknown)
-            return violations;
+            return results;
 
         var sourceBcPrefix = ExtractBcPrefix(context.ProjectName, sourceLayer);
         if (string.IsNullOrEmpty(sourceBcPrefix))
-            return violations;
+            return results;
 
         foreach (var reference in context.DirectProjectReferences)
         {
@@ -97,31 +97,46 @@ public sealed class IN001_CanonicalLayerDependenciesRule : InfrastructureRuleBas
                 continue;
 
             // Verificar se a dependencia é permitida
-            if (!AllowedDependencies.TryGetValue(sourceLayer, out var allowed) ||
-                !allowed.Contains(targetLayer))
+            if (AllowedDependencies.TryGetValue(sourceLayer, out var allowed) &&
+                allowed.Contains(targetLayer))
+            {
+                results.Add(new ProjectReferenceCheckResult
+                {
+                    TargetReference = reference,
+                    Description = $"{sourceLayer} -> {targetLayer} (permitido)",
+                    IsValid = true
+                });
+            }
+            else
             {
                 var allowedNames = AllowedDependencies.TryGetValue(sourceLayer, out var a) && a.Length > 0
                     ? string.Join(", ", a)
                     : "(nenhuma camada intra-BC)";
 
-                violations.Add(new Violation
+                results.Add(new ProjectReferenceCheckResult
                 {
-                    Rule = Name,
-                    Severity = DefaultSeverity,
-                    Adr = AdrPath,
-                    Project = context.ProjectName,
-                    File = context.CsprojRelativePath,
-                    Line = 1,
-                    Message = $"{context.ProjectName} ({sourceLayer}) referencia {reference} ({targetLayer}), " +
-                              $"mas {sourceLayer} so pode referenciar: {allowedNames}.",
-                    LlmHint = $"Remover a ProjectReference de '{reference}' no .csproj de '{context.ProjectName}'. " +
-                              $"A camada {sourceLayer} nao deve depender diretamente de {targetLayer}. " +
-                              $"Consulte a ADR IN-001 para o grafo de dependencias correto."
+                    TargetReference = reference,
+                    Description = $"{sourceLayer} -> {targetLayer} (proibido)",
+                    IsValid = false,
+                    Violation = new Violation
+                    {
+                        Rule = Name,
+                        Severity = DefaultSeverity,
+                        Adr = AdrPath,
+                        Project = context.ProjectName,
+                        File = context.CsprojRelativePath,
+                        Line = 1,
+                        Message = $"{context.ProjectName} ({sourceLayer}) referencia {reference} ({targetLayer}), " +
+                                  $"mas {sourceLayer} so pode referenciar: {allowedNames}.",
+                        LlmHint = $"Remover a ProjectReference de '{reference}' no .csproj de '{context.ProjectName}'. " +
+                                  $"A camada {sourceLayer} nao deve depender diretamente de {targetLayer}. " +
+                                  $"Consulte a ADR IN-001 para o grafo de dependencias correto."
+                    }
                 });
             }
         }
 
-        return violations;
+        return results;
     }
 
     /// <summary>

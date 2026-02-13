@@ -46,16 +46,16 @@ public abstract class ProjectRule : Rule
                 AllProjectNames = allProjectNames
             };
 
-            var violations = AnalyzeProjectReferences(context);
+            var checkResults = AnalyzeProjectReferences(context);
 
-            var typeResults = violations.Select(v => new TypeAnalysisResult
+            var typeResults = checkResults.Select(cr => new TypeAnalysisResult
             {
-                TypeName = v.Message,
-                TypeFullName = $"{projectName} -> {v.Message}",
+                TypeName = cr.TargetReference,
+                TypeFullName = $"{projectName} -> {cr.TargetReference}",
                 File = relativeCsprojPath,
-                Line = v.Line,
-                Status = TypeAnalysisStatus.Failed,
-                Violation = v
+                Line = cr.Violation?.Line ?? 1,
+                Status = cr.IsValid ? TypeAnalysisStatus.Passed : TypeAnalysisStatus.Failed,
+                Violation = cr.Violation
             }).ToList();
 
             results.Add(new RuleAnalysisResult
@@ -74,11 +74,12 @@ public abstract class ProjectRule : Rule
     }
 
     /// <summary>
-    /// Analisa as ProjectReferences de um projeto e retorna violacoes encontradas.
+    /// Analisa as ProjectReferences de um projeto e retorna os resultados de cada verificacao.
+    /// Deve retornar um resultado para cada referencia verificada (tanto passes quanto falhas).
     /// </summary>
     /// <param name="context">Contexto com informacoes do projeto e suas referencias.</param>
-    /// <returns>Lista de violacoes encontradas (vazia se nenhuma).</returns>
-    protected abstract IReadOnlyList<Violation> AnalyzeProjectReferences(ProjectRuleContext context);
+    /// <returns>Lista de resultados de verificacao (passes e falhas).</returns>
+    protected abstract IReadOnlyList<ProjectReferenceCheckResult> AnalyzeProjectReferences(ProjectRuleContext context);
 
     /// <summary>
     /// Busca o .csproj de um projeto pelo nome no diretorio src/.

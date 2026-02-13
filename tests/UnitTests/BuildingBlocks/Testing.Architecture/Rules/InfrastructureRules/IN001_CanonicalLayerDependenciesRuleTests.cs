@@ -134,7 +134,7 @@ public class IN001_CanonicalLayerDependenciesRuleTests : TestBase
     [InlineData("ShopDemo.Auth.Api", "ShopDemo.Auth.Application")]
     [InlineData("ShopDemo.Auth.Api", "ShopDemo.Auth.Infra.CrossCutting.Bootstrapper")]
     [InlineData("ShopDemo.Auth.Api", "ShopDemo.Auth.Infra.CrossCutting.Configuration")]
-    public void AllowedReference_ShouldNotGenerateViolation(string sourceProject, string targetProject)
+    public void AllowedReference_ShouldGeneratePassedResult(string sourceProject, string targetProject)
     {
         // Arrange
         LogArrange($"Testing allowed reference: {sourceProject} -> {targetProject}");
@@ -150,12 +150,12 @@ public class IN001_CanonicalLayerDependenciesRuleTests : TestBase
             var results = rule.Analyze(compilations, tempDir);
 
             // Assert
-            LogAssert("Verifying no violations");
-            var violations = results
-                .SelectMany(r => r.TypeResults)
-                .Where(t => t.Violation is not null)
-                .ToList();
-            violations.ShouldBeEmpty();
+            LogAssert("Verifying passed result for allowed reference");
+            var typeResults = results.SelectMany(r => r.TypeResults).ToList();
+            typeResults.Count.ShouldBe(1);
+            typeResults[0].Status.ShouldBe(TypeAnalysisStatus.Passed);
+            typeResults[0].TypeName.ShouldBe(targetProject);
+            typeResults[0].Violation.ShouldBeNull();
         }
         finally
         {
@@ -236,12 +236,9 @@ public class IN001_CanonicalLayerDependenciesRuleTests : TestBase
             var results = rule.Analyze(compilations, tempDir);
 
             // Assert
-            LogAssert("Verifying no violations for BuildingBlocks reference");
-            var violations = results
-                .SelectMany(r => r.TypeResults)
-                .Where(t => t.Violation is not null)
-                .ToList();
-            violations.ShouldBeEmpty();
+            LogAssert("Verifying BuildingBlocks reference is skipped (no results)");
+            var typeResults = results.SelectMany(r => r.TypeResults).ToList();
+            typeResults.ShouldBeEmpty();
         }
         finally
         {
@@ -273,12 +270,9 @@ public class IN001_CanonicalLayerDependenciesRuleTests : TestBase
             var results = rule.Analyze(compilations, tempDir);
 
             // Assert
-            LogAssert("Verifying no violations for cross-BC reference");
-            var violations = results
-                .SelectMany(r => r.TypeResults)
-                .Where(t => t.Violation is not null)
-                .ToList();
-            violations.ShouldBeEmpty();
+            LogAssert("Verifying cross-BC reference is skipped (no results)");
+            var typeResults = results.SelectMany(r => r.TypeResults).ToList();
+            typeResults.ShouldBeEmpty();
         }
         finally
         {
@@ -309,12 +303,9 @@ public class IN001_CanonicalLayerDependenciesRuleTests : TestBase
             var results = rule.Analyze(compilations, tempDir);
 
             // Assert
-            LogAssert("Verifying no violations for unknown layer");
-            var violations = results
-                .SelectMany(r => r.TypeResults)
-                .Where(t => t.Violation is not null)
-                .ToList();
-            violations.ShouldBeEmpty();
+            LogAssert("Verifying unknown layer project is skipped (no results)");
+            var typeResults = results.SelectMany(r => r.TypeResults).ToList();
+            typeResults.ShouldBeEmpty();
         }
         finally
         {
