@@ -39,7 +39,7 @@ public abstract class Rule
     /// <param name="compilations">Compilações dos projetos a serem analisados.</param>
     /// <param name="rootDir">Diretório raiz do repositório.</param>
     /// <returns>Lista de resultados por projeto, contendo o status de cada tipo analisado.</returns>
-    public IReadOnlyList<RuleAnalysisResult> Analyze(
+    public virtual IReadOnlyList<RuleAnalysisResult> Analyze(
         IReadOnlyDictionary<string, Compilation> compilations,
         string rootDir)
     {
