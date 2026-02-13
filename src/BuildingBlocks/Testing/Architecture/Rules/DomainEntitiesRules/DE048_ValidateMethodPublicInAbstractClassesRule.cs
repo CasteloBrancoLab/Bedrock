@@ -20,7 +20,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class DE048_ValidateMethodPublicInAbstractClassesRule : Rule
+public sealed class DE048_ValidateMethodPublicInAbstractClassesRule : DomainEntitiesGeneralRuleBase
 {
     // Properties
     public override string Name => "DE048_ValidateMethodPublicInAbstractClasses";

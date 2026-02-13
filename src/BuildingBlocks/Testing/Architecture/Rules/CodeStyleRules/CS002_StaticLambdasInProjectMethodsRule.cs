@@ -9,7 +9,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.CodeStyleRules;
 /// pertence ao namespace raiz do projeto DEVE ser <c>static</c>.
 /// Previne closures e alocações no heap.
 /// </summary>
-public sealed class CS002_StaticLambdasInProjectMethodsRule : Rule
+public sealed class CS002_StaticLambdasInProjectMethodsRule : CodeStyleRuleBase
 {
     public override string Name => "CS002_StaticLambdasInProjectMethods";
     public override string Description =>

@@ -18,6 +18,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </summary>
 public abstract class DomainEntityRuleBase : Rule
 {
+    public override string Category => "Domain Entities";
     /// <summary>
     /// Nome do tipo base genérico de entidades.
     /// </summary>

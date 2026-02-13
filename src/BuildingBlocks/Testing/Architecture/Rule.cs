@@ -11,6 +11,11 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture;
 public abstract class Rule
 {
     /// <summary>
+    /// Categoria da regra (ex: "Domain Entities", "Code Style", "Infrastructure").
+    /// </summary>
+    public abstract string Category { get; }
+
+    /// <summary>
     /// Nome identificador da regra (ex: DE001_SealedClass).
     /// </summary>
     public abstract string Name { get; }
@@ -104,6 +109,7 @@ public abstract class Rule
 
             results.Add(new RuleAnalysisResult
             {
+                RuleCategory = Category,
                 RuleName = Name,
                 RuleDescription = Description,
                 DefaultSeverity = DefaultSeverity,

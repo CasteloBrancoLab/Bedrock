@@ -8,7 +8,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.CodeStyleRules;
 /// disponível como parâmetro DEVE usar as variantes <c>ForDistributedTracing</c>
 /// em vez da API padrão do <c>ILogger</c>.
 /// </summary>
-public sealed class CS003_LoggingWithDistributedTracingRule : Rule
+public sealed class CS003_LoggingWithDistributedTracingRule : CodeStyleRuleBase
 {
     private static readonly HashSet<string> ForbiddenLogMethods = new(StringComparer.Ordinal)
     {

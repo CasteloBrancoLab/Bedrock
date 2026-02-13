@@ -7,6 +7,11 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture;
 public sealed class RuleAnalysisResult
 {
     /// <summary>
+    /// Categoria da regra (ex: "Domain Entities", "Code Style", "Infrastructure").
+    /// </summary>
+    public required string RuleCategory { get; init; }
+
+    /// <summary>
     /// Nome identificador da regra (ex: DE001_SealedClass).
     /// </summary>
     public required string RuleName { get; init; }

@@ -19,7 +19,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class DE056_NoCreateFromExistingInfoInAbstractClassesRule : Rule
+public sealed class DE056_NoCreateFromExistingInfoInAbstractClassesRule : DomainEntitiesGeneralRuleBase
 {
     // Properties
     public override string Name => "DE056_NoCreateFromExistingInfoInAbstractClasses";

@@ -50,7 +50,9 @@ public abstract class RuleTestBase<TFixture> : TestBase
         Manager.AddRuleResults(ruleResults);
 
         // Sempre gerar relatório JSON (mesmo sem violações, para o HTML report)
-        var jsonPath = Path.Combine(RootDir, "artifacts", "architecture", "architecture-report.json");
+        // Usa nome do assembly de teste como subpasta para evitar conflito de I/O entre projetos paralelos
+        var testProjectName = GetType().Assembly.GetName().Name ?? "unknown";
+        var jsonPath = Path.Combine(RootDir, "artifacts", "architecture", testProjectName, "architecture-report.json");
         Manager.WriteJsonReport(jsonPath);
 
         // Extrair violações dos resultados

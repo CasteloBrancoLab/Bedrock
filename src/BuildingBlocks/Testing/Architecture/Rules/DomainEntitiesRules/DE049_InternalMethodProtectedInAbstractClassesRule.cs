@@ -21,7 +21,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class DE049_InternalMethodProtectedInAbstractClassesRule : Rule
+public sealed class DE049_InternalMethodProtectedInAbstractClassesRule : DomainEntitiesGeneralRuleBase
 {
     // Properties
     public override string Name => "DE049_InternalMethodProtectedInAbstractClasses";

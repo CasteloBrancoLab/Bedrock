@@ -60,6 +60,7 @@ public abstract class ProjectRule : Rule
 
             results.Add(new RuleAnalysisResult
             {
+                RuleCategory = Category,
                 RuleName = Name,
                 RuleDescription = Description,
                 DefaultSeverity = DefaultSeverity,

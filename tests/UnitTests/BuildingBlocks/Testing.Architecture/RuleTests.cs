@@ -271,6 +271,7 @@ public class RuleTests : TestBase
 
     private sealed class AlwaysPassRule : Rule
     {
+        public override string Category => "Test";
         public override string Name => "AlwaysPass";
         public override string Description => "Always passes";
         public override Severity DefaultSeverity => Severity.Error;
@@ -281,6 +282,7 @@ public class RuleTests : TestBase
 
     private sealed class AlwaysFailRule : Rule
     {
+        public override string Category => "Test";
         public override string Name => "AlwaysFail";
         public override string Description => "Always fails";
         public override Severity DefaultSeverity => Severity.Error;
@@ -301,6 +303,7 @@ public class RuleTests : TestBase
 
     private sealed class SealedOnlyRule : Rule
     {
+        public override string Category => "Test";
         public override string Name => "SealedOnly";
         public override string Description => "Classes must be sealed";
         public override Severity DefaultSeverity => Severity.Error;

@@ -7,7 +7,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.InfrastructureRules;
 /// Opera no nivel de projeto (.csproj ProjectReferences), diferente das
 /// regras DE (tipos) e CS (code style).
 /// </summary>
-public sealed class IN001_CanonicalLayerDependenciesRule : ProjectRule
+public sealed class IN001_CanonicalLayerDependenciesRule : InfrastructureRuleBase
 {
     private const string BuildingBlocksPrefix = "Bedrock.BuildingBlocks.";
 

@@ -539,6 +539,7 @@ public class ViolationManagerTests : TestBase
     private static RuleAnalysisResult CreateRuleResultForProject(string ruleName, string projectName, IReadOnlyList<TypeAnalysisResult> typeResults) =>
         new()
         {
+            RuleCategory = "Test",
             RuleName = ruleName,
             RuleDescription = $"{ruleName} description",
             DefaultSeverity = Severity.Error,
