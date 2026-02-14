@@ -12,6 +12,9 @@ public static class DataModelBaseAdapter
         dataModel.TenantCode = entity.EntityInfo.TenantInfo.Code;
         dataModel.CreatedBy = entity.EntityInfo.EntityChangeInfo.CreatedBy;
         dataModel.CreatedAt = entity.EntityInfo.EntityChangeInfo.CreatedAt;
+        dataModel.CreatedCorrelationId = entity.EntityInfo.EntityChangeInfo.CreatedCorrelationId;
+        dataModel.CreatedExecutionOrigin = entity.EntityInfo.EntityChangeInfo.CreatedExecutionOrigin;
+        dataModel.CreatedBusinessOperationCode = entity.EntityInfo.EntityChangeInfo.CreatedBusinessOperationCode;
         dataModel.LastChangedBy = entity.EntityInfo.EntityChangeInfo.LastChangedBy;
         dataModel.LastChangedAt = entity.EntityInfo.EntityChangeInfo.LastChangedAt;
         dataModel.LastChangedExecutionOrigin = entity.EntityInfo.EntityChangeInfo.LastChangedExecutionOrigin;

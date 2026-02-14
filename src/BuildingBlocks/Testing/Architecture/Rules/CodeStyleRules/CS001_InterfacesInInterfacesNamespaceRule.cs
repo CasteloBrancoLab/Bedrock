@@ -7,7 +7,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.CodeStyleRules;
 /// refletindo no namespace. Exemplo: Passwords/Interfaces/IPasswordHasher.cs
 /// com namespace ...Passwords.Interfaces.
 /// </summary>
-public sealed class CS001_InterfacesInInterfacesNamespaceRule : Rule
+public sealed class CS001_InterfacesInInterfacesNamespaceRule : CodeStyleRuleBase
 {
     public override string Name => "CS001_InterfacesInInterfacesNamespace";
     public override string Description =>

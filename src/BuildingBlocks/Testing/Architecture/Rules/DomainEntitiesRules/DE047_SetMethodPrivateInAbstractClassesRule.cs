@@ -20,7 +20,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class DE047_SetMethodPrivateInAbstractClassesRule : Rule
+public sealed class DE047_SetMethodPrivateInAbstractClassesRule : DomainEntitiesGeneralRuleBase
 {
     // Properties
     public override string Name => "DE047_SetMethodPrivateInAbstractClasses";

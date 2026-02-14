@@ -23,6 +23,7 @@ public class RuleAnalysisResultTests : TestBase
         LogAct("Instantiating RuleAnalysisResult");
         var result = new RuleAnalysisResult
         {
+            RuleCategory = "Test",
             RuleName = "DE001_SealedClass",
             RuleDescription = "Classes must be sealed",
             DefaultSeverity = Severity.Error,
@@ -159,6 +160,7 @@ public class RuleAnalysisResultTests : TestBase
     private static RuleAnalysisResult CreateResult(IReadOnlyList<TypeAnalysisResult> typeResults) =>
         new()
         {
+            RuleCategory = "Test",
             RuleName = "TestRule",
             RuleDescription = "Test description",
             DefaultSeverity = Severity.Error,

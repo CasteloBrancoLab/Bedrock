@@ -3,34 +3,65 @@ using System.Text;
 using System.Text.Json;
 
 // Gerador de relatório HTML para testes de arquitetura
-// Uso: ArchitectureReportGenerator <json-report> <output-file> <git-branch> <git-commit>
+// Uso: ArchitectureReportGenerator <json-dir-or-file> <output-file> <git-branch> <git-commit>
+// Aceita um diretório com subpastas contendo architecture-report.json ou um arquivo JSON único.
 
-var jsonReportPath = args.Length > 0 ? args[0] : "artifacts/architecture/architecture-report.json";
+var jsonInput = args.Length > 0 ? args[0] : "artifacts/architecture";
 var outputFile = args.Length > 1 ? args[1] : "artifacts/architecture-report/index.html";
 var gitBranch = args.Length > 2 ? args[2] : "unknown";
 var gitCommit = args.Length > 3 ? args[3] : "unknown";
 
-if (!File.Exists(jsonReportPath))
+// Descobrir JSONs: diretório com subpastas ou arquivo único
+var jsonFiles = new List<string>();
+if (Directory.Exists(jsonInput))
 {
-    Console.WriteLine($"Arquivo JSON não encontrado: {jsonReportPath}");
+    jsonFiles.AddRange(Directory.GetFiles(jsonInput, "architecture-report.json", SearchOption.AllDirectories)
+        .Where(f => !f.Replace('\\', '/').EndsWith("architecture/architecture-report.json"))
+        .Order(StringComparer.OrdinalIgnoreCase));
+}
+else if (File.Exists(jsonInput))
+{
+    jsonFiles.Add(jsonInput);
+}
+
+if (jsonFiles.Count == 0)
+{
+    Console.WriteLine($"Nenhum relatório JSON encontrado em: {jsonInput}");
     Console.WriteLine("Nenhuma violação de arquitetura para reportar.");
     return 0;
 }
 
-Console.WriteLine($"Processando: {jsonReportPath}");
+Console.WriteLine($"Consolidando {jsonFiles.Count} relatórios JSON...");
 
-var jsonContent = File.ReadAllText(jsonReportPath);
-var report = JsonSerializer.Deserialize<JsonElement>(jsonContent);
+// Consolidar todos os JSONs
+var totalTypesAnalyzed = 0;
+var totalPassed = 0;
+var totalViolations = 0;
+var errors = 0;
+var warnings = 0;
+var infos = 0;
+var timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+var ruleResults = new List<JsonElement>();
 
-var totalTypesAnalyzed = report.GetProperty("totalTypesAnalyzed").GetInt32();
-var totalPassed = report.GetProperty("totalPassed").GetInt32();
-var totalViolations = report.GetProperty("totalViolations").GetInt32();
-var errors = report.GetProperty("errors").GetInt32();
-var warnings = report.GetProperty("warnings").GetInt32();
-var infos = report.GetProperty("infos").GetInt32();
-var timestamp = report.GetProperty("timestamp").GetString() ?? DateTime.UtcNow.ToString("O");
+foreach (var jsonFile in jsonFiles)
+{
+    var jsonContent = File.ReadAllText(jsonFile);
+    var report = JsonSerializer.Deserialize<JsonElement>(jsonContent);
 
-var ruleResults = report.GetProperty("ruleResults").EnumerateArray().ToList();
+    totalTypesAnalyzed += report.GetProperty("totalTypesAnalyzed").GetInt32();
+    totalPassed += report.GetProperty("totalPassed").GetInt32();
+    totalViolations += report.GetProperty("totalViolations").GetInt32();
+    errors += report.GetProperty("errors").GetInt32();
+    warnings += report.GetProperty("warnings").GetInt32();
+    infos += report.GetProperty("infos").GetInt32();
+
+    var ts = report.GetProperty("timestamp").GetString();
+    if (!string.IsNullOrEmpty(ts))
+        timestamp = ts;
+
+    ruleResults.AddRange(report.GetProperty("ruleResults").EnumerateArray());
+    Console.WriteLine($"  + {Path.GetDirectoryName(jsonFile)?.Split(Path.DirectorySeparatorChar).LastOrDefault() ?? jsonFile}");
+}
 
 // Agrupar por projeto (ordenado por nome)
 var byProject = ruleResults
@@ -216,7 +247,7 @@ static string GenerateHtml(
         var progressClass = projectFailed > 0 ? "has-failures" : "all-passed";
 
         sb.Append($"""
-            <article class="project-group">
+            <article class="project-group collapsed">
                 <div class="project-header" onclick="this.closest('.project-group').classList.toggle('collapsed')">
                     <span class="project-toggle">▼</span>
                     <span class="project-name">{WebUtility.HtmlEncode(projectName)}</span>
@@ -245,14 +276,13 @@ static string GenerateHtml(
             var rulePassed = types.Count(t => t.GetProperty("status").GetString() == "Passed");
             var ruleFailed = ruleTotal - rulePassed;
             sb.Append($"""
-                    <div class="rule-section">
+                    <div class="rule-section collapsed">
                         <div class="rule-header-inner" onclick="this.closest('.rule-section').classList.toggle('collapsed')">
                             <span class="rule-toggle">▼</span>
                             <div class="rule-meta">
                                 <div class="rule-name">{WebUtility.HtmlEncode(ruleName)}</div>
                                 <div class="rule-desc">{WebUtility.HtmlEncode(ruleDesc)}</div>
                                 <div class="rule-adr">ADR: <a href="{WebUtility.HtmlEncode(adrPath)}">{WebUtility.HtmlEncode(adrPath)}</a></div>
-                                <div style="margin-top:.25rem;font-size:.75rem;color:var(--muted)">Severidade: <span class="badge {(defaultSev switch { "Error" => "badge-error", "Warning" => "badge-warning", _ => "badge-info" })}" style="font-size:.65rem">{WebUtility.HtmlEncode(defaultSev)}</span></div>
                             </div>
                             <div class="rule-stats">
                                 <span class="badge badge-passed">{rulePassed}/{ruleTotal}</span>
@@ -320,56 +350,90 @@ static string GenerateHtml(
 
     sb.Append("</section>");
 
-    // Sumário por Regra (tabela consolidada)
-    var distinctRules = ruleResults
-        .GroupBy(r => r.GetProperty("ruleName").GetString() ?? "")
+    // Sumário por Regra agrupado por Categoria
+    var byCategory = ruleResults
+        .GroupBy(r => r.TryGetProperty("ruleCategory", out var cat) ? cat.GetString() ?? "Other" : "Other")
         .OrderBy(g => g.Key, StringComparer.Ordinal)
         .ToList();
 
     sb.Append("""
         <section>
             <h2 class="section-header">Sumário por Regra</h2>
-            <table style="width:100%;border-collapse:collapse;background:var(--card);border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)">
-                <thead><tr>
-                    <th style="padding:.75rem 1rem;text-align:left;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Regra</th>
-                    <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Severidade</th>
-                    <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Tipos</th>
-                    <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Passou</th>
-                    <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Falhou</th>
-                    <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Taxa</th>
-                </tr></thead>
-                <tbody>
     """);
 
-    foreach (var ruleGroup in distinctRules)
+    foreach (var categoryGroup in byCategory)
     {
-        var name = ruleGroup.Key;
-        var allTypes = ruleGroup.SelectMany(r => r.GetProperty("types").EnumerateArray()).ToList();
-        var rTotal = allTypes.Count;
-        var rPassed = allTypes.Count(t => t.GetProperty("status").GetString() == "Passed");
-        var rFailed = rTotal - rPassed;
-        var rRate = rTotal > 0 ? (rPassed * 100.0 / rTotal).ToString("F1") : "100.0";
-        var sev = ruleGroup.First().GetProperty("defaultSeverity").GetString() ?? "Error";
-        var sevColor = sev switch { "Error" => "var(--error)", "Warning" => "var(--warning)", _ => "var(--info)" };
+        var categoryName = categoryGroup.Key;
+        var categoryRules = categoryGroup
+            .GroupBy(r => r.GetProperty("ruleName").GetString() ?? "")
+            .OrderBy(g => g.Key, StringComparer.Ordinal)
+            .ToList();
+
+        var catTotal = categoryRules.Sum(g => g.SelectMany(r => r.GetProperty("types").EnumerateArray()).Count());
+        var catPassed = categoryRules.Sum(g => g.SelectMany(r => r.GetProperty("types").EnumerateArray()).Count(t => t.GetProperty("status").GetString() == "Passed"));
+        var catFailed = catTotal - catPassed;
 
         sb.Append($"""
-                    <tr>
-                        <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:500">{WebUtility.HtmlEncode(name)}</td>
-                        <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);color:{sevColor};font-weight:600">{WebUtility.HtmlEncode(sev)}</td>
-                        <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border)">{rTotal}</td>
-                        <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);color:var(--passed);font-weight:600">{rPassed}</td>
-                        <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);color:var(--error);font-weight:600">{rFailed}</td>
-                        <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);font-weight:600">{rRate}%</td>
-                    </tr>
+            <article class="project-group collapsed">
+                <div class="project-header" onclick="this.closest('.project-group').classList.toggle('collapsed')">
+                    <span class="project-toggle">▼</span>
+                    <span class="project-name">{WebUtility.HtmlEncode(categoryName)}</span>
+                    <div class="project-stats">
+                        <span class="badge badge-passed">{catPassed} passed</span>
         """);
+
+        if (catFailed > 0)
+            sb.Append($"""<span class="badge badge-error">{catFailed} failed</span>""");
+
+        sb.Append($"""
+                        <span style="font-size:.75rem;color:var(--muted)">{categoryRules.Count} regras</span>
+                    </div>
+                </div>
+                <div class="project-content">
+                    <table style="width:100%;border-collapse:collapse;background:var(--card)">
+                        <thead><tr>
+                            <th style="padding:.75rem 1rem;text-align:left;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Regra</th>
+                            <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Severidade</th>
+                            <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Tipos</th>
+                            <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Passou</th>
+                            <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Falhou</th>
+                            <th style="padding:.75rem 1rem;text-align:center;background:var(--table-header-bg);font-size:.75rem;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)">Taxa</th>
+                        </tr></thead>
+                        <tbody>
+        """);
+
+        foreach (var ruleGroup in categoryRules)
+        {
+            var name = ruleGroup.Key;
+            var allTypes = ruleGroup.SelectMany(r => r.GetProperty("types").EnumerateArray()).ToList();
+            var rTotal = allTypes.Count;
+            var rPassed = allTypes.Count(t => t.GetProperty("status").GetString() == "Passed");
+            var rFailed = rTotal - rPassed;
+            var rRate = rTotal > 0 ? (rPassed * 100.0 / rTotal).ToString("F1") : "100.0";
+            var sev = ruleGroup.First().GetProperty("defaultSeverity").GetString() ?? "Error";
+            var sevColor = sev switch { "Error" => "var(--muted)", "Warning" => "var(--warning)", _ => "var(--info)" };
+
+            sb.Append($"""
+                            <tr>
+                                <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-weight:500">{WebUtility.HtmlEncode(name)}</td>
+                                <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);color:{sevColor}">{WebUtility.HtmlEncode(sev)}</td>
+                                <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border)">{rTotal}</td>
+                                <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);color:var(--passed);font-weight:600">{rPassed}</td>
+                                <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);color:{(rFailed > 0 ? "var(--error)" : "var(--muted)")};font-weight:600">{rFailed}</td>
+                                <td style="padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border);font-weight:600">{rRate}%</td>
+                            </tr>
+            """);
+        }
+
+        sb.Append("</tbody></table></div></article>");
     }
 
-    sb.Append("</tbody></table></section>");
+    sb.Append("</section>");
 
     sb.Append($"""
             <footer class="footer">
                 <p><strong>Bedrock Framework</strong> - Relatório de Testes de Arquitetura</p>
-                <p>Projetos: {byProject.Count} | Regras: {distinctRules.Count} | Tipos: {totalTypes} | Violações: {totalViolations}</p>
+                <p>Projetos: {byProject.Count} | Regras: {ruleResults.Select(r => r.GetProperty("ruleName").GetString()).Distinct().Count()} | Tipos: {totalTypes} | Violações: {totalViolations}</p>
             </footer>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

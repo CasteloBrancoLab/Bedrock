@@ -22,12 +22,12 @@
 
 ## Consistência com Convenções do Projeto
 
-- [x] CHK011 Correção de path aplicada: `samples/ShopDemo/Auth/` em vez de `src/Services/Auth/`
+- [x] CHK011 Correção de path aplicada: `src/ShopDemo/Auth/` em vez de `src/Services/Auth/`
 - [x] CHK012 Nomenclatura segue convenção ShopDemo (`ShopDemo.Auth.*`)
 - [x] CHK013 Target framework `net10.0` conforme CLAUDE.md
 - [x] CHK014 Relação 1:1 entre projetos src e testes unitários
 - [x] CHK015 Stryker thresholds de 100% conforme CLAUDE.md
-- [x] CHK016 5 camadas definidas: Domain.Entities, Application, Infra.Data, Infra.Persistence, Api
+- [x] CHK016 5 camadas definidas: Domain.Entities, Application, Infra.Data, Infra.Data.PostgreSql, Api
 
 ## Rastreabilidade
 

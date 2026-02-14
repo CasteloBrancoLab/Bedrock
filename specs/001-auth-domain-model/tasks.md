@@ -16,8 +16,8 @@
 ## Path Conventions
 
 - **Source (BuildingBlocks)**: `src/BuildingBlocks/Security/`
-- **Source (Auth Domain.Entities)**: `samples/ShopDemo/Auth/Domain.Entities/`
-- **Source (Auth Domain)**: `samples/ShopDemo/Auth/Domain/`
+- **Source (Auth Domain.Entities)**: `src/ShopDemo/Auth/Domain.Entities/`
+- **Source (Auth Domain)**: `src/ShopDemo/Auth/Domain/`
 - **Unit Tests (Security)**: `tests/UnitTests/BuildingBlocks/Security/`
 - **Unit Tests (Auth Domain.Entities)**: `tests/UnitTests/ShopDemo/Auth/Domain.Entities/`
 - **Unit Tests (Auth Domain)**: `tests/UnitTests/ShopDemo/Auth/Domain/`
@@ -33,7 +33,7 @@
 - [x] T002 Create GlobalUsings.cs for Security building block in `src/BuildingBlocks/Security/GlobalUsings.cs`
 - [x] T003 Create Security unit test project with .csproj referencing Testing and Security in `tests/UnitTests/BuildingBlocks/Security/Bedrock.UnitTests.BuildingBlocks.Security.csproj`
 - [x] T004 Create stryker-config.json for Security mutation tests in `tests/MutationTests/BuildingBlocks/Security/stryker-config.json`
-- [x] T005 Add project reference to Security building block from Auth Domain .csproj in `samples/ShopDemo/Auth/Domain/ShopDemo.Auth.Domain.csproj`
+- [x] T005 Add project reference to Security building block from Auth Domain .csproj in `src/ShopDemo/Auth/Domain/ShopDemo.Auth.Domain.csproj`
 - [x] T006 Add all new projects to the solution file `Bedrock.sln` and verify build with `./scripts/build.sh`
 
 ---
@@ -46,21 +46,21 @@
 
 ### Value Objects & Enums (no interdependencies)
 
-- [x] T007 [P] Implement UserStatus enum with values Active=1, Suspended=2, Blocked=3 in `samples/ShopDemo/Auth/Domain.Entities/Users/Enums/UserStatus.cs`
-- [x] T008 [P] Implement PasswordHash readonly struct with ReadOnlyMemory\<byte\>, CreateNew factory, constant-time Equals, and `[REDACTED]` ToString in `samples/ShopDemo/Auth/Domain.Entities/Users/PasswordHash.cs`
+- [x] T007 [P] Implement UserStatus enum with values Active=1, Suspended=2, Blocked=3 in `src/ShopDemo/Auth/Domain.Entities/Users/Enums/UserStatus.cs`
+- [x] T008 [P] Implement PasswordHash readonly struct with ReadOnlyMemory\<byte\>, CreateNew factory, constant-time Equals, and `[REDACTED]` ToString in `src/ShopDemo/Auth/Domain.Entities/Users/PasswordHash.cs`
 
 ### Input Objects (depend on T007, T008)
 
-- [x] T009 [P] Implement RegisterNewInput readonly record struct (EmailAddress, PasswordHash) in `samples/ShopDemo/Auth/Domain.Entities/Users/Inputs/RegisterNewInput.cs`
-- [x] T010 [P] Implement CreateFromExistingInfoInput readonly record struct (EntityInfo, string Username, EmailAddress, PasswordHash, UserStatus) in `samples/ShopDemo/Auth/Domain.Entities/Users/Inputs/CreateFromExistingInfoInput.cs`
-- [x] T011 [P] Implement ChangeStatusInput readonly record struct (UserStatus NewStatus) in `samples/ShopDemo/Auth/Domain.Entities/Users/Inputs/ChangeStatusInput.cs`
-- [x] T012 [P] Implement ChangeUsernameInput readonly record struct (string NewUsername) in `samples/ShopDemo/Auth/Domain.Entities/Users/Inputs/ChangeUsernameInput.cs`
-- [x] T013 [P] Implement ChangePasswordHashInput readonly record struct (PasswordHash NewPasswordHash) in `samples/ShopDemo/Auth/Domain.Entities/Users/Inputs/ChangePasswordHashInput.cs`
+- [x] T009 [P] Implement RegisterNewInput readonly record struct (EmailAddress, PasswordHash) in `src/ShopDemo/Auth/Domain.Entities/Users/Inputs/RegisterNewInput.cs`
+- [x] T010 [P] Implement CreateFromExistingInfoInput readonly record struct (EntityInfo, string Username, EmailAddress, PasswordHash, UserStatus) in `src/ShopDemo/Auth/Domain.Entities/Users/Inputs/CreateFromExistingInfoInput.cs`
+- [x] T011 [P] Implement ChangeStatusInput readonly record struct (UserStatus NewStatus) in `src/ShopDemo/Auth/Domain.Entities/Users/Inputs/ChangeStatusInput.cs`
+- [x] T012 [P] Implement ChangeUsernameInput readonly record struct (string NewUsername) in `src/ShopDemo/Auth/Domain.Entities/Users/Inputs/ChangeUsernameInput.cs`
+- [x] T013 [P] Implement ChangePasswordHashInput readonly record struct (PasswordHash NewPasswordHash) in `src/ShopDemo/Auth/Domain.Entities/Users/Inputs/ChangePasswordHashInput.cs`
 
 ### Interface & Metadata (depend on T007, T008)
 
-- [x] T014 [P] Implement IUser interface extending IEntity with Username, Email, PasswordHash, Status properties in `samples/ShopDemo/Auth/Domain.Entities/Users/Interfaces/IUser.cs`
-- [x] T015 [P] Implement UserMetadata static class with validation properties (UsernameMinLength=1, UsernameMaxLength=255, PasswordHashMaxLength=128, etc.) and ChangeMetadata method in `samples/ShopDemo/Auth/Domain.Entities/Users/UserMetadata.cs`
+- [x] T014 [P] Implement IUser interface extending IEntity with Username, Email, PasswordHash, Status properties in `src/ShopDemo/Auth/Domain.Entities/Users/Interfaces/IUser.cs`
+- [x] T015 [P] Implement UserMetadata static class with validation properties (UsernameMinLength=1, UsernameMaxLength=255, PasswordHashMaxLength=128, etc.) and ChangeMetadata method in `src/ShopDemo/Auth/Domain.Entities/Users/UserMetadata.cs`
 
 **Checkpoint**: All foundational types compiled — User entity implementation can now begin
 
@@ -74,9 +74,9 @@
 
 ### Implementation for User Story 1
 
-- [x] T016 [US1] Implement User sealed class extending EntityBase\<User\>, IAggregateRoot, IUser with private constructors, all properties (Username, Email, PasswordHash, Status), RegisterNew factory method (validates all fields with & operator, sets Username=Email), CreateFromExistingInfo factory method (no validation), and all static Validate* methods in `samples/ShopDemo/Auth/Domain.Entities/Users/User.cs`
-- [x] T017 [US1] Implement ChangeStatus method with state machine validation (Active↔Suspended, Active↔Blocked, Suspended→Blocked allowed; Blocked→Suspended forbidden) using Clone-Modify-Return pattern in `samples/ShopDemo/Auth/Domain.Entities/Users/User.cs`
-- [x] T018 [US1] Implement ChangeUsername and ChangePasswordHash methods using Clone-Modify-Return pattern in `samples/ShopDemo/Auth/Domain.Entities/Users/User.cs`
+- [x] T016 [US1] Implement User sealed class extending EntityBase\<User\>, IAggregateRoot, IUser with private constructors, all properties (Username, Email, PasswordHash, Status), RegisterNew factory method (validates all fields with & operator, sets Username=Email), CreateFromExistingInfo factory method (no validation), and all static Validate* methods in `src/ShopDemo/Auth/Domain.Entities/Users/User.cs`
+- [x] T017 [US1] Implement ChangeStatus method with state machine validation (Active↔Suspended, Active↔Blocked, Suspended→Blocked allowed; Blocked→Suspended forbidden) using Clone-Modify-Return pattern in `src/ShopDemo/Auth/Domain.Entities/Users/User.cs`
+- [x] T018 [US1] Implement ChangeUsername and ChangePasswordHash methods using Clone-Modify-Return pattern in `src/ShopDemo/Auth/Domain.Entities/Users/User.cs`
 
 ### Tests for User Story 1
 
@@ -137,8 +137,8 @@
 
 ### Implementation for User Story 2
 
-- [x] T043 [US2] Implement IAuthenticationService interface (RegisterUserAsync, VerifyCredentialsAsync) in `samples/ShopDemo/Auth/Domain/Services/IAuthenticationService.cs`
-- [x] T044 [US2] Implement AuthenticationService — RegisterUserAsync: validate password policy → hash password via IPasswordHasher → create User via RegisterNew → persist via IUserRepository; VerifyCredentialsAsync: find User by email → verify password via IPasswordHasher → re-hash and update if NeedsRehash → return User or null with generic error; in `samples/ShopDemo/Auth/Domain/Services/AuthenticationService.cs`
+- [x] T043 [US2] Implement IAuthenticationService interface (RegisterUserAsync, VerifyCredentialsAsync) in `src/ShopDemo/Auth/Domain/Services/IAuthenticationService.cs`
+- [x] T044 [US2] Implement AuthenticationService — RegisterUserAsync: validate password policy → hash password via IPasswordHasher → create User via RegisterNew → persist via IUserRepository; VerifyCredentialsAsync: find User by email → verify password via IPasswordHasher → re-hash and update if NeedsRehash → return User or null with generic error; in `src/ShopDemo/Auth/Domain/Services/AuthenticationService.cs`
 
 ### Tests for User Story 2
 
@@ -172,7 +172,7 @@
 
 ### Implementation for User Story 4
 
-- [x] T049 [US4] Implement IUserRepository interface extending IRepository\<User\> with GetByEmailAsync, GetByUsernameAsync, ExistsByEmailAsync, ExistsByUsernameAsync in `samples/ShopDemo/Auth/Domain/Repositories/IUserRepository.cs`
+- [x] T049 [US4] Implement IUserRepository interface extending IRepository\<User\> with GetByEmailAsync, GetByUsernameAsync, ExistsByEmailAsync, ExistsByUsernameAsync in `src/ShopDemo/Auth/Domain/Repositories/IUserRepository.cs`
 
 ### Tests for User Story 4
 
@@ -313,6 +313,6 @@ Task T037-T041: Security tests
 - [Story] label maps task to specific user story for traceability
 - Each user story is independently completable and testable
 - Commit after each phase passes pipeline validation
-- The SimpleAggregateRoot template at `src/templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` is the reference implementation for User entity
+- The SimpleAggregateRoot template at `src/Templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs` is the reference implementation for User entity
 - Domain.Entities must NEVER reference Security building block — this is verified in Phase 8 (T052)
 - Auth mutation test stryker configs already exist from issue #137 scaffolding

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\ShopDemo.Auth.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

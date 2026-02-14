@@ -81,6 +81,57 @@ public class DataModelBaseTests : TestBase
     }
 
     [Fact]
+    public void CreatedCorrelationId_ShouldBeSettableAndGettable()
+    {
+        // Arrange
+        LogArrange("Creating DataModelBase instance");
+        DataModelBase model = new();
+        Guid expectedCorrelationId = Guid.NewGuid();
+
+        // Act
+        LogAct("Setting CreatedCorrelationId property");
+        model.CreatedCorrelationId = expectedCorrelationId;
+
+        // Assert
+        LogAssert("Verifying CreatedCorrelationId is set correctly");
+        model.CreatedCorrelationId.ShouldBe(expectedCorrelationId);
+    }
+
+    [Fact]
+    public void CreatedExecutionOrigin_ShouldBeSettableAndGettable()
+    {
+        // Arrange
+        LogArrange("Creating DataModelBase instance");
+        DataModelBase model = new();
+        const string expectedOrigin = "API";
+
+        // Act
+        LogAct("Setting CreatedExecutionOrigin property");
+        model.CreatedExecutionOrigin = expectedOrigin;
+
+        // Assert
+        LogAssert("Verifying CreatedExecutionOrigin is set correctly");
+        model.CreatedExecutionOrigin.ShouldBe(expectedOrigin);
+    }
+
+    [Fact]
+    public void CreatedBusinessOperationCode_ShouldBeSettableAndGettable()
+    {
+        // Arrange
+        LogArrange("Creating DataModelBase instance");
+        DataModelBase model = new();
+        const string expectedCode = "CREATE_ORDER";
+
+        // Act
+        LogAct("Setting CreatedBusinessOperationCode property");
+        model.CreatedBusinessOperationCode = expectedCode;
+
+        // Assert
+        LogAssert("Verifying CreatedBusinessOperationCode is set correctly");
+        model.CreatedBusinessOperationCode.ShouldBe(expectedCode);
+    }
+
+    [Fact]
     public void LastChangedBy_ShouldBeNullableAndSettable()
     {
         // Arrange
@@ -206,9 +257,10 @@ public class DataModelBaseTests : TestBase
         LogArrange("Preparing test data");
         Guid id = Guid.NewGuid();
         Guid tenantCode = Guid.NewGuid();
+        Guid createdCorrelationId = Guid.NewGuid();
         DateTimeOffset createdAt = DateTimeOffset.UtcNow;
         DateTimeOffset lastChangedAt = DateTimeOffset.UtcNow.AddHours(1);
-        Guid correlationId = Guid.NewGuid();
+        Guid lastChangedCorrelationId = Guid.NewGuid();
 
         // Act
         LogAct("Creating DataModelBase with object initializer");
@@ -218,11 +270,14 @@ public class DataModelBaseTests : TestBase
             TenantCode = tenantCode,
             CreatedBy = "creator",
             CreatedAt = createdAt,
+            CreatedCorrelationId = createdCorrelationId,
+            CreatedExecutionOrigin = "API",
+            CreatedBusinessOperationCode = "CREATE_ORDER",
             LastChangedBy = "modifier",
             LastChangedAt = lastChangedAt,
             LastChangedExecutionOrigin = "CLI",
-            LastChangedCorrelationId = correlationId,
-            LastChangedBusinessOperationCode = "CREATE_ORDER",
+            LastChangedCorrelationId = lastChangedCorrelationId,
+            LastChangedBusinessOperationCode = "UPDATE_ORDER",
             EntityVersion = 999L
         };
 
@@ -232,11 +287,14 @@ public class DataModelBaseTests : TestBase
         model.TenantCode.ShouldBe(tenantCode);
         model.CreatedBy.ShouldBe("creator");
         model.CreatedAt.ShouldBe(createdAt);
+        model.CreatedCorrelationId.ShouldBe(createdCorrelationId);
+        model.CreatedExecutionOrigin.ShouldBe("API");
+        model.CreatedBusinessOperationCode.ShouldBe("CREATE_ORDER");
         model.LastChangedBy.ShouldBe("modifier");
         model.LastChangedAt.ShouldBe(lastChangedAt);
         model.LastChangedExecutionOrigin.ShouldBe("CLI");
-        model.LastChangedCorrelationId.ShouldBe(correlationId);
-        model.LastChangedBusinessOperationCode.ShouldBe("CREATE_ORDER");
+        model.LastChangedCorrelationId.ShouldBe(lastChangedCorrelationId);
+        model.LastChangedBusinessOperationCode.ShouldBe("UPDATE_ORDER");
         model.EntityVersion.ShouldBe(999L);
     }
 }

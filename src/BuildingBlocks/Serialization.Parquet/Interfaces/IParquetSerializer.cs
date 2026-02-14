@@ -1,4 +1,4 @@
-using Bedrock.BuildingBlocks.Serialization.Abstractions;
+using Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 using Bedrock.BuildingBlocks.Serialization.Parquet.Models;
 
 namespace Bedrock.BuildingBlocks.Serialization.Parquet.Interfaces;

@@ -133,6 +133,7 @@ public sealed class ViolationManager
                     .ThenBy(r => r.RuleName, StringComparer.Ordinal)
                     .Select(r => new
                 {
+                    ruleCategory = r.RuleCategory,
                     ruleName = r.RuleName,
                     ruleDescription = r.RuleDescription,
                     defaultSeverity = r.DefaultSeverity.ToString(),

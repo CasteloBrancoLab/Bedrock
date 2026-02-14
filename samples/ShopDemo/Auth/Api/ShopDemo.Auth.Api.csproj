@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\Application\ShopDemo.Auth.Application.csproj" />
-    <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
-  </ItemGroup>
-
-</Project>

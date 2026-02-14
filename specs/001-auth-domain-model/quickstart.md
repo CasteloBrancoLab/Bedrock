@@ -81,7 +81,7 @@
 
 ## Referências
 
-- [SimpleAggregateRoot Template](../../src/templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs)
+- [SimpleAggregateRoot Template](../../src/Templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs)
 - [IRepository Base](../../src/BuildingBlocks/Domain/Repositories/IRepository.cs)
 - [EmailAddress Value Object](../../src/BuildingBlocks/Core/EmailAddresses/EmailAddress.cs)
 - [Constitution](../../.specify/memory/constitution.md)

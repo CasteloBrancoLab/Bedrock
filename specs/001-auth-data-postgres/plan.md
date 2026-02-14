@@ -6,7 +6,7 @@
 
 ## Summary
 
-Implement the PostgreSQL data access layer for the User aggregate root (auth domain), following the established template project patterns. This covers: UserDataModel, Mapper, Factories (bidirectional), Adapter, DataModelRepository, PostgreSqlRepository, Connection, and UnitOfWork. The domain layer (User entity, PasswordHash value object, IUserRepository interface) is already implemented in `ShopDemo.Auth.Domain.Entities` and `ShopDemo.Auth.Domain`. The scaffolded but empty projects `ShopDemo.Auth.Infra.Data` and `ShopDemo.Auth.Infra.Persistence` will receive the implementation.
+Implement the PostgreSQL data access layer for the User aggregate root (auth domain), following the established template project patterns. This covers: UserDataModel, Mapper, Factories (bidirectional), Adapter, DataModelRepository, PostgreSqlRepository, Connection, and UnitOfWork. The domain layer (User entity, PasswordHash value object, IUserRepository interface) is already implemented in `ShopDemo.Auth.Domain.Entities` and `ShopDemo.Auth.Domain`. The scaffolded but empty projects `ShopDemo.Auth.Infra.Data` and `ShopDemo.Auth.Infra.Data.PostgreSql` will receive the implementation.
 
 ## Technical Context
 
@@ -18,7 +18,7 @@ Implement the PostgreSQL data access layer for the User aggregate root (auth dom
 **Project Type**: Framework library (BuildingBlocks pattern)
 **Performance Goals**: Zero-allocation on hot paths (per BB-I); raw Npgsql with binary import
 **Constraints**: 100% code coverage, 100% mutation score, no EF Core (direct Npgsql)
-**Scale/Scope**: 2 projects (Infra.Data, Infra.Persistence) + 2 test projects
+**Scale/Scope**: 2 projects (Infra.Data, Infra.Data.PostgreSql) + 2 test projects
 
 ## Constitution Check
 
@@ -41,7 +41,7 @@ Implement the PostgreSQL data access layer for the User aggregate root (auth dom
 | BB-VIII. Camadas de Infraestrutura por Template Method | PASS | RepositoryBase wraps error handling. DataModelRepositoryBase provides CRUD. |
 | BB-IX. Disciplina de Testes Unitários | PASS | TestBase inheritance, AAA with LogArrange/LogAct/LogAssert, Shouldly, regions. |
 | BB-X. Disciplina de Testes de Integração | N/A | Integration tests are out of scope for this issue (unit tests only). |
-| BB-XI. Templates como Lei de Implementação | PASS | Implementation follows `src/templates/Infra.Data.PostgreSql/` exactly. |
+| BB-XI. Templates como Lei de Implementação | PASS | Implementation follows `src/Templates/Infra.Data.PostgreSql/` exactly. |
 
 **Gate Result: PASS** — No violations. Proceed to Phase 0.
 
@@ -62,14 +62,14 @@ specs/001-auth-data-postgres/
 ### Source Code (repository root)
 
 ```text
-samples/ShopDemo/Auth/
+src/ShopDemo/Auth/
 ├── Infra.Data/                                    # Data access abstraction
 │   ├── Repositories/
 │   │   └── UserRepository.cs                      # RepositoryBase<User> → IUserRepository
 │   ├── GlobalUsings.cs                            # (exists)
 │   └── ShopDemo.Auth.Infra.Data.csproj            # (exists)
 │
-├── Infra.Persistence/                             # PostgreSQL implementation
+├── Infra.Data.PostgreSql/                             # PostgreSQL implementation
 │   ├── DataModels/
 │   │   └── UserDataModel.cs                       # DataModelBase + User columns
 │   ├── Mappers/
@@ -96,7 +96,7 @@ samples/ShopDemo/Auth/
 │   │   │   └── IAuthPostgreSqlUnitOfWork.cs       # IPostgreSqlUnitOfWork
 │   │   └── AuthPostgreSqlUnitOfWork.cs            # PostgreSqlUnitOfWorkBase
 │   ├── GlobalUsings.cs                            # (exists)
-│   └── ShopDemo.Auth.Infra.Persistence.csproj     # (exists, needs Observability ref)
+│   └── ShopDemo.Auth.Infra.Data.PostgreSql.csproj     # (exists, needs Observability ref)
 │
 tests/UnitTests/ShopDemo/Auth/
 ├── Infra.Data/
@@ -104,7 +104,7 @@ tests/UnitTests/ShopDemo/Auth/
 │   │   └── UserRepositoryTests.cs
 │   └── ShopDemo.Auth.UnitTests.Infra.Data.csproj
 │
-├── Infra.Persistence/
+├── Infra.Data.PostgreSql/
 │   ├── DataModels/
 │   │   └── UserDataModelTests.cs
 │   ├── Mappers/
@@ -122,16 +122,16 @@ tests/UnitTests/ShopDemo/Auth/
 │   │   └── AuthPostgreSqlConnectionTests.cs
 │   ├── UnitOfWork/
 │   │   └── AuthPostgreSqlUnitOfWorkTests.cs
-│   └── ShopDemo.Auth.UnitTests.Infra.Persistence.csproj
+│   └── ShopDemo.Auth.UnitTests.Infra.Data.PostgreSql.csproj
 │
 tests/MutationTests/ShopDemo/Auth/
 ├── Infra.Data/
 │   └── stryker-config.json
-└── Infra.Persistence/
+└── Infra.Data.PostgreSql/
     └── stryker-config.json
 ```
 
-**Structure Decision**: Follows existing ShopDemo.Auth scaffolding (issue #137). The two infrastructure projects (`Infra.Data` and `Infra.Persistence`) already exist with .csproj and GlobalUsings. This plan adds implementation files following the `src/templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming conventions (`Infra.Persistence` instead of `Infra.Data.PostgreSql`).
+**Structure Decision**: Follows existing ShopDemo.Auth scaffolding (issue #137). The two infrastructure projects (`Infra.Data` and `Infra.Data.PostgreSql`) already exist with .csproj and GlobalUsings. This plan adds implementation files following the `src/Templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming conventions (`Infra.Data.PostgreSql` instead of `Infra.Data.PostgreSql`).
 
 ## Complexity Tracking
 

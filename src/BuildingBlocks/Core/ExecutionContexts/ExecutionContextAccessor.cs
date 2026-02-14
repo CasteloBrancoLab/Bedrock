@@ -1,3 +1,5 @@
+using Bedrock.BuildingBlocks.Core.ExecutionContexts.Interfaces;
+
 namespace Bedrock.BuildingBlocks.Core.ExecutionContexts;
 
 public sealed class ExecutionContextAccessor : IExecutionContextAccessor

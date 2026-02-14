@@ -72,7 +72,7 @@ src/BuildingBlocks/Security/
 └── PasswordHashResult.cs               # Resultado do hash (byte[] + pepper version)
 
 # Auth Domain.Entities (existente — scaffolding issue #137)
-samples/ShopDemo/Auth/Domain.Entities/
+src/ShopDemo/Auth/Domain.Entities/
 ├── ShopDemo.Auth.Domain.Entities.csproj  # (existente)
 ├── GlobalUsings.cs                       # (existente)
 └── Users/
@@ -90,7 +90,7 @@ samples/ShopDemo/Auth/Domain.Entities/
         └── ChangePasswordHashInput.cs
 
 # Auth Domain (existente — scaffolding issue #137)
-samples/ShopDemo/Auth/Domain/
+src/ShopDemo/Auth/Domain/
 ├── ShopDemo.Auth.Domain.csproj           # (existente — adicionar ref Security)
 ├── GlobalUsings.cs                       # (existente)
 ├── Repositories/
@@ -134,7 +134,7 @@ tests/MutationTests/BuildingBlocks/Security/
 └── stryker-config.json                  # NOVO
 ```
 
-**Structure Decision**: Segue exatamente a estrutura existente do Bedrock: BuildingBlocks para componentes reutilizáveis do framework, samples/ShopDemo para implementações concretas, testes em relação 1:1. O novo `Bedrock.BuildingBlocks.Security` é justificado como cross-cutting concern de segurança reutilizável (não específico ao Auth).
+**Structure Decision**: Segue exatamente a estrutura existente do Bedrock: BuildingBlocks para componentes reutilizáveis do framework, src/ShopDemo para implementações concretas, testes em relação 1:1. O novo `Bedrock.BuildingBlocks.Security` é justificado como cross-cutting concern de segurança reutilizável (não específico ao Auth).
 
 ## Complexity Tracking
 

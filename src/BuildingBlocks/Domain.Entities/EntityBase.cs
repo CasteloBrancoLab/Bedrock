@@ -470,6 +470,9 @@ public abstract class EntityBase : IEntity
 /// Generic abstract base class for domain entities with typed operations.
 /// </summary>
 /// <typeparam name="TEntity">The entity type.</typeparam>
+// ArchRule disable DE050_NoPublicBusinessMethodsInAbstractClasses : EntityBase é classe base do framework — Clone é parte do contrato IEntity, não é método de negócio
+// ArchRule disable DE051_IsValidHierarchyInAbstractClasses : EntityBase é classe base do framework — IsValidConcreteInternal é padrão para BCs, não para o framework base
+// ArchRule disable DE055_RegisterNewBaseInAbstractClasses : EntityBase é classe base do framework — RegisterNewBase é padrão para BCs concretos, não para o framework base
 public abstract class EntityBase<TEntity> : EntityBase, IEntity<TEntity>
 {
     private static readonly string EntityTypeName = typeof(TEntity).ToString();

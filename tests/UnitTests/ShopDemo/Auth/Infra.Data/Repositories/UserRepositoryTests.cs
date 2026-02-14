@@ -10,7 +10,7 @@ using Moq;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
 using ShopDemo.Auth.Infra.Data.Repositories;
-using ShopDemo.Auth.Infra.Persistence.Repositories.Interfaces;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -26,6 +26,7 @@ public class UserRepositoryTests : TestBase
     public UserRepositoryTests(ITestOutputHelper outputHelper) : base(outputHelper)
     {
         _loggerMock = new Mock<ILogger<UserRepository>>();
+        _loggerMock.Setup(static x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
         _postgreSqlRepositoryMock = new Mock<IUserPostgreSqlRepository>();
         _sut = new UserRepository(_loggerMock.Object, _postgreSqlRepositoryMock.Object);
     }

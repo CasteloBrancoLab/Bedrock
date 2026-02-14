@@ -7,7 +7,7 @@
 
 ### R1: Template Pattern Mapping
 
-**Decision**: Follow `src/templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming.
+**Decision**: Follow `src/Templates/Infra.Data.PostgreSql/` pattern exactly, adapted to ShopDemo naming.
 
 **Rationale**: Constitution BB-XI mandates templates as normative reference. The template provides a complete, tested pattern for all persistence artifacts. Deviation would contradict the constitution.
 
@@ -15,7 +15,7 @@
 
 | Template Artifact | ShopDemo Auth Equivalent |
 |-------------------|--------------------------|
-| `Templates.Infra.Data.PostgreSql` namespace | `ShopDemo.Auth.Infra.Persistence` namespace |
+| `Templates.Infra.Data.PostgreSql` namespace | `ShopDemo.Auth.Infra.Data.PostgreSql` namespace |
 | `SimpleAggregateRootDataModel` | `UserDataModel` |
 | `SimpleAggregateRootDataModelMapper` | `UserDataModelMapper` |
 | `SimpleAggregateRootDataModelFactory` | `UserDataModelFactory` |
@@ -101,8 +101,8 @@ These are exposed on `IUserDataModelRepository` and consumed by `UserPostgreSqlR
 
 **Rationale**: Follows template pattern (`ConnectionStrings:TemplatesPostgreSql`) with domain-specific prefix. Allows independent database configuration per bounded context.
 
-### R7: Infra.Persistence .csproj Dependencies
+### R7: Infra.Data.PostgreSql .csproj Dependencies
 
 **Decision**: Add `Bedrock.BuildingBlocks.Observability` project reference to the existing `.csproj`.
 
-**Rationale**: The existing `ShopDemo.Auth.Infra.Persistence.csproj` references `Infra.Data`, `Domain.Entities`, and `Persistence.PostgreSql`. The template also includes `Core` and `Observability` references. Since `Persistence.PostgreSql` already transitively brings `Core`, only `Observability` needs to be added (required by `DataModelRepositoryBase` for logging).
+**Rationale**: The existing `ShopDemo.Auth.Infra.Data.PostgreSql.csproj` references `Infra.Data`, `Domain.Entities`, and `Persistence.PostgreSql`. The template also includes `Core` and `Observability` references. Since `Persistence.PostgreSql` already transitively brings `Core`, only `Observability` needs to be added (required by `DataModelRepositoryBase` for logging).

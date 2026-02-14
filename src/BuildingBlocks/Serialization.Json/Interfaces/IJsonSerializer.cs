@@ -1,4 +1,4 @@
-using Bedrock.BuildingBlocks.Serialization.Abstractions;
+using Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 
 namespace Bedrock.BuildingBlocks.Serialization.Json.Interfaces;
 

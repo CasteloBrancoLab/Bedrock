@@ -21,7 +21,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class DE050_NoPublicBusinessMethodsInAbstractClassesRule : Rule
+public sealed class DE050_NoPublicBusinessMethodsInAbstractClassesRule : DomainEntitiesGeneralRuleBase
 {
     // Properties
     public override string Name => "DE050_NoPublicBusinessMethodsInAbstractClasses";

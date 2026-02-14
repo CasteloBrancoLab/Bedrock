@@ -290,5 +290,5 @@ Para enums com poucos valores (< 256), `byte` é sempre preferível.
 ## Referências no Código
 
 - [CategoryType.cs](../../../templates/Domain.Entities/AbstractAggregateRoots/Enums/CategoryType.cs) - comentários LLM_RULE sobre convenções de enums
-- [PersonType.cs](../../../samples/Orders/Domain.Entities/Customers/Enums/PersonType.cs) - exemplo de enum seguindo as convenções
-- [CustomerStatus.cs](../../../samples/Orders/Domain.Entities/Customers/Enums/CustomerStatus.cs) - exemplo de enum de status seguindo as convenções
+- [PersonType.cs](../../../src/ShopDemo/Orders/Domain.Entities/Customers/Enums/PersonType.cs) - exemplo de enum seguindo as convenções
+- [CustomerStatus.cs](../../../src/ShopDemo/Orders/Domain.Entities/Customers/Enums/CustomerStatus.cs) - exemplo de enum de status seguindo as convenções

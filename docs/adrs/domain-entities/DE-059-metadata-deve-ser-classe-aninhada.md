@@ -229,6 +229,6 @@ public sealed class User : EntityBase<User>
 
 ## Referências no Código
 
-- [SimpleAggregateRoot.cs](../../../src/templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs) - Template canonical com metadata aninhada
-- [CompositeAggregateRoot.cs](../../../src/templates/Domain.Entities/CompositeAggregateRoots/CompositeAggregateRoot.cs) - Composite AR com metadata aninhada
-- [CompositeChildEntity.cs](../../../src/templates/Domain.Entities/CompositeAggregateRoots/CompositeChildEntity.cs) - Child entity com metadata aninhada
+- [SimpleAggregateRoot.cs](../../../src/Templates/Domain.Entities/SimpleAggregateRoots/SimpleAggregateRoot.cs) - Template canonical com metadata aninhada
+- [CompositeAggregateRoot.cs](../../../src/Templates/Domain.Entities/CompositeAggregateRoots/CompositeAggregateRoot.cs) - Composite AR com metadata aninhada
+- [CompositeChildEntity.cs](../../../src/Templates/Domain.Entities/CompositeAggregateRoots/CompositeChildEntity.cs) - Child entity com metadata aninhada

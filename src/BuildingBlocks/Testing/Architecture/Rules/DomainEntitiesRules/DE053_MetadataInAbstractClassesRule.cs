@@ -22,7 +22,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class DE053_MetadataInAbstractClassesRule : Rule
+public sealed class DE053_MetadataInAbstractClassesRule : DomainEntitiesGeneralRuleBase
 {
     // Properties
     public override string Name => "DE053_MetadataInAbstractClasses";

@@ -17,13 +17,13 @@ Scaffolding feature — pesquisa mínima necessária. Todas as decisões técnic
 
 ### D2: Localização dos Projetos
 
-**Decisão**: `samples/ShopDemo/Auth/` (correção do usuário).
+**Decisão**: `src/ShopDemo/Auth/` (correção do usuário).
 **Razão**: O Auth é um módulo do ShopDemo sample, não um BuildingBlock do Bedrock. A issue #137 originalmente propunha `src/Services/Auth/` mas o usuário corrigiu para manter dentro do ShopDemo.
 **Alternativas**: `src/Services/Auth/` (rejeitada — Auth não é um serviço do framework, é um sample).
 
 ### D3: Camadas do Auth
 
-**Decisão**: 5 camadas (Domain.Entities, Application, Infra.Data, Infra.Persistence, Api).
+**Decisão**: 5 camadas (Domain.Entities, Application, Infra.Data, Infra.Data.PostgreSql, Api).
 **Razão**: Definido pela arquitetura na issue #136. Cada camada tem responsabilidade clara na arquitetura limpa.
 **Alternativas**: Nenhuma considerada — arquitetura definida previamente.
 

@@ -21,7 +21,7 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.DomainEntitiesRules;
 /// </list>
 /// </para>
 /// </summary>
-public sealed class DE046_EnumConventionsRule : Rule
+public sealed class DE046_EnumConventionsRule : DomainEntitiesGeneralRuleBase
 {
     // Properties
     public override string Name => "DE046_EnumConventions";
