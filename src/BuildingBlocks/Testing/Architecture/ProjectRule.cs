@@ -118,7 +118,8 @@ public abstract class ProjectRule : Rule
                     continue;
 
                 // Extrair o nome do projeto do caminho (ex: ..\Domain\ShopDemo.Auth.Domain.csproj -> ShopDemo.Auth.Domain)
-                var fileName = Path.GetFileNameWithoutExtension(include);
+                // Normalizar separadores: csproj usa \ (convencao MSBuild) mas em Linux \ nao e separador de diretorio
+                var fileName = Path.GetFileNameWithoutExtension(include.Replace('\\', '/'));
                 if (!string.IsNullOrEmpty(fileName))
                     references.Add(fileName);
             }
