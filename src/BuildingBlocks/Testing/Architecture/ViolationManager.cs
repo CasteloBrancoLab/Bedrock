@@ -9,11 +9,17 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture;
 /// Usa estado estático compartilhado para que múltiplas fixtures (ex: DomainEntities + CodeStyle)
 /// acumulem resultados no mesmo store. Thread-safe via Lock para execução paralela de collections.
 /// </summary>
+#pragma warning disable CA1822 // Instance methods wrapping static state - intentional design for test fixture injection pattern
 public sealed class ViolationManager
 {
     private static readonly Lock _lock = new();
     private static readonly List<Violation> _violations = [];
     private static readonly List<RuleAnalysisResult> _ruleResults = [];
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     /// <summary>
     /// Limpa o estado estático compartilhado. Usar apenas em testes unitários para isolamento.
@@ -157,11 +163,7 @@ public sealed class ViolationManager
                 })
             };
 
-            var json = JsonSerializer.Serialize(report, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var json = JsonSerializer.Serialize(report, s_jsonOptions);
 
             File.WriteAllText(outputPath, json, Encoding.UTF8);
         }

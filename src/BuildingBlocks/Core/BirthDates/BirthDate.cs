@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Bedrock.BuildingBlocks.Core.BirthDates;
 
 public readonly struct BirthDate
-    : IEquatable<BirthDate>, IComparable<BirthDate>, IFormattable, ISpanFormattable
+    : IEquatable<BirthDate>, IComparable<BirthDate>, ISpanFormattable
 {
     public DateTimeOffset Value { get; }
 

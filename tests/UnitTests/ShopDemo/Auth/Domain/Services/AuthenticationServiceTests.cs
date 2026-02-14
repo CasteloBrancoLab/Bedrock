@@ -111,6 +111,32 @@ public class AuthenticationServiceTests : TestBase
     }
 
     [Fact]
+    public async Task RegisterUserAsync_WhenUserRegistrationFails_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up for User.RegisterNew failure (username too long)");
+        var executionContext = CreateTestExecutionContext();
+        string email = new string('a', 256) + "@test.com"; // exceeds UserMetadata.UsernameMaxLength (255)
+        string password = "ValidPassword1!";
+        byte[] hashBytes = CreateValidHashBytes();
+
+        _passwordHasherMock
+            .Setup(x => x.HashPassword(executionContext, password))
+            .Returns(new PasswordHashResult(hashBytes, 1));
+
+        // Act
+        LogAct("Registering user with email that causes username validation failure");
+        var result = await _sut.RegisterUserAsync(executionContext, email, password, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned when User.RegisterNew fails");
+        result.ShouldBeNull();
+        _userRepositoryMock.Verify(
+            x => x.RegisterNewAsync(It.IsAny<ExecutionContext>(), It.IsAny<User>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task RegisterUserAsync_WhenRepositoryFails_ShouldReturnNull()
     {
         // Arrange

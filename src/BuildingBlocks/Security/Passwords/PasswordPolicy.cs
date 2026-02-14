@@ -35,16 +35,21 @@ public static class PasswordPolicy
             value: password!.Length
         );
 
-        bool complexityValidation = ValidateAllowSpaces(executionContext, password)
-            & ValidateRequireUppercase(executionContext, password)
-            & ValidateRequireLowercase(executionContext, password)
-            & ValidateRequireDigit(executionContext, password)
-            & ValidateRequireSpecialCharacter(executionContext, password)
-            & ValidateMinUniqueCharacters(executionContext, password);
+        bool allowSpacesValidation = ValidateAllowSpaces(executionContext, password);
+        bool requireUppercaseValidation = ValidateRequireUppercase(executionContext, password);
+        bool requireLowercaseValidation = ValidateRequireLowercase(executionContext, password);
+        bool requireDigitValidation = ValidateRequireDigit(executionContext, password);
+        bool requireSpecialCharacterValidation = ValidateRequireSpecialCharacter(executionContext, password);
+        bool minUniqueCharactersValidation = ValidateMinUniqueCharacters(executionContext, password);
 
         return minLengthValidation
             & maxLengthValidation
-            & complexityValidation;
+            & allowSpacesValidation
+            & requireUppercaseValidation
+            & requireLowercaseValidation
+            & requireDigitValidation
+            & requireSpecialCharacterValidation
+            & minUniqueCharactersValidation;
     }
 
     private static bool ValidateAllowSpaces(
@@ -71,11 +76,8 @@ public static class PasswordPolicy
         if (!PasswordPolicyMetadata.RequireUppercase)
             return true;
 
-        foreach (char c in password)
-        {
-            if (char.IsUpper(c))
-                return true;
-        }
+        if (password.Any(char.IsUpper))
+            return true;
 
         executionContext.AddErrorMessage(
             code: $"{MessageCodePrefix}.RequireUppercase");
@@ -89,11 +91,8 @@ public static class PasswordPolicy
         if (!PasswordPolicyMetadata.RequireLowercase)
             return true;
 
-        foreach (char c in password)
-        {
-            if (char.IsLower(c))
-                return true;
-        }
+        if (password.Any(char.IsLower))
+            return true;
 
         executionContext.AddErrorMessage(
             code: $"{MessageCodePrefix}.RequireLowercase");
@@ -107,11 +106,8 @@ public static class PasswordPolicy
         if (!PasswordPolicyMetadata.RequireDigit)
             return true;
 
-        foreach (char c in password)
-        {
-            if (char.IsDigit(c))
-                return true;
-        }
+        if (password.Any(char.IsDigit))
+            return true;
 
         executionContext.AddErrorMessage(
             code: $"{MessageCodePrefix}.RequireDigit");
@@ -125,11 +121,8 @@ public static class PasswordPolicy
         if (!PasswordPolicyMetadata.RequireSpecialCharacter)
             return true;
 
-        foreach (char c in password)
-        {
-            if (!char.IsLetterOrDigit(c) && c != ' ')
-                return true;
-        }
+        if (password.Any(c => !char.IsLetterOrDigit(c) && c != ' '))
+            return true;
 
         executionContext.AddErrorMessage(
             code: $"{MessageCodePrefix}.RequireSpecialCharacter");

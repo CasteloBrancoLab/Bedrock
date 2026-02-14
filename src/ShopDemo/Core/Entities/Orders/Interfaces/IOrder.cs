@@ -12,7 +12,7 @@ public interface IOrder
     public OrderStatus Status { get; }
 }
 
-public interface IOrder<TCustomer>
+public interface IOrder<out TCustomer>
     : IOrder
     where TCustomer : ICustomer
 {
