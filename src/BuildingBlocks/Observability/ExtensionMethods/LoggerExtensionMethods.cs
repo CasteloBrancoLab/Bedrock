@@ -22,6 +22,7 @@ namespace Bedrock.BuildingBlocks.Observability.ExtensionMethods;
 /// </remarks>
 public static class LoggerExtensionMethods
 {
+#pragma warning disable CS8601 // False positive - C# 14 extension member syntax not fully supported by nullable analysis
     extension(ILogger logger)
     {
         // ================================
@@ -744,6 +745,7 @@ public static class LoggerExtensionMethods
             LogForDistributedTracingCore(logger, executionContext, logLevel, exception, message, args);
         }
     }
+#pragma warning restore CS8601
 
     /// <summary>
     /// Core logging implementation that handles the actual logging with distributed tracing context.

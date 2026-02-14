@@ -53,8 +53,7 @@ public sealed class User
             {
                 string username = input.Email.Value?.ToLowerInvariant() ?? string.Empty;
 
-                return
-                    instance.SetUsername(executionContext, username)
+                return instance.SetUsername(executionContext, username)
                     & instance.SetEmail(executionContext, input.Email)
                     & instance.SetPasswordHash(executionContext, input.PasswordHash)
                     & instance.SetStatus(executionContext, UserStatus.Active);
@@ -177,8 +176,7 @@ public sealed class User
         UserStatus? status
     )
     {
-        return
-            EntityBaseIsValid(executionContext, entityInfo)
+        return EntityBaseIsValid(executionContext, entityInfo)
             & ValidateUsername(executionContext, username)
             & ValidateEmail(executionContext, email)
             & ValidatePasswordHash(executionContext, passwordHash)
@@ -228,9 +226,8 @@ public sealed class User
             value: username!.Length
         );
 
-        return usernameIsRequiredValidation
-            && usernameMinLengthValidation
-            && usernameMaxLengthValidation;
+        return usernameMinLengthValidation
+            & usernameMaxLengthValidation;
     }
 
     public static bool ValidateEmail(
@@ -277,8 +274,7 @@ public sealed class User
             value: passwordHash.Value.Length
         );
 
-        return passwordHashIsRequiredValidation
-            && passwordHashMaxLengthValidation;
+        return passwordHashMaxLengthValidation;
     }
 
     public static bool ValidateStatus(

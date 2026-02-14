@@ -31,10 +31,7 @@ public sealed class AuthPostgreSqlConnection
     {
         string? connectionString = _configuration[ConnectionStringConfigKey];
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(
-            connectionString,
-            nameof(connectionString)
-        );
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         options.WithConnectionString(connectionString);
     }

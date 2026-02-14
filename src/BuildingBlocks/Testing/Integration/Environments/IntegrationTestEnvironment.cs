@@ -105,7 +105,7 @@ public sealed class IntegrationTestEnvironment : IIntegrationTestEnvironment
             return long.Parse(normalized[..^2]) * 1024 * 1024 * 1024;
         }
 
-        if (normalized.EndsWith("g"))
+        if (normalized.EndsWith('g'))
         {
             return long.Parse(normalized[..^1]) * 1024 * 1024 * 1024;
         }
@@ -115,7 +115,7 @@ public sealed class IntegrationTestEnvironment : IIntegrationTestEnvironment
             return long.Parse(normalized[..^2]) * 1024 * 1024;
         }
 
-        if (normalized.EndsWith("m"))
+        if (normalized.EndsWith('m'))
         {
             return long.Parse(normalized[..^1]) * 1024 * 1024;
         }
@@ -125,7 +125,7 @@ public sealed class IntegrationTestEnvironment : IIntegrationTestEnvironment
             return long.Parse(normalized[..^2]) * 1024;
         }
 
-        if (normalized.EndsWith("k"))
+        if (normalized.EndsWith('k'))
         {
             return long.Parse(normalized[..^1]) * 1024;
         }

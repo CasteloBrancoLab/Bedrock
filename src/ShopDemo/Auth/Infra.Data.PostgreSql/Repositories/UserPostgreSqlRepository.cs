@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.Paginations;
@@ -169,6 +170,7 @@ public sealed class UserPostgreSqlRepository
     }
 
     // Stryker disable all : Delegates internos capturados pelo mock - testados via callback nos testes de EnumerateAllAsync
+    [ExcludeFromCodeCoverage(Justification = "Delegate interno capturado pelo mock - testado via callback nos testes de EnumerateAllAsync")]
     private static DataModelItemHandler<UserDataModel> CreateEnumerateAllDataModelHandler(
         ExecutionContext executionContext,
         PaginationInfo paginationInfo,
@@ -183,6 +185,7 @@ public sealed class UserPostgreSqlRepository
 
     // Stryker restore all
     // Stryker disable all : Delegates internos - requer captura via callback mock com DataModelItemHandler
+    [ExcludeFromCodeCoverage(Justification = "Delegate interno capturado pelo mock - testado via callback nos testes de EnumerateModifiedSinceAsync")]
     private static DataModelItemHandler<UserDataModel> CreateEnumerateModifiedSinceDataModelHandler(
         ExecutionContext executionContext,
         TimeProvider timeProvider,

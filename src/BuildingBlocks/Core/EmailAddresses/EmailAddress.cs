@@ -1,7 +1,7 @@
 namespace Bedrock.BuildingBlocks.Core.EmailAddresses;
 
 public readonly struct EmailAddress
-    : IEquatable<EmailAddress>, IFormattable, ISpanFormattable
+    : IEquatable<EmailAddress>, ISpanFormattable
 {
     public string Value { get; }
 

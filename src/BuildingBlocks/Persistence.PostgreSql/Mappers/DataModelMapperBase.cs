@@ -389,23 +389,7 @@ public abstract class DataModelMapperBase<TDataModel>
         string paramName = GetParameterName(propertyName);
         string opSql = op.ToSql();
 
-        string clause = string.Create(
-            _tableName.Length + 1 + columnMap.ColumnName.Length + 1 + opSql.Length + 1 + paramName.Length,
-            (_tableName, columnMap.ColumnName, opSql, paramName),
-            static (span, state) =>
-            {
-                int pos = 0;
-                state._tableName.AsSpan().CopyTo(span);
-                pos += state._tableName.Length;
-                span[pos++] = '.';
-                state.ColumnName.AsSpan().CopyTo(span[pos..]);
-                pos += state.ColumnName.Length;
-                span[pos++] = ' ';
-                state.opSql.AsSpan().CopyTo(span[pos..]);
-                pos += state.opSql.Length;
-                span[pos++] = ' ';
-                state.paramName.AsSpan().CopyTo(span[pos..]);
-            });
+        string clause = BuildWhereClauseString(columnMap.ColumnName, opSql, paramName);
 
         WhereClause result = new(clause);
         _whereClauseCache[key] = result;
@@ -438,23 +422,7 @@ public abstract class DataModelMapperBase<TDataModel>
         string paramName = GetParameterName(propertyName) + parameterSuffix;
         string opSql = op.ToSql();
 
-        string clause = string.Create(
-            _tableName.Length + 1 + columnMap.ColumnName.Length + 1 + opSql.Length + 1 + paramName.Length,
-            (_tableName, columnMap.ColumnName, opSql, paramName),
-            static (span, state) =>
-            {
-                int pos = 0;
-                state._tableName.AsSpan().CopyTo(span);
-                pos += state._tableName.Length;
-                span[pos++] = '.';
-                state.ColumnName.AsSpan().CopyTo(span[pos..]);
-                pos += state.ColumnName.Length;
-                span[pos++] = ' ';
-                state.opSql.AsSpan().CopyTo(span[pos..]);
-                pos += state.opSql.Length;
-                span[pos++] = ' ';
-                state.paramName.AsSpan().CopyTo(span[pos..]);
-            });
+        string clause = BuildWhereClauseString(columnMap.ColumnName, opSql, paramName);
 
         return new WhereClause(clause);
     }
@@ -849,6 +817,27 @@ public abstract class DataModelMapperBase<TDataModel>
         Configure();
     }
     // Stryker restore all
+
+    private string BuildWhereClauseString(string columnName, string opSql, string paramName)
+    {
+        return string.Create(
+            _tableName.Length + 1 + columnName.Length + 1 + opSql.Length + 1 + paramName.Length,
+            (_tableName, columnName, opSql, paramName),
+            static (span, state) =>
+            {
+                int pos = 0;
+                state._tableName.AsSpan().CopyTo(span);
+                pos += state._tableName.Length;
+                span[pos++] = '.';
+                state.columnName.AsSpan().CopyTo(span[pos..]);
+                pos += state.columnName.Length;
+                span[pos++] = ' ';
+                state.opSql.AsSpan().CopyTo(span[pos..]);
+                pos += state.opSql.Length;
+                span[pos++] = ' ';
+                state.paramName.AsSpan().CopyTo(span[pos..]);
+            });
+    }
 
     private void MapDataModelBaseColumns()
     {

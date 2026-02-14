@@ -283,10 +283,10 @@ public abstract class Rule
             // Parar se encontrar uma declaração de tipo ou membro (não é mais contexto do nosso tipo)
             if (lineText.Length > 0 && !lineText.StartsWith("//", StringComparison.Ordinal) &&
                 !lineText.StartsWith("/*", StringComparison.Ordinal) &&
-                !lineText.StartsWith("*", StringComparison.Ordinal) &&
-                !lineText.StartsWith("[", StringComparison.Ordinal) &&
+                !lineText.StartsWith('*') &&
+                !lineText.StartsWith('[') &&
                 !lineText.StartsWith("/// ", StringComparison.Ordinal) &&
-                !lineText.StartsWith("}", StringComparison.Ordinal) &&
+                !lineText.StartsWith('}') &&
                 lineText.Length > 0)
                 break;
 
