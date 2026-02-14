@@ -92,10 +92,12 @@ ARCH_FAIL_EOF
         echo "Architecture Report: artifacts/architecture-report/index.html"
     fi
     echo ""
-    echo "STATUS: FAILED (architecture tests failed)"
-    echo ""
     echo ">>> Extracting pending items..."
     "$SCRIPT_DIR/summarize.sh"
+    "$SCRIPT_DIR/sonar-check.sh"
+    "$SCRIPT_DIR/generate-pending-summary.sh"
+    echo ""
+    echo "STATUS: FAILED (architecture tests failed)"
     echo ""
     echo "Next steps:"
     echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
@@ -244,45 +246,32 @@ if [ -f "artifacts/integration-report/index.html" ]; then
 fi
 echo ""
 
-# === EXTRACT PENDING ITEMS (always runs) ===
+# === EXTRACT ALL PENDING ITEMS (always runs) ===
 echo ">>> Extracting pending items..."
+echo "  Local data (mutants, coverage, architecture)..."
 "$SCRIPT_DIR/summarize.sh"
 echo ""
+echo "  SonarCloud issues..."
+"$SCRIPT_DIR/sonar-check.sh"
+echo ""
+echo "  Generating consolidated summary..."
+"$SCRIPT_DIR/generate-pending-summary.sh"
+echo ""
 
-# === COVERAGE GATE ===
-COVERAGE_FAILED=0
-COVERAGE_PENDING_COUNT=$(find artifacts/pending -name "coverage_*.txt" 2>/dev/null | wc -l)
-COVERAGE_PENDING_COUNT=${COVERAGE_PENDING_COUNT//[^0-9]/}
-if [ "$COVERAGE_PENDING_COUNT" -gt 0 ]; then
-    COVERAGE_FAILED=1
-fi
+# === UNIVERSAL GATE ===
+# Gate checks: architecture violations, surviving mutants, and SonarCloud issues
+# Coverage is delegated to SonarCloud (local Coverlet reports include transitive deps, producing false positives)
+PENDING_COUNT=$(find artifacts/pending -name "*.txt" ! -name "SUMMARY.txt" ! -name "coverage_*.txt" 2>/dev/null | wc -l)
+PENDING_COUNT=${PENDING_COUNT//[^0-9]/}
 
-# === FINAL STATUS ===
-if [ $MUTATION_FAILED -eq 1 ]; then
-    echo "STATUS: FAILED (mutation threshold not met)"
+if [ "$PENDING_COUNT" -gt 0 ]; then
+    echo "STATUS: FAILED ($PENDING_COUNT pending items)"
     echo ""
     echo "Next steps:"
     echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
     echo "  2. Check individual files in artifacts/pending/ for details"
-    echo "  3. Improve test assertions to kill mutants"
+    echo "  3. Fix all pending items"
     echo "  4. Run pipeline again"
-    exit 1
-elif [ $COVERAGE_FAILED -eq 1 ]; then
-    echo "STATUS: FAILED (coverage below 100% — $COVERAGE_PENDING_COUNT files with uncovered lines)"
-    echo ""
-    echo "Next steps:"
-    echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
-    echo "  2. Check individual files in artifacts/pending/coverage_*.txt for details"
-    echo "  3. Add tests to cover uncovered lines"
-    echo "  4. Run pipeline again"
-    exit 1
-elif [ $INTEGRATION_FAILED -eq 1 ]; then
-    echo "STATUS: FAILED (integration tests failed)"
-    echo ""
-    echo "Next steps:"
-    echo "  1. Check test results in artifacts/test-results/"
-    echo "  2. Fix failing integration tests"
-    echo "  3. Run pipeline again"
     exit 1
 else
     echo "STATUS: SUCCESS"

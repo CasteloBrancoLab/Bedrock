@@ -332,12 +332,15 @@ Scripts bash para execução local da pipeline, otimizados para uso pelo **code 
 
 ```
 scripts/
-├── clean.sh          # Limpa bin/ e obj/ recursivamente
-├── clean-artifacts.sh # Limpa artefatos gerados
-├── build.sh          # Compila a solução
-├── test.sh           # Executa testes com cobertura
-├── mutate.sh         # Executa testes de mutação
-└── pipeline.sh       # Executa pipeline completa
+├── clean.sh                    # Limpa bin/ e obj/ recursivamente
+├── clean-artifacts.sh          # Limpa artefatos gerados
+├── build.sh                    # Compila a solução
+├── test.sh                     # Executa testes com cobertura
+├── mutate.sh                   # Executa testes de mutação
+├── summarize.sh                # Extrai pendências locais (mutantes, arquitetura)
+├── sonar-check.sh              # Busca issues do SonarCloud
+├── generate-pending-summary.sh # Gera SUMMARY.txt consolidado
+└── pipeline.sh                 # Executa pipeline completa
 ```
 
 #### Comandos
@@ -362,8 +365,8 @@ artifacts/
 ├── mutation/         # Relatórios de mutação (JSON)
 ├── pending/          # Pendências extraídas para análise
 │   ├── SUMMARY.txt           # Resumo consolidado das pendências
+│   ├── architecture_*.txt    # Violações de arquitetura
 │   ├── mutant_*.txt          # Mutantes sobreviventes (um arquivo por mutante)
-│   ├── coverage_*.txt        # Arquivos com cobertura insuficiente
 │   └── sonar_*.txt           # Issues do SonarCloud (um arquivo por issue)
 └── summary.json      # Resumo consolidado da pipeline
 ```
@@ -378,14 +381,6 @@ LINE: <linha>
 STATUS: Survived|NoCoverage
 MUTATOR: <tipo-de-mutador>
 DESCRIPTION: <descrição-da-mutação>
-```
-
-**Cobertura (`coverage_<projeto>_<numero>.txt`):**
-```
-PROJECT: <nome-do-projeto>
-FILE: <caminho-do-arquivo>
-UNCOVERED_LINES: <linhas-separadas-por-virgula>
-COUNT: <quantidade-de-linhas>
 ```
 
 **SonarCloud (`sonar_<tipo>_<numero>.txt`):**
@@ -423,13 +418,14 @@ pipeline completa — basta build e testes focados.
 1. Executar `./scripts/pipeline.sh` (pipeline completa)
 2. Verificar `artifacts/pending/SUMMARY.txt`
 3. Se houver pendências:
+   - **Arquitetura**: Ler `artifacts/pending/architecture_*.txt` e corrigir violações
    - **Mutantes**: Ler `artifacts/pending/mutant_*.txt` e corrigir testes
-   - **Cobertura**: Ler `artifacts/pending/coverage_*.txt` e adicionar testes
    - **SonarCloud**: Ler `artifacts/pending/sonar_*.txt` e corrigir issues
-   - Repetir até atingir **100%** de cobertura
    - Repetir até atingir **100%** de mutação
    - Repetir até não ter mais issue do SonarCloud para resolver
 4. Só abrir a PR quando a pipeline passar completamente
+
+> **Nota**: Cobertura é delegada ao SonarCloud. Local Coverlet reports incluem dependências transitivas e produzem falsos positivos.
 
 ### Limite de Retentativas
 
@@ -496,8 +492,8 @@ Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Ne
 │  4. Executar: ./scripts/pipeline.sh                      │
 │  5. Se FAILED ou com pendências (max 5 tentativas):      │
 │     - Ler artifacts/pending/SUMMARY.txt                  │
+│     - Ler artifacts/pending/architecture_*.txt           │
 │     - Ler artifacts/pending/mutant_*.txt                 │
-│     - Ler artifacts/pending/coverage_*.txt               │
 │     - Ler artifacts/pending/sonar_*.txt                  │
 │     - Corrigir e voltar ao passo 4                       │
 │  6. Se SUCCESS: commitar e push                          │
