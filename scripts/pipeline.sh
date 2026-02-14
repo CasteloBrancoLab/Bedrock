@@ -244,16 +244,36 @@ if [ -f "artifacts/integration-report/index.html" ]; then
 fi
 echo ""
 
+# === EXTRACT PENDING ITEMS (always runs) ===
+echo ">>> Extracting pending items..."
+"$SCRIPT_DIR/summarize.sh"
+echo ""
+
+# === COVERAGE GATE ===
+COVERAGE_FAILED=0
+COVERAGE_PENDING_COUNT=$(find artifacts/pending -name "coverage_*.txt" 2>/dev/null | wc -l)
+COVERAGE_PENDING_COUNT=${COVERAGE_PENDING_COUNT//[^0-9]/}
+if [ "$COVERAGE_PENDING_COUNT" -gt 0 ]; then
+    COVERAGE_FAILED=1
+fi
+
+# === FINAL STATUS ===
 if [ $MUTATION_FAILED -eq 1 ]; then
     echo "STATUS: FAILED (mutation threshold not met)"
-    echo ""
-    echo ">>> Extracting pending items..."
-    "$SCRIPT_DIR/summarize.sh"
     echo ""
     echo "Next steps:"
     echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
     echo "  2. Check individual files in artifacts/pending/ for details"
     echo "  3. Improve test assertions to kill mutants"
+    echo "  4. Run pipeline again"
+    exit 1
+elif [ $COVERAGE_FAILED -eq 1 ]; then
+    echo "STATUS: FAILED (coverage below 100% — $COVERAGE_PENDING_COUNT files with uncovered lines)"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
+    echo "  2. Check individual files in artifacts/pending/coverage_*.txt for details"
+    echo "  3. Add tests to cover uncovered lines"
     echo "  4. Run pipeline again"
     exit 1
 elif [ $INTEGRATION_FAILED -eq 1 ]; then
