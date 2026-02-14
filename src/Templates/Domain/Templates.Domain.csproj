@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BuildingBlocks\Core\Bedrock.BuildingBlocks.Core.csproj" />
-    <ProjectReference Include="..\..\src\BuildingBlocks\Domain.Entities\Bedrock.BuildingBlocks.Domain.Entities.csproj" />
-    <ProjectReference Include="..\..\src\BuildingBlocks\Domain\Bedrock.BuildingBlocks.Domain.csproj" />
-    <ProjectReference Include="..\..\src\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Core\Bedrock.BuildingBlocks.Core.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Domain.Entities\Bedrock.BuildingBlocks.Domain.Entities.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Domain\Bedrock.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
     <ProjectReference Include="..\Domain.Entities\Templates.Domain.Entities.csproj" />
   </ItemGroup>
 

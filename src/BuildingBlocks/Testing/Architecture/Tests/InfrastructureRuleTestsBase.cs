@@ -31,4 +31,64 @@ public abstract class InfrastructureRuleTestsBase<TFixture> : RuleTestBase<TFixt
     {
         AssertNoViolations(new IN003_DomainZeroExternalDependenciesRule());
     }
+
+    [Fact]
+    public void IN006_Infra_Data_Tech_deve_ter_marker_interface_de_conexao()
+    {
+        AssertNoViolations(new IN006_ConnectionMarkerInterfaceRule());
+    }
+
+    [Fact]
+    public void IN007_Infra_Data_Tech_deve_ter_marker_interface_de_UnitOfWork()
+    {
+        AssertNoViolations(new IN007_UnitOfWorkMarkerInterfaceRule());
+    }
+
+    [Fact]
+    public void IN008_Implementacao_de_conexao_deve_ser_sealed_e_herdar_base()
+    {
+        AssertNoViolations(new IN008_ConnectionImplementationSealedRule());
+    }
+
+    [Fact]
+    public void IN009_Implementacao_de_UnitOfWork_deve_ser_sealed_e_herdar_base()
+    {
+        AssertNoViolations(new IN009_UnitOfWorkImplementationSealedRule());
+    }
+
+    [Fact]
+    public void IN010_DataModel_deve_herdar_DataModelBase()
+    {
+        AssertNoViolations(new IN010_DataModelInheritsDataModelBaseRule());
+    }
+
+    [Fact]
+    public void IN011_DataModelRepository_deve_implementar_IDataModelRepository_e_herdar_base()
+    {
+        AssertNoViolations(new IN011_DataModelRepositoryImplementsBaseRule());
+    }
+
+    [Fact]
+    public void IN012_Repositorio_tecnologico_deve_implementar_IRepository_e_ser_sealed()
+    {
+        AssertNoViolations(new IN012_TechRepositoryImplementsIRepositoryRule());
+    }
+
+    [Fact]
+    public void IN013_DataModel_deve_ter_factories_bidirecionais()
+    {
+        AssertNoViolations(new IN013_BidirectionalFactoriesRule());
+    }
+
+    [Fact]
+    public void IN014_DataModel_deve_ter_adapter_para_atualizacao()
+    {
+        AssertNoViolations(new IN014_DataModelAdapterRule());
+    }
+
+    [Fact]
+    public void IN015_Projeto_Infra_Data_Tech_deve_ter_estrutura_canonica_de_pastas()
+    {
+        AssertNoViolations(new IN015_CanonicalFolderStructureRule());
+    }
 }

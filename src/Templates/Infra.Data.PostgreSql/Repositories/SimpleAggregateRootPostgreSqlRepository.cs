@@ -10,7 +10,7 @@ using Templates.Infra.Data.PostgreSql.Repositories.Interfaces;
 
 namespace Templates.Infra.Data.PostgreSql.Repositories;
 
-public class SimpleAggregateRootPostgreSqlRepository
+public sealed class SimpleAggregateRootPostgreSqlRepository
     : ISimpleAggregateRootPostgreSqlRepository
 {
     private readonly ISimpleAggregateRootDataModelRepository _dataModelRepository;
