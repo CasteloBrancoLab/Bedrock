@@ -19,4 +19,22 @@ public abstract class RelationalRuleTestsBase<TFixture> : RuleTestBase<TFixture>
     {
         AssertNoViolations(new RL001_MapperInheritsDataModelMapperBaseRule());
     }
+
+    [Fact]
+    public void RL002_ConfigureInternal_do_mapper_deve_chamar_MapTable()
+    {
+        AssertNoViolations(new RL002_MapperConfigureInternalCallsMapTableRule());
+    }
+
+    [Fact]
+    public void RL003_Literais_SQL_proibidos_fora_de_Mappers()
+    {
+        AssertNoViolations(new RL003_NoSqlLiteralsOutsideMappersRule());
+    }
+
+    [Fact]
+    public void RL004_DataModel_deve_ter_apenas_propriedades_primitivas()
+    {
+        AssertNoViolations(new RL004_DataModelOnlyPrimitivePropertiesRule());
+    }
 }

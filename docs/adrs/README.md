@@ -15,6 +15,8 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 | **RE** | Repositories | Persistência e acesso a dados | Em breve |
 | **AS** | Application Services | Serviços de aplicação e casos de uso | Em breve |
 | **IN** | [Infrastructure](./infrastructure/README.md) | Infraestrutura, cross-cutting concerns | 5 ADRs |
+| **RL** | [Relational](./relational/README.md) | Mapeamento objeto-relacional, SQL generation, data models | 4 ADRs |
+| **PG** | [PostgreSQL](./postgresql/README.md) | Padroes especificos do PostgreSQL e Npgsql | 2 ADRs |
 | **AP** | API | APIs REST, GraphQL, contratos | Em breve |
 
 ## Convenção de Nomenclatura
@@ -161,6 +163,18 @@ Links para implementações de referência no repositório.
 - [IN-004: Modelo de Dados É Detalhe de Implementacao](./infrastructure/IN-004-modelo-dados-detalhe-implementacao.md)
 - [IN-005: Infra.Data Atua como Facade de Persistencia](./infrastructure/IN-005-infra-data-facade-persistencia.md)
 - [Ver todas as ADRs de Infrastructure](./infrastructure/)
+
+### Relational (RL)
+- [RL-001: Mapper Deve Herdar DataModelMapperBase](./relational/RL-001-mapper-herda-datamodelmapperbase.md)
+- [RL-002: ConfigureInternal do Mapper Deve Chamar MapTable](./relational/RL-002-mapper-configurar-maptable.md)
+- [RL-003: Proibir SQL Literal Fora de Mappers](./relational/RL-003-proibir-sql-fora-de-mapper.md)
+- [RL-004: DataModel Deve Ter Apenas Propriedades Primitivas](./relational/RL-004-datamodel-propriedades-primitivas.md)
+- [Ver todas as ADRs de Relational](./relational/)
+
+### PostgreSQL (PG)
+- [PG-001: MapBinaryImporter Deve Escrever Todas as Colunas](./postgresql/PG-001-binary-importer-todas-colunas.md)
+- [PG-002: ConfigureInternal da Connection Deve Validar Connection String](./postgresql/PG-002-connection-validar-connectionstring.md)
+- [Ver todas as ADRs de PostgreSQL](./postgresql/)
 
 ---
 
