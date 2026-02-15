@@ -161,7 +161,7 @@ jobs:
 
           FAILED=0
           for project in $(find tests/UnitTests -name "*.csproj"); do
-            name=$(basename "$(dirname "$project")")
+            name=$(echo "$project" | sed 's|tests/UnitTests/||' | sed 's|/[^/]*\.csproj$||' | sed 's|/|.|g')
             echo "::group::Unit tests for $name"
 
             dotnet-coverage collect "dotnet test --no-build $project --logger trx;LogFileName=results.trx --results-directory artifacts/coverage/raw/$name" \
