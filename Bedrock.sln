@@ -329,6 +329,22 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api", "Api", "{33DCD73B-CE3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.ArchitectureTests.ShopDemo.Auth.Api", "tests\ArchitectureTests\ShopDemo\Auth\Api\Bedrock.ArchitectureTests.ShopDemo.Auth.Api.csproj", "{36E41E56-C534-4674-A237-20048D5D3738}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence.PostgreSql.Migrations", "Persistence.PostgreSql.Migrations", "{E6D16031-9EC7-63F3-1DA7-C5A6439AEF25}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.BuildingBlocks.Persistence.PostgreSql.Migrations", "src\BuildingBlocks\Persistence.PostgreSql.Migrations\Bedrock.BuildingBlocks.Persistence.PostgreSql.Migrations.csproj", "{772C1698-1D99-41EB-9975-1D4BB5733B88}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence.PostgreSql.Migrations", "Persistence.PostgreSql.Migrations", "{369368F1-79B9-8204-79FF-E5453038B68E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.UnitTests.BuildingBlocks.Persistence.PostgreSql.Migrations", "tests\UnitTests\BuildingBlocks\Persistence.PostgreSql.Migrations\Bedrock.UnitTests.BuildingBlocks.Persistence.PostgreSql.Migrations.csproj", "{129F51DF-865F-46BE-BC11-046897EEAB41}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence.PostgreSql.Migrations", "Persistence.PostgreSql.Migrations", "{E25ED676-95B0-2BE3-8532-0E1D90E532DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Migrations", "tests\IntegrationTests\BuildingBlocks\Persistence.PostgreSql.Migrations\Bedrock.IntegrationTests.BuildingBlocks.Persistence.PostgreSql.Migrations.csproj", "{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Persistence.PostgreSql.Migrations", "Persistence.PostgreSql.Migrations", "{9BAD1FD3-EAB3-5717-81D8-EAA89B2FDA0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.ArchitectureTests.BuildingBlocks.Persistence.PostgreSql.Migrations", "tests\ArchitectureTests\BuildingBlocks\Persistence.PostgreSql.Migrations\Bedrock.ArchitectureTests.BuildingBlocks.Persistence.PostgreSql.Migrations.csproj", "{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1215,6 +1231,54 @@ Global
 		{36E41E56-C534-4674-A237-20048D5D3738}.Release|x64.Build.0 = Release|Any CPU
 		{36E41E56-C534-4674-A237-20048D5D3738}.Release|x86.ActiveCfg = Release|Any CPU
 		{36E41E56-C534-4674-A237-20048D5D3738}.Release|x86.Build.0 = Release|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Debug|x64.Build.0 = Debug|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Debug|x86.Build.0 = Debug|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Release|x64.ActiveCfg = Release|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Release|x64.Build.0 = Release|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Release|x86.ActiveCfg = Release|Any CPU
+		{772C1698-1D99-41EB-9975-1D4BB5733B88}.Release|x86.Build.0 = Release|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Debug|x64.Build.0 = Debug|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Debug|x86.Build.0 = Debug|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Release|x64.ActiveCfg = Release|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Release|x64.Build.0 = Release|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Release|x86.ActiveCfg = Release|Any CPU
+		{129F51DF-865F-46BE-BC11-046897EEAB41}.Release|x86.Build.0 = Release|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Debug|x64.Build.0 = Debug|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Debug|x86.Build.0 = Debug|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Release|x64.ActiveCfg = Release|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Release|x64.Build.0 = Release|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Release|x86.ActiveCfg = Release|Any CPU
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF}.Release|x86.Build.0 = Release|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Debug|x64.Build.0 = Debug|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Debug|x86.Build.0 = Debug|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Release|x64.ActiveCfg = Release|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Release|x64.Build.0 = Release|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Release|x86.ActiveCfg = Release|Any CPU
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1379,5 +1443,13 @@ Global
 		{DC84A079-612F-4730-8BD6-AF1D2D640A8A} = {4FD70351-4A64-D82B-0DFE-CC77F80279C6}
 		{33DCD73B-CE3F-A0E8-5B52-68AB91A7E163} = {8F110CDB-4BD3-3FA4-3209-5EF2354D100D}
 		{36E41E56-C534-4674-A237-20048D5D3738} = {33DCD73B-CE3F-A0E8-5B52-68AB91A7E163}
+		{E6D16031-9EC7-63F3-1DA7-C5A6439AEF25} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
+		{772C1698-1D99-41EB-9975-1D4BB5733B88} = {E6D16031-9EC7-63F3-1DA7-C5A6439AEF25}
+		{369368F1-79B9-8204-79FF-E5453038B68E} = {A7B8C9D0-E1F2-3456-0123-567890123456}
+		{129F51DF-865F-46BE-BC11-046897EEAB41} = {369368F1-79B9-8204-79FF-E5453038B68E}
+		{E25ED676-95B0-2BE3-8532-0E1D90E532DA} = {A7EAD5F5-299C-B51A-A368-89B6D8995572}
+		{FA00D41B-D0BC-4D36-960F-1DB69E188EBF} = {E25ED676-95B0-2BE3-8532-0E1D90E532DA}
+		{9BAD1FD3-EAB3-5717-81D8-EAA89B2FDA0B} = {B0F38E0D-E636-1486-F1BB-2A26257A6DDA}
+		{AB9F9DC6-3228-4DDC-848F-3139DE4A4251} = {9BAD1FD3-EAB3-5717-81D8-EAA89B2FDA0B}
 	EndGlobalSection
 EndGlobal
