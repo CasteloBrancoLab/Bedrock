@@ -1,0 +1,1 @@
+ALTER TABLE test_table ADD COLUMN description VARCHAR(255) NULL;
