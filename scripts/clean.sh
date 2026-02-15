@@ -23,8 +23,4 @@ rm -rf TestResults/
 rm -rf StrykerOutput/
 rm -rf coverage/
 rm -rf mutation-reports/
-
-# Remove temporary PowerShell scripts (if any)
-rm -f scripts/replace-namespace*.ps1
-
 echo "Done: Cleaned all artifacts and temporary files"
