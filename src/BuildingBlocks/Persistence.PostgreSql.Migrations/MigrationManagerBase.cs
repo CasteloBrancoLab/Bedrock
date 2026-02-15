@@ -70,13 +70,7 @@ public abstract class MigrationManagerBase
 
         try
         {
-            await Task.Run(() =>
-            {
-                using var serviceProvider = CreateServiceProvider();
-                using var scope = serviceProvider.CreateScope();
-                var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
-                runner.MigrateUp();
-            }, cancellationToken);
+            await Task.Run(ExecuteMigrateUp, cancellationToken);
 
             _logger.LogInformationForDistributedTracing(
                 executionContext,
@@ -92,6 +86,15 @@ public abstract class MigrationManagerBase
                 TargetSchema);
             throw;
         }
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Requer conexao PostgreSQL real - coberto por testes de integracao")]
+    private void ExecuteMigrateUp()
+    {
+        using var serviceProvider = CreateServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+        runner.MigrateUp();
     }
 
     /// <summary>
@@ -128,13 +131,7 @@ public abstract class MigrationManagerBase
 
         try
         {
-            await Task.Run(() =>
-            {
-                using var serviceProvider = CreateServiceProvider();
-                using var scope = serviceProvider.CreateScope();
-                var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
-                runner.MigrateDown(targetVersion);
-            }, cancellationToken);
+            await Task.Run(() => ExecuteMigrateDown(targetVersion), cancellationToken);
 
             _logger.LogInformationForDistributedTracing(
                 executionContext,
@@ -152,6 +149,15 @@ public abstract class MigrationManagerBase
                 TargetSchema);
             throw;
         }
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Requer conexao PostgreSQL real - coberto por testes de integracao")]
+    private void ExecuteMigrateDown(long targetVersion)
+    {
+        using var serviceProvider = CreateServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+        runner.MigrateDown(targetVersion);
     }
 
     /// <summary>
@@ -184,46 +190,7 @@ public abstract class MigrationManagerBase
 
         try
         {
-            var status = await Task.Run(() =>
-            {
-                using var serviceProvider = CreateServiceProvider();
-                using var scope = serviceProvider.CreateScope();
-                var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
-
-                runner.LoadVersionInfoIfRequired();
-
-                var loader = runner.MigrationLoader;
-                var versionLoader = scope.ServiceProvider
-                    .GetRequiredService<IVersionLoader>();
-
-                var versionData = versionLoader.VersionInfo;
-                var allMigrations = loader.LoadMigrations();
-
-                var applied = new List<Models.MigrationInfo>();
-                var pending = new List<Models.MigrationInfo>();
-
-                foreach (var migration in allMigrations.OrderBy(m => m.Key))
-                {
-                    var version = migration.Key;
-                    var description = migration.Value.Migration.GetType().Name;
-
-                    if (versionData.HasAppliedMigration(version))
-                    {
-                        var appliedOn = versionData.AppliedMigrations()
-                            .FirstOrDefault(v => v == version);
-                        applied.Add(Models.MigrationInfo.Create(
-                            version,
-                            description,
-                            appliedOn > 0 ? DateTimeOffset.UtcNow : null));
-                    }
-                    else
-                    {
-                        pending.Add(Models.MigrationInfo.Create(version, description));
-                    }
-                }
-
-                return Models.MigrationStatus.Create(applied, pending);
-            }, cancellationToken);
+            var status = await Task.Run(ExecuteGetStatus, cancellationToken);
 
             _logger.LogInformationForDistributedTracing(
                 executionContext,
@@ -243,6 +210,48 @@ public abstract class MigrationManagerBase
                 TargetSchema);
             throw;
         }
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Requer conexao PostgreSQL real - coberto por testes de integracao")]
+    private Models.MigrationStatus ExecuteGetStatus()
+    {
+        using var serviceProvider = CreateServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+
+        runner.LoadVersionInfoIfRequired();
+
+        var loader = runner.MigrationLoader;
+        var versionLoader = scope.ServiceProvider
+            .GetRequiredService<IVersionLoader>();
+
+        var versionData = versionLoader.VersionInfo;
+        var allMigrations = loader.LoadMigrations();
+
+        var applied = new List<Models.MigrationInfo>();
+        var pending = new List<Models.MigrationInfo>();
+
+        foreach (var migration in allMigrations.OrderBy(m => m.Key))
+        {
+            var version = migration.Key;
+            var description = migration.Value.Migration.GetType().Name;
+
+            if (versionData.HasAppliedMigration(version))
+            {
+                var appliedOn = versionData.AppliedMigrations()
+                    .FirstOrDefault(v => v == version);
+                applied.Add(Models.MigrationInfo.Create(
+                    version,
+                    description,
+                    appliedOn > 0 ? DateTimeOffset.UtcNow : null));
+            }
+            else
+            {
+                pending.Add(Models.MigrationInfo.Create(version, description));
+            }
+        }
+
+        return Models.MigrationStatus.Create(applied, pending);
     }
 
     /// <summary>
