@@ -176,11 +176,8 @@ public sealed class UserPostgreSqlRepository
         PaginationInfo paginationInfo,
         EnumerateAllItemHandler<User> handler)
     {
-        return async (dataModel, cancellationToken) =>
-        {
-            User entity = UserFactory.Create(dataModel);
-            return await handler(executionContext, entity, paginationInfo, cancellationToken);
-        };
+        var adapter = new EnumerateAllHandlerAdapter(executionContext, paginationInfo, handler);
+        return adapter.InvokeAsync;
     }
 
     // Stryker restore all
@@ -192,11 +189,39 @@ public sealed class UserPostgreSqlRepository
         DateTimeOffset since,
         EnumerateModifiedSinceItemHandler<User> handler)
     {
-        return async (dataModel, cancellationToken) =>
+        var adapter = new EnumerateModifiedSinceHandlerAdapter(executionContext, timeProvider, since, handler);
+        return adapter.InvokeAsync;
+    }
+
+    // Stryker restore all
+
+    // Handler classes replace compiler-generated closures so that [ExcludeFromCodeCoverage]
+    // is properly recognized by dotnet-coverage (which does NOT propagate the attribute
+    // from parent methods to compiler-generated lambda/closure classes).
+    [ExcludeFromCodeCoverage(Justification = "Delegate interno - requer infraestrutura real para execucao")]
+    private sealed class EnumerateAllHandlerAdapter(
+        ExecutionContext executionContext,
+        PaginationInfo paginationInfo,
+        EnumerateAllItemHandler<User> handler)
+    {
+        public async Task<bool> InvokeAsync(UserDataModel dataModel, CancellationToken cancellationToken)
+        {
+            User entity = UserFactory.Create(dataModel);
+            return await handler(executionContext, entity, paginationInfo, cancellationToken);
+        }
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Delegate interno - requer infraestrutura real para execucao")]
+    private sealed class EnumerateModifiedSinceHandlerAdapter(
+        ExecutionContext executionContext,
+        TimeProvider timeProvider,
+        DateTimeOffset since,
+        EnumerateModifiedSinceItemHandler<User> handler)
+    {
+        public async Task<bool> InvokeAsync(UserDataModel dataModel, CancellationToken cancellationToken)
         {
             User entity = UserFactory.Create(dataModel);
             return await handler(executionContext, entity, timeProvider, since, cancellationToken);
-        };
+        }
     }
-    // Stryker restore all
 }
