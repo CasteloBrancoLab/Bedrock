@@ -2,14 +2,10 @@
 # summarize.sh - Extrai pendências locais (mutação, cobertura, arquitetura) para artifacts/pending
 # SonarCloud: ver sonar-check.sh
 # Sumário consolidado: ver generate-pending-summary.sh
-#
-# NOTA: Os scripts PowerShell são escritos em arquivos temporários (.ps1) e executados com
-# -File para evitar problemas de escaping de \$ em inline -Command no MINGW64 bash.
 set -e
 
 ARTIFACTS_DIR="artifacts"
 PENDING_DIR="$ARTIFACTS_DIR/pending"
-TEMP_PS1="$ARTIFACTS_DIR/.tmp_summarize.ps1"
 
 echo "=== SUMMARIZE ==="
 
@@ -38,37 +34,82 @@ for report in "$ARTIFACTS_DIR"/mutation/*/reports/mutation-report.json; do
 
     project=$(basename "$(dirname "$(dirname "$report")")")
 
-    # Write PowerShell script to temp file to avoid bash escaping issues
-    cat > "$TEMP_PS1" << PSEOF
-\$json = Get-Content '$report' | ConvertFrom-Json
-\$files = \$json.files.PSObject.Properties
-\$mutantIndex = 0
-
-foreach (\$file in \$files) {
-    \$filePath = \$file.Name
-    foreach (\$mutant in \$file.Value.mutants) {
-        if (\$mutant.status -eq 'Survived' -or \$mutant.status -eq 'NoCoverage') {
-            \$mutantIndex++
-            \$line = \$mutant.location.start.line
-            \$mutator = \$mutant.mutatorName
-            \$status = \$mutant.status
-            \$desc = \$mutant.description
-
-            \$outFile = '$PENDING_DIR/mutant_${project}_' + \$mutantIndex.ToString('D3') + '.txt'
-
-            "PROJECT: $project" | Out-File -FilePath \$outFile -Encoding UTF8
-            "FILE: \$filePath" | Out-File -FilePath \$outFile -Append -Encoding UTF8
-            "LINE: \$line" | Out-File -FilePath \$outFile -Append -Encoding UTF8
-            "STATUS: \$status" | Out-File -FilePath \$outFile -Append -Encoding UTF8
-            "MUTATOR: \$mutator" | Out-File -FilePath \$outFile -Append -Encoding UTF8
-            "DESCRIPTION: \$desc" | Out-File -FilePath \$outFile -Append -Encoding UTF8
-        }
+    # Parse mutation report JSON using awk (pure bash, cross-platform)
+    # Strip "source" lines first — they contain the full file source code with braces/quotes
+    # that would confuse the parser
+    grep -v '^[[:space:]]*"source"[[:space:]]*:' "$report" | awk -v project="$project" -v dir="$PENDING_DIR" '
+    BEGIN {
+        idx = 0; file = ""; m_file = ""
+        m_mutator = ""; m_line = ""; m_status = ""; m_desc = ""
+        in_start = 0; had_mutant = 0
     }
-}
-Write-Host \$mutantIndex
-PSEOF
 
-    powershell -NoProfile -File "$TEMP_PS1" 2>/dev/null || echo "0"
+    # File path key under "files" object: "path/to/file.ext": {
+    /^[[:space:]]*"[^"]+[.][a-zA-Z]+"[[:space:]]*:[[:space:]]*\{/ {
+        s = $0
+        sub(/^[[:space:]]*"/, "", s)
+        sub(/".*/, "", s)
+        file = s
+    }
+
+    # New mutant detected by "id" field — output previous if surviving
+    /[[:space:]]*"id"[[:space:]]*:[[:space:]]*"/ {
+        if (had_mutant && (m_status == "Survived" || m_status == "NoCoverage")) {
+            idx++
+            num = sprintf("%03d", idx)
+            outfile = dir "/mutant_" project "_" num ".txt"
+            print "PROJECT: " project > outfile
+            print "FILE: " m_file >> outfile
+            print "LINE: " m_line >> outfile
+            print "STATUS: " m_status >> outfile
+            print "MUTATOR: " m_mutator >> outfile
+            print "DESCRIPTION: " m_desc >> outfile
+            close(outfile)
+        }
+        m_file = file
+        m_mutator = ""; m_line = ""; m_status = ""; m_desc = ""
+        in_start = 0; had_mutant = 1
+    }
+
+    /"mutatorName"[[:space:]]*:/ {
+        s = $0; sub(/.*"mutatorName"[[:space:]]*:[[:space:]]*"/, "", s); sub(/".*/, "", s)
+        m_mutator = s
+    }
+
+    /"start"[[:space:]]*:[[:space:]]*\{/ { in_start = 1 }
+    /"end"[[:space:]]*:[[:space:]]*\{/ { in_start = 0 }
+
+    /"line"[[:space:]]*:/ && in_start {
+        s = $0; sub(/.*"line"[[:space:]]*:[[:space:]]*/, "", s); sub(/[^0-9].*/, "", s)
+        if (s ~ /^[0-9]+$/) m_line = s
+    }
+
+    /"status"[[:space:]]*:/ {
+        s = $0; sub(/.*"status"[[:space:]]*:[[:space:]]*"/, "", s); sub(/".*/, "", s)
+        m_status = s
+    }
+
+    /"description"[[:space:]]*:/ {
+        s = $0; sub(/.*"description"[[:space:]]*:[[:space:]]*"/, "", s); sub(/".*/, "", s)
+        m_desc = s
+    }
+
+    END {
+        if (had_mutant && (m_status == "Survived" || m_status == "NoCoverage")) {
+            idx++
+            num = sprintf("%03d", idx)
+            outfile = dir "/mutant_" project "_" num ".txt"
+            print "PROJECT: " project > outfile
+            print "FILE: " m_file >> outfile
+            print "LINE: " m_line >> outfile
+            print "STATUS: " m_status >> outfile
+            print "MUTATOR: " m_mutator >> outfile
+            print "DESCRIPTION: " m_desc >> outfile
+            close(outfile)
+        }
+        print idx
+    }
+    ' || echo "0"
 done
 
 # Conta mutantes pendentes
@@ -95,6 +136,18 @@ COVERAGE_EXCLUSIONS=(
     "**/src/BuildingBlocks/Testing/ServiceCollectionFixture.cs"
 )
 
+# Convert glob patterns to pipe-delimited regex for awk
+EXCL_REGEX=""
+for pat in "${COVERAGE_EXCLUSIONS[@]}"; do
+    r=$(printf '%s' "$pat" | sed 's/[.]/[.]/g; s/\*\*/__DBLSTAR__/g; s/\*/[^\/]*/g; s/__DBLSTAR__/.*/g')
+    r="^${r}$"
+    if [ -n "$EXCL_REGEX" ]; then
+        EXCL_REGEX="${EXCL_REGEX}|${r}"
+    else
+        EXCL_REGEX="$r"
+    fi
+done
+
 COVERAGE_FILE_INDEX=0
 
 for cobertura in "$ARTIFACTS_DIR"/coverage/raw/*.cobertura.xml; do
@@ -104,58 +157,85 @@ for cobertura in "$ARTIFACTS_DIR"/coverage/raw/*.cobertura.xml; do
 
     project_name=$(basename "$cobertura" .cobertura.xml)
 
-    # Build PowerShell exclusions array literal
-    ps_exclusions=$(printf "'%s'," "${COVERAGE_EXCLUSIONS[@]}" | sed 's/,$//')
-
-    # Write PowerShell script to temp file to avoid bash escaping issues
-    cat > "$TEMP_PS1" << PSEOF
-[xml]\$xml = Get-Content '$cobertura'
-\$suffix = '.$project_name'
-\$exclusions = @($ps_exclusions)
-
-function Test-Excluded(\$path) {
-    foreach (\$pattern in \$exclusions) {
-        \$regex = '^' + [regex]::Escape(\$pattern).Replace('\*\*', [char]0x00A7 + [char]0x00A7).Replace('\*', '[^/]*').Replace([char]0x00A7 + [char]0x00A7, '.*') + '\$'
-        if (\$path -match \$regex) { return \$true }
+    # Parse cobertura XML using awk (pure bash, cross-platform)
+    awk -F'"' -v project_name="$project_name" -v excl_regex="$EXCL_REGEX" '
+    BEGIN {
+        suffix = "." project_name
+        pkg = ""; cls_file = ""; rel_path = ""
+        total = 0; covered = 0; uncov = ""; uncov_count = 0
+        in_matching_pkg = 0; skip_class = 1
     }
-    return \$false
-}
 
-foreach (\$pkg in \$xml.coverage.packages.package) {
-    \$pkgName = \$pkg.name
-    if (-not (\$pkgName.EndsWith(\$suffix) -or \$pkgName -eq '$project_name')) { continue }
+    /<package[[:space:]]/ {
+        for (i = 1; i <= NF; i++) {
+            if ($(i) ~ /name=$/) { pkg = $(i+1); break }
+        }
+        if (pkg == project_name || substr(pkg, length(pkg) - length(suffix) + 1) == suffix) {
+            in_matching_pkg = 1
+        } else {
+            in_matching_pkg = 0
+        }
+    }
 
-    foreach (\$cls in \$pkg.classes.class) {
-        \$filename = \$cls.filename -replace '\\\\', '/'
+    /<\/package>/ { in_matching_pkg = 0 }
 
-        \$srcIdx = \$filename.IndexOf('/src/')
-        if (\$srcIdx -lt 0) { continue }
-        \$relPath = \$filename.Substring(\$srcIdx + 1)
+    in_matching_pkg && /<class[[:space:]]/ {
+        # Output previous class if it had uncovered lines
+        if (total > 0 && uncov_count > 0 && !skip_class) {
+            line_rate = (total > 0) ? sprintf("%.1f", covered / total * 100) : "100.0"
+            print pkg "|" rel_path "|" line_rate "|" total "|" covered "|" uncov
+        }
 
-        if (Test-Excluded \$relPath) { continue }
+        # Parse new class
+        cls_file = ""
+        for (i = 1; i <= NF; i++) {
+            if ($(i) ~ /filename=$/) { cls_file = $(i+1); break }
+        }
 
-        \$uncovered = @()
-        \$total = 0
-        \$covered = 0
-        foreach (\$line in \$cls.lines.line) {
-            \$total++
-            if ([int]\$line.hits -eq 0) {
-                \$uncovered += \$line.number
+        # Normalize backslashes to forward slashes
+        gsub(/\\/, "/", cls_file)
+
+        # Extract relative path from /src/
+        src_idx = index(cls_file, "/src/")
+        if (src_idx == 0) {
+            skip_class = 1
+        } else {
+            rel_path_full = substr(cls_file, src_idx)
+            rel_path = substr(cls_file, src_idx + 1)
+            if (excl_regex != "" && rel_path_full ~ excl_regex) {
+                skip_class = 1
             } else {
-                \$covered++
+                skip_class = 0
             }
         }
 
-        if (\$uncovered.Count -eq 0) { continue }
-
-        \$lineRate = if (\$total -gt 0) { [math]::Round(\$covered / \$total * 100, 1) } else { 100 }
-
-        Write-Output "\$pkgName|\$relPath|\$lineRate|\$total|\$covered|\$(\$uncovered -join ',')"
+        total = 0; covered = 0; uncov = ""; uncov_count = 0
     }
-}
-PSEOF
 
-    powershell -NoProfile -File "$TEMP_PS1" 2>/dev/null | while IFS='|' read -r pkg filePath lineRate total coveredCount uncoveredLines; do
+    in_matching_pkg && !skip_class && /<line[[:space:]]/ {
+        linenum = ""; hits = ""
+        for (i = 1; i <= NF; i++) {
+            if ($(i) ~ /number=$/) linenum = $(i+1)
+            if ($(i) ~ /hits=$/) hits = $(i+1)
+        }
+        if (linenum != "" && hits != "") {
+            total++
+            if (hits + 0 == 0) {
+                uncov = uncov (uncov ? "," : "") linenum
+                uncov_count++
+            } else {
+                covered++
+            }
+        }
+    }
+
+    END {
+        if (total > 0 && uncov_count > 0 && !skip_class) {
+            line_rate = (total > 0) ? sprintf("%.1f", covered / total * 100) : "100.0"
+            print pkg "|" rel_path "|" line_rate "|" total "|" covered "|" uncov
+        }
+    }
+    ' "$cobertura" | while IFS='|' read -r pkg filePath lineRate total coveredCount uncoveredLines; do
         if [ -z "$filePath" ]; then continue; fi
         COVERAGE_FILE_INDEX=$((COVERAGE_FILE_INDEX + 1))
         idx=$(printf "%03d" "$COVERAGE_FILE_INDEX")
@@ -170,8 +250,6 @@ UNCOVERED_LINES: $uncoveredLines
 COVEOF
     done
 done
-
-rm -f "$TEMP_PS1" 2>/dev/null || true
 
 COVERAGE_PENDING=$(find "$PENDING_DIR" -name "coverage_*.txt" 2>/dev/null | wc -l)
 COVERAGE_PENDING=${COVERAGE_PENDING//[^0-9]/}

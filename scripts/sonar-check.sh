@@ -46,64 +46,62 @@ else
 
         # Extrai total de issues na primeira página
         if [ $page -eq 1 ]; then
-            total=$(powershell -NoProfile -Command "
-                \$json = Get-Content '$TEMP_JSON' -Raw | ConvertFrom-Json
-                Write-Host \$json.total
-            " 2>/dev/null || echo "0")
+            total=$(grep -o '"total"[[:space:]]*:[[:space:]]*[0-9]*' "$TEMP_JSON" | head -1 | grep -o '[0-9]*$')
+            total=${total:-0}
             total=${total//[^0-9]/}
-            [ -z "$total" ] && total=0
             echo "Total SonarCloud issues: $total"
         fi
 
-        # Processa cada issue da página
-        issues_processed=$(powershell -NoProfile -Command "
-            \$json = Get-Content '$TEMP_JSON' -Raw | ConvertFrom-Json
-            \$issueIndex = $issue_index
+        # Processa cada issue da página usando bash puro
+        # Flatten JSON: coloca cada issue em uma linha separada
+        prev_index=$issue_index
 
-            foreach (\$issue in \$json.issues) {
-                \$issueIndex++
+        while IFS= read -r issue_line; do
+            [ -z "$issue_line" ] && continue
 
-                \$type = \$issue.type
-                \$severity = \$issue.severity
-                \$component = \$issue.component -replace '^${SONAR_PROJECT}:', ''
-                \$line = if (\$issue.line) { \$issue.line } else { 'N/A' }
-                \$message = \$issue.message -replace '[\r\n]+', ' '
-                \$rule = \$issue.rule
-                \$effort = if (\$issue.effort) { \$issue.effort } else { 'N/A' }
+            type=$(printf '%s' "$issue_line" | grep -o '"type":"[^"]*"' | head -1 | cut -d'"' -f4)
+            [ -z "$type" ] && continue
 
-                \$typePrefix = switch (\$type) {
-                    'BUG' { 'bug' }
-                    'VULNERABILITY' { 'vuln' }
-                    'CODE_SMELL' { 'smell' }
-                    'SECURITY_HOTSPOT' { 'hotspot' }
-                    default { 'issue' }
-                }
+            severity=$(printf '%s' "$issue_line" | grep -o '"severity":"[^"]*"' | head -1 | cut -d'"' -f4)
+            component=$(printf '%s' "$issue_line" | grep -o '"component":"[^"]*"' | head -1 | cut -d'"' -f4)
+            rule=$(printf '%s' "$issue_line" | grep -o '"rule":"[^"]*"' | head -1 | cut -d'"' -f4)
+            message=$(printf '%s' "$issue_line" | grep -o '"message":"[^"]*"' | head -1 | cut -d'"' -f4)
+            effort=$(printf '%s' "$issue_line" | grep -o '"effort":"[^"]*"' | head -1 | cut -d'"' -f4)
+            i_line=$(printf '%s' "$issue_line" | grep -o '"line":[0-9]*' | head -1 | grep -o '[0-9]*$')
 
-                \$outFile = '$PENDING_DIR/sonar_' + \$typePrefix + '_' + \$issueIndex.ToString('D3') + '.txt'
+            [ -z "$i_line" ] && i_line="N/A"
+            [ -z "$effort" ] && effort="N/A"
 
-                @(
-                    \"TYPE: \$type\",
-                    \"SEVERITY: \$severity\",
-                    \"FILE: \$component\",
-                    \"LINE: \$line\",
-                    \"RULE: \$rule\",
-                    \"EFFORT: \$effort\",
-                    \"MESSAGE: \$message\"
-                ) | Out-File -FilePath \$outFile -Encoding UTF8
-            }
+            # Strip SonarCloud project prefix from component
+            component="${component#${SONAR_PROJECT}:}"
 
-            Write-Host \$issueIndex
-        " 2>/dev/null || echo "$issue_index")
+            # Determine type prefix
+            case "$type" in
+                BUG) prefix="bug" ;;
+                VULNERABILITY) prefix="vuln" ;;
+                CODE_SMELL) prefix="smell" ;;
+                SECURITY_HOTSPOT) prefix="hotspot" ;;
+                *) prefix="issue" ;;
+            esac
 
-        issues_processed=${issues_processed//[^0-9]/}
-        [ -z "$issues_processed" ] && issues_processed=$issue_index
+            issue_index=$((issue_index + 1))
+            idx=$(printf "%03d" "$issue_index")
+
+            cat > "$PENDING_DIR/sonar_${prefix}_${idx}.txt" << EOF
+TYPE: $type
+SEVERITY: $severity
+FILE: $component
+LINE: $i_line
+RULE: $rule
+EFFORT: $effort
+MESSAGE: $message
+EOF
+        done < <(tr '\n' ' ' < "$TEMP_JSON" | sed 's/{"key"/\n{"key"/g' | grep '{"key"')
 
         # Se não processou novas issues, sai do loop
-        if [ "$issues_processed" -eq "$issue_index" ]; then
+        if [ "$issue_index" -eq "$prev_index" ]; then
             break
         fi
-
-        issue_index=$issues_processed
 
         # Verifica se há mais páginas
         if [ "$issue_index" -ge "$total" ]; then
