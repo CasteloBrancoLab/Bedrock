@@ -2,27 +2,36 @@
   ============================================================================
   Sync Impact Report
   ============================================================================
-  Version change: 1.10.1 → 1.11.0
-  Bump rationale: MINOR — adição de regra Roslyn CS002 (static
-    lambdas em métodos do projeto) com impacto em BB-I e BB-VII.
+  Version change: 1.11.0 → 1.12.0
+  Bump rationale: MINOR — expansão material de BB-VII (Arquitetura
+    Verificada por Código) com reestruturação completa dos testes
+    arquiteturais para modelo 1:1 por projeto, adição de 3 novas
+    categorias de regras (IN, RL, PG) e regra CS003. Adição do
+    BuildingBlock Security ao grafo de dependências.
   Modified principles:
-    - BB-I. Performance como Requisito:
-      - Adicionada referência à regra CS002 como enforcement
-        automático da proibição de closures em hot paths.
     - BB-VII. Arquitetura Verificada por Código:
-      - Atualizada descrição de CS para incluir CS002 (static
-        lambdas), com detalhes sobre escopo, detecção de
-        namespace raiz e mecanismo de supressão via comentários.
-      - Atualizado diagrama: CodeStyleRuleTests agora lista
-        CS001–CS002+.
+      - Reestruturado modelo de testes arquiteturais: de consolidado
+        em projeto único para 1:1 por projeto src (25+ projetos).
+      - Adicionadas categorias de regras: IN (Infrastructure, 16
+        regras), RL (Relational, 4 regras), PG (PostgreSQL, 2 regras).
+      - Adicionada regra CS003 (Logging com Distributed Tracing).
+      - Atualizado diagrama de estrutura de testes.
+      - Atualizada descrição de base classes: RuleTestBase<TFixture>,
+        *RuleTestsBase<TFixture> genéricos.
+      - Removida seção ViolationManager (estado compartilhado não é
+        mais necessário com projetos separados).
+    - Grafo de Dependências:
+      - Adicionado BuildingBlock Security (← Core).
   Added sections: Nenhuma
-  Removed sections: Nenhuma
+  Removed sections:
+    - Subseção "ViolationManager — estado estático compartilhado"
+      em BB-VII (substituída por modelo 1:1 por projeto).
   Templates requiring updates:
     - .specify/templates/plan-template.md       ✅ compatível
-    - .specify/templates/spec-template.md        ✅ compatível
-    - .specify/templates/tasks-template.md       ✅ compatível
-    - .specify/templates/checklist-template.md   ✅ compatível
-    - .specify/templates/agent-file-template.md  ✅ compatível
+    - .specify/templates/spec-template.md       ✅ compatível
+    - .specify/templates/tasks-template.md      ✅ compatível
+    - .specify/templates/checklist-template.md  ✅ compatível
+    - .specify/templates/agent-file-template.md ✅ compatível
   Follow-up TODOs: Nenhum
   ============================================================================
 -->
@@ -148,6 +157,11 @@ considerados desde o design inicial, não adicionados depois.
   acesso ao código-fonte.
 - Componentes que processam dados DEVEM expor métricas de
   throughput e latência quando aplicável.
+- Todo logging em código com `ExecutionContext` disponível DEVE
+  usar extension methods de distributed tracing do
+  `Bedrock.BuildingBlocks.Observability.ExtensionMethods`
+  (verificado pela regra CS003). Métodos `ILogger` padrão
+  (`Log`, `LogError`, etc.) são proibidos nesse contexto.
 
 **Razão**: Um framework é usado por terceiros que não têm acesso ao
 código interno. Sem observabilidade, problemas em produção se tornam
@@ -401,16 +415,42 @@ verificadas por código são recomendações, não regras.
 
 - Regras arquiteturais Roslyn DEVEM ser executadas como testes
   unitários no pipeline. Categorias atuais:
-  - **DE** (Domain Entities): DE001+ — regras para entidades
-    de domínio (sealed, factory methods, imutabilidade, etc.).
-  - **CS** (Code Style): CS001+ — regras de estilo de código
-    aplicáveis a qualquer tipo em qualquer projeto (interfaces
-    em Interfaces/, static lambdas em métodos do projeto, etc.).
-    A regra CS002 detecta lambdas não-static passadas como
-    argumento a métodos cujo tipo pertence ao namespace raiz
-    do projeto (derivado de `AssemblyName`). Suporta supressão
-    via `// CS002 disable once : razão` e blocos
-    `// CS002 disable` / `// CS002 restore`.
+  - **DE** (Domain Entities): DE001–DE060 — regras para
+    entidades de domínio (sealed, factory methods,
+    imutabilidade, metadata, herança, composição, etc.).
+  - **CS** (Code Style): CS001–CS003 — regras de estilo de
+    código aplicáveis a qualquer tipo em qualquer projeto:
+    - CS001: Interfaces em subpasta `Interfaces/`.
+    - CS002: Lambdas inline DEVEM ser `static` em métodos
+      do projeto. Detecta lambdas não-static passadas como
+      argumento a métodos cujo tipo pertence ao namespace
+      raiz do projeto (derivado de `AssemblyName`). Suporta
+      supressão via `// CS002 disable once : razão` e blocos
+      `// CS002 disable` / `// CS002 restore`.
+    - CS003: Logging DEVE usar extension methods de
+      distributed tracing (`*ForDistributedTracing`) quando
+      `ExecutionContext` está disponível. Métodos `ILogger`
+      padrão são proibidos nesse contexto. Isenções:
+      bootstrap (Program.cs, Startup), playground, testes.
+  - **IN** (Infrastructure): IN001–IN016 — regras para
+    camadas de infraestrutura de bounded contexts:
+    - Camadas canônicas (IN001), separação de projetos
+      (IN002–IN003), data models (IN004, IN010),
+      facade (IN005), marker interfaces para conexão
+      (IN006) e UnitOfWork (IN007), implementações sealed
+      (IN008–IN009), repositórios (IN011–IN012),
+      factories bidirecionais (IN013), adapters (IN014),
+      estrutura de pastas (IN015), delegação tech (IN016).
+  - **RL** (Relational): RL001–RL004 — regras para camadas
+    de persistência relacional:
+    - Mapper herda `DataModelMapperBase` (RL001),
+      `ConfigureInternal` chama `MapTable` (RL002),
+      SQL literal proibido fora de Mappers (RL003),
+      DataModel apenas propriedades primitivas (RL004).
+  - **PG** (PostgreSQL): PG001–PG002 — regras específicas
+    para implementações PostgreSQL:
+    - `MapBinaryImporter` escreve todas as colunas (PG001),
+      `ConfigureInternal` valida connection string (PG002).
   O conjunto de regras está em evolução e será expandido
   conforme novos padrões forem estabelecidos.
 - Cada regra DEVE ter: severity, caminho de ADR associado e
@@ -422,62 +462,111 @@ verificadas por código são recomendações, não regras.
 
 **Organização dos testes arquiteturais:**
 
-Testes arquiteturais residem em `tests/ArchitectureTests/`
-e validam que o código dos projetos cumpre as regras Roslyn.
+Testes arquiteturais seguem relação **1:1 com cada projeto
+src**. Cada projeto fonte tem um projeto de teste
+arquitetural correspondente em `tests/ArchitectureTests/`.
 
-- Cada categoria de regra DEVE ter uma única classe de teste
-  consolidada, NÃO um arquivo por regra:
-  - `DomainEntitiesRuleTests` — todas as regras DE001–DE058.
-  - `CodeStyleRuleTests` — todas as regras CS001+.
-- Cada `[Fact]` DEVE ser prefixado com o código da regra
-  (ex: `DE001_`, `CS001_`) e ordenado numericamente para
-  facilitar localização.
-- Métodos DEVEM ser organizados com `#region` em blocos de
-  10 regras (ex: `#region DE001–DE010`).
-- Cada categoria DEVE ter sua própria fixture (herdando
-  `RuleFixture`) que define os projetos a escanear via
-  `GetProjectPaths()`.
-- Testes usam `AssertNoViolations(new RuleClass())` —
-  a infraestrutura base (`RuleTestBase<TFixture>`) gera
-  relatórios e pendências em `artifacts/` automaticamente.
-- Novas categorias de regra exigem: fixture +
-  `[CollectionDefinition]` + classe de teste, tudo no
-  mesmo projeto de testes arquiteturais.
+- Cada projeto de teste arquitetural contém:
+  - `Fixtures/ArchFixture.cs` — fixture que herda
+    `RuleFixture` e aponta para o .csproj do projeto src
+    via `GetProjectPaths()`.
+  - Uma classe de teste por categoria de regra aplicável
+    ao projeto (nem todo projeto tem todas as categorias).
+- Collection name DEVE ser sempre `"Arch"` em todos os
+  projetos de teste arquitetural.
+- A fixture `ArchFixture` e a collection `ArchCollection`
+  DEVEM ser `sealed`.
 
-**ViolationManager — estado estático compartilhado:**
+**Classes de teste por categoria:**
 
-- `ViolationManager` usa estado estático (`_violations`,
-  `_ruleResults`) compartilhado entre todas as instâncias,
-  protegido por `Lock` para thread-safety.
-- Cada fixture (`DomainEntitiesArchFixture`,
-  `CodeStyleArchFixture`) cria sua própria instância de
-  `ViolationManager`, mas todas acumulam resultados no
-  mesmo store estático.
-- Isso garante que o relatório JSON consolidado
-  (`architecture-report.json`) inclui resultados de TODAS
-  as categorias de regra, independente da ordem de execução
-  das collections do xUnit.
-- `ResetSharedState()` DEVE ser chamado nos testes unitários
-  do próprio `ViolationManager` para isolamento.
+| Classe | Base genérica | Regras | Presente em |
+|--------|---------------|--------|-------------|
+| `CodeStyleRuleTests` | `CodeStyleRuleTestsBase<ArchFixture>` | CS001–CS003 | Todos os projetos |
+| `InfrastructureRuleTests` | `InfrastructureRuleTestsBase<ArchFixture>` | IN001–IN016 | Todos os projetos |
+| `DomainEntitiesRuleTests` | `DomainEntitiesRuleTestsBase<ArchFixture>` | DE001–DE060 | Projetos Domain.Entities |
+| `RelationalRuleTests` | `RelationalRuleTestsBase<ArchFixture>` | RL001–RL004 | Projetos Infra.Data.PostgreSql |
+| `PostgreSqlRuleTests` | `PostgreSqlRuleTestsBase<ArchFixture>` | PG001–PG002 | Projetos Infra.Data.PostgreSql |
+
+- Cada classe de teste concreta é minimal — usa primary
+  constructor do C# 12 e herda toda lógica da base genérica:
+
+```csharp
+[Collection("Arch")]
+public sealed class CodeStyleRuleTests(
+    ArchFixture fixture, ITestOutputHelper output)
+    : CodeStyleRuleTestsBase<ArchFixture>(fixture, output);
+```
+
+**Hierarquia de base classes (em Testing):**
 
 ```
-tests/ArchitectureTests/Templates/Domain.Entities/
+RuleFixture (abstract)
+└─ ArchFixture (concrete, por projeto)
+
+RuleTestBase<TFixture> (abstract)
+├─ CodeStyleRuleTestsBase<TFixture>
+├─ InfrastructureRuleTestsBase<TFixture>
+├─ DomainEntitiesRuleTestsBase<TFixture>
+├─ RelationalRuleTestsBase<TFixture>
+└─ PostgreSqlRuleTestsBase<TFixture>
+```
+
+- `RuleFixture` descobre o root do repositório (busca
+  `Bedrock.sln`), carrega compilações Roslyn via
+  `WorkspaceFactory` e expõe `ViolationManager`.
+- `RuleTestBase<TFixture>` fornece `AssertNoViolations(Rule)`
+  que analisa compilações, registra resultados, gera
+  `architecture-report.json` por projeto de teste e escreve
+  arquivos de pendência em `artifacts/pending/`.
+- Cada `*RuleTestsBase<TFixture>` contém os `[Fact]` methods
+  prefixados com o código da regra (ex: `DE001_`, `CS001_`,
+  `IN006_`), organizados com `#region` em blocos lógicos.
+
+**Estrutura de exemplo (BuildingBlocks.Core):**
+
+```
+tests/ArchitectureTests/BuildingBlocks/Core/
 ├── Fixtures/
-│   ├── DomainEntitiesArchFixture.cs   # Escaneia Templates e ShopDemo
-│   └── CodeStyleArchFixture.cs        # Escaneia BBs e ShopDemo
-├── DomainEntitiesRuleTests.cs         # 59 [Fact] DE001–DE059
-└── CodeStyleRuleTests.cs              # [Fact] CS001–CS002+
+│   └── ArchFixture.cs            # GetProjectPaths → Core.csproj
+├── CodeStyleRuleTests.cs         # CS001–CS003
+└── InfrastructureRuleTests.cs    # IN001–IN016
+```
+
+**Estrutura de exemplo (Infra.Data.PostgreSql):**
+
+```
+tests/ArchitectureTests/BuildingBlocks/Persistence.PostgreSql/
+├── Fixtures/
+│   └── ArchFixture.cs            # GetProjectPaths → PostgreSql.csproj
+├── CodeStyleRuleTests.cs         # CS001–CS003
+├── InfrastructureRuleTests.cs    # IN001–IN016
+├── RelationalRuleTests.cs        # RL001–RL004
+└── PostgreSqlRuleTests.cs        # PG001–PG002
+```
+
+**ADRs por categoria:**
+
+Cada categoria de regra tem seus ADRs em `docs/adrs/`:
+
+```
+docs/adrs/
+├── domain-entities/   # DE-001 a DE-060 (60 ADRs)
+├── infrastructure/    # IN-001 a IN-016 (16 ADRs)
+├── relational/        # RL-001 a RL-004 (4 ADRs)
+├── postgresql/        # PG-001 a PG-002 (2 ADRs)
+└── code-style/        # CS-001 a CS-003 (3 ADRs)
 ```
 
 **Razão**: Documentação desatualiza; código não. Regras
 verificadas por analisadores garantem compliance contínuo sem
-depender de revisão manual. A consolidação em uma classe por
-categoria elimina proliferação de arquivos idênticos e facilita
-navegação — cada regra é apenas um `[Fact]` prefixado.
-O estado estático compartilhado no `ViolationManager` garante
-que múltiplas collections do xUnit contribuem para um único
-relatório consolidado, evitando que a última collection
-sobrescreva os resultados das anteriores.
+depender de revisão manual. O modelo 1:1 por projeto garante
+que cada projeto src é validado individualmente, e que
+categorias de regra não aplicáveis a determinado projeto
+simplesmente não são incluídas (ex: regras PG não existem em
+projetos que não são Infra.Data.PostgreSql). A herança
+genérica (`*RuleTestsBase<TFixture>`) elimina duplicação de
+lógica de teste — cada projeto concreto tem classes de teste
+de 2-3 linhas que herdam toda a infraestrutura.
 
 ### BB-VIII. Camadas de Infraestrutura por Template Method
 
@@ -1073,6 +1162,8 @@ Domain (← Core, Domain.Entities)
   ↑
 Observability (← Core)
   ↑
+Security (← Core)
+  ↑
 Data (← Core, Domain, Domain.Entities, Observability)
   ↑
 Persistence.Abstractions (← Core)
@@ -1099,7 +1190,9 @@ as invariantes de direção de dependência sejam respeitadas.
 - **Análise estática**: SonarCloud (issues DEVEM ser resolvidas ou
   justificadas como falso positivo)
 - **Análise arquitetural**: Roslyn analyzers (conjunto de regras
-  em evolução: DE001+ para Domain Entities, CS001+ para Code Style)
+  em evolução: DE001–DE060 para Domain Entities, CS001–CS003
+  para Code Style, IN001–IN016 para Infrastructure,
+  RL001–RL004 para Relational, PG001–PG002 para PostgreSQL)
 - **Diagramas**: Mermaid (obrigatório em issues e documentação
   técnica)
 - **Gestão de tarefas**: GitHub Issues (ver seção
@@ -1273,4 +1366,4 @@ Em caso de conflito entre esta constituição e qualquer outro documento
   projeto contém orientações operacionais detalhadas para o code
   agent, derivadas desta constituição.
 
-**Version**: 1.11.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-10
+**Version**: 1.12.0 | **Ratified**: 2026-02-08 | **Last Amended**: 2026-02-14
