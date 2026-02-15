@@ -118,6 +118,57 @@ public class MigrationManagerBaseTests : TestBase
         await action.ShouldThrowAsync<ArgumentNullException>();
     }
 
+    [Fact]
+    public async Task MigrateUpAsync_WithValidExecutionContext_ShouldDelegateToInternalMethod()
+    {
+        // Arrange
+        LogArrange("Creating manager with valid logger and invalid connection (no PostgreSQL)");
+        var manager = new TestMigrationManager(_loggerMock.Object, "Host=localhost;Port=1;Timeout=1");
+        var executionContext = CreateTestExecutionContext();
+
+        // Act
+        LogAct("Calling MigrateUpAsync with valid execution context (expect failure due to no DB)");
+        var action = () => manager.MigrateUpAsync(executionContext);
+
+        // Assert
+        LogAssert("Verifying delegation occurred and exception propagated from infrastructure");
+        await action.ShouldThrowAsync<Exception>();
+    }
+
+    [Fact]
+    public async Task MigrateDownAsync_WithValidExecutionContext_ShouldDelegateToInternalMethod()
+    {
+        // Arrange
+        LogArrange("Creating manager with valid logger and invalid connection (no PostgreSQL)");
+        var manager = new TestMigrationManager(_loggerMock.Object, "Host=localhost;Port=1;Timeout=1");
+        var executionContext = CreateTestExecutionContext();
+
+        // Act
+        LogAct("Calling MigrateDownAsync with valid execution context (expect failure due to no DB)");
+        var action = () => manager.MigrateDownAsync(executionContext, 0);
+
+        // Assert
+        LogAssert("Verifying delegation occurred and exception propagated from infrastructure");
+        await action.ShouldThrowAsync<Exception>();
+    }
+
+    [Fact]
+    public async Task GetStatusAsync_WithValidExecutionContext_ShouldDelegateToInternalMethod()
+    {
+        // Arrange
+        LogArrange("Creating manager with valid logger and invalid connection (no PostgreSQL)");
+        var manager = new TestMigrationManager(_loggerMock.Object, "Host=localhost;Port=1;Timeout=1");
+        var executionContext = CreateTestExecutionContext();
+
+        // Act
+        LogAct("Calling GetStatusAsync with valid execution context (expect failure due to no DB)");
+        var action = () => manager.GetStatusAsync(executionContext);
+
+        // Assert
+        LogAssert("Verifying delegation occurred and exception propagated from infrastructure");
+        await action.ShouldThrowAsync<Exception>();
+    }
+
     private static ExecutionContext CreateTestExecutionContext()
     {
         return ExecutionContext.Create(

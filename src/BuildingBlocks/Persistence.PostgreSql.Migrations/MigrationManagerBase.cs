@@ -48,6 +48,7 @@ public abstract class MigrationManagerBase
     /// <param name="executionContext">The execution context for distributed tracing.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     // Stryker disable all : Requer conexao PostgreSQL real - coberto por testes de integracao
+    [ExcludeFromCodeCoverage(Justification = "Delegacao para metodo interno excluido - coberto por testes de integracao")]
     public async Task MigrateUpAsync(
         ExecutionContext executionContext,
         CancellationToken cancellationToken = default)
@@ -102,6 +103,7 @@ public abstract class MigrationManagerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when a DOWN script is missing for a migration that needs to be reverted.</exception>
     // Stryker disable all : Requer conexao PostgreSQL real - coberto por testes de integracao
+    [ExcludeFromCodeCoverage(Justification = "Delegacao para metodo interno excluido - coberto por testes de integracao")]
     public async Task MigrateDownAsync(
         ExecutionContext executionContext,
         long targetVersion,
@@ -160,6 +162,7 @@ public abstract class MigrationManagerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The current migration status with applied and pending migration lists.</returns>
     // Stryker disable all : Requer conexao PostgreSQL real - coberto por testes de integracao
+    [ExcludeFromCodeCoverage(Justification = "Delegacao para metodo interno excluido - coberto por testes de integracao")]
     public async Task<Models.MigrationStatus> GetStatusAsync(
         ExecutionContext executionContext,
         CancellationToken cancellationToken = default)
