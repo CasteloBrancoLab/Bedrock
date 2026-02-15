@@ -45,7 +45,10 @@ echo "  Violations: $ARCH_PENDING"
 echo "  Report JSON: artifacts/architecture/architecture-report.json"
 
 # Gerar relatório HTML (mesmo com violações)
-if [ -f "artifacts/architecture/architecture-report.json" ]; then
+# JSONs são gerados em subpastas: artifacts/architecture/<project>/architecture-report.json
+ARCH_JSON_COUNT=$(find "artifacts/architecture" -mindepth 2 -name "architecture-report.json" 2>/dev/null | wc -l)
+ARCH_JSON_COUNT=${ARCH_JSON_COUNT//[^0-9]/}
+if [ "$ARCH_JSON_COUNT" -gt 0 ]; then
     "$SCRIPT_DIR/generate-architecture-report.sh" || echo "Warning: Architecture report generation failed"
 fi
 

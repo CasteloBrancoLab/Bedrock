@@ -11,7 +11,7 @@ echo "=== SUMMARIZE ==="
 
 # Cria diretório de pendências (limpa apenas arquivos locais, preserva sonar_*.txt de execuções anteriores)
 mkdir -p "$PENDING_DIR"
-rm -f "$PENDING_DIR"/mutant_*.txt "$PENDING_DIR"/SUMMARY.txt 2>/dev/null || true
+rm -f "$PENDING_DIR"/mutant_*.txt "$PENDING_DIR"/coverage_*.txt "$PENDING_DIR"/SUMMARY.txt 2>/dev/null || true
 
 # ========================================
 # VIOLAÇÕES DE ARQUITETURA
@@ -71,10 +71,101 @@ MUTATION_PENDING=${MUTATION_PENDING//[^0-9]/}
 echo "Found $MUTATION_PENDING surviving mutants"
 
 # ========================================
-# COBERTURA (delegada ao SonarCloud)
+# COBERTURA (linhas não cobertas)
 # ========================================
-# Coverage is not extracted locally because Coverlet reports include transitive
-# dependencies, producing false positives. SonarCloud is the authority on coverage.
-echo "Coverage: delegated to SonarCloud (see sonar-check.sh)"
+echo "Extracting uncovered lines..."
+
+# Coverage exclusion patterns (aligned with sonar.coverage.exclusions in ci.yml)
+COVERAGE_EXCLUSIONS=(
+    "**/tests/**/*"
+    "**/samples/**/*"
+    "**/templates/**/*"
+    "**/tools/**/*"
+    "**/playground/**/*"
+    "**/src/BuildingBlocks/Testing/Benchmarks/**/*"
+    "**/src/BuildingBlocks/Testing/Integration/**/*"
+    "**/src/BuildingBlocks/Testing/Attributes/**/*"
+    "**/src/BuildingBlocks/Testing/TestBase.cs"
+    "**/src/BuildingBlocks/Testing/ServiceCollectionFixture.cs"
+)
+
+COVERAGE_FILE_INDEX=0
+
+for cobertura in "$ARTIFACTS_DIR"/coverage/raw/*.cobertura.xml; do
+    if [ ! -f "$cobertura" ]; then
+        continue
+    fi
+
+    project_name=$(basename "$cobertura" .cobertura.xml)
+
+    # Extract uncovered files using PowerShell (filters transitive deps by package name suffix)
+    powershell -NoProfile -Command "
+        [xml]\$xml = Get-Content '$cobertura'
+        \$suffix = '.$project_name'
+        \$exclusions = @($(printf "'%s'," "${COVERAGE_EXCLUSIONS[@]}" | sed 's/,$//'))
+
+        function Test-Excluded(\$path) {
+            foreach (\$pattern in \$exclusions) {
+                \$regex = '^' + [regex]::Escape(\$pattern).Replace('\*\*', '§§').Replace('\*', '[^/]*').Replace('§§', '.*') + '$'
+                if (\$path -match \$regex) { return \$true }
+            }
+            return \$false
+        }
+
+        foreach (\$pkg in \$xml.coverage.packages.package) {
+            \$pkgName = \$pkg.name
+            if (-not (\$pkgName.EndsWith(\$suffix) -or \$pkgName -eq \$project_name)) { continue }
+
+            foreach (\$cls in \$pkg.classes.class) {
+                \$filename = \$cls.filename -replace '\\\\', '/'
+
+                # Build relative path from src/
+                \$srcIdx = \$filename.IndexOf('/src/')
+                if (\$srcIdx -lt 0) { continue }
+                \$relPath = \$filename.Substring(\$srcIdx + 1)
+
+                # Check exclusions
+                if (Test-Excluded \$relPath) { continue }
+
+                # Collect uncovered lines (hits=0)
+                \$uncovered = @()
+                \$total = 0
+                \$covered = 0
+                foreach (\$line in \$cls.lines.line) {
+                    \$total++
+                    if ([int]\$line.hits -eq 0) {
+                        \$uncovered += \$line.number
+                    } else {
+                        \$covered++
+                    }
+                }
+
+                if (\$uncovered.Count -eq 0) { continue }
+
+                \$lineRate = if (\$total -gt 0) { [math]::Round(\$covered / \$total * 100, 1) } else { 100 }
+
+                # Output one line per uncovered file: PROJECT|FILE|LINE_RATE|TOTAL|COVERED|UNCOVERED_LINES
+                Write-Output \"\$pkgName|\$relPath|\$lineRate|\$total|\$covered|\$(\$uncovered -join ',')\";
+            }
+        }
+    " 2>/dev/null | while IFS='|' read -r pkg filePath lineRate total coveredCount uncoveredLines; do
+        if [ -z "$filePath" ]; then continue; fi
+        COVERAGE_FILE_INDEX=$((COVERAGE_FILE_INDEX + 1))
+        idx=$(printf "%03d" "$COVERAGE_FILE_INDEX")
+
+        cat > "$PENDING_DIR/coverage_${project_name}_${idx}.txt" << COVEOF
+PROJECT: $pkg
+FILE: $filePath
+LINE_RATE: ${lineRate}%
+TOTAL_LINES: $total
+COVERED_LINES: $coveredCount
+UNCOVERED_LINES: $uncoveredLines
+COVEOF
+    done
+done
+
+COVERAGE_PENDING=$(find "$PENDING_DIR" -name "coverage_*.txt" 2>/dev/null | wc -l)
+COVERAGE_PENDING=${COVERAGE_PENDING//[^0-9]/}
+echo "Found $COVERAGE_PENDING files with uncovered lines"
 
 echo "Done: Local pending items extracted to $PENDING_DIR/"

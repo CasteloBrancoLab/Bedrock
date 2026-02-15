@@ -19,7 +19,9 @@ FAILED_TESTS=0
 
 # Find and run all test projects under tests/UnitTests
 for project in $(find tests/UnitTests -name "*.csproj"); do
-    name=$(basename "$(dirname "$project")")
+    # Build unique name from path: tests/UnitTests/BuildingBlocks/Core/*.csproj -> BuildingBlocks.Core
+    # This avoids collisions (e.g., BuildingBlocks/Domain.Entities vs ShopDemo/Auth/Domain.Entities)
+    name=$(echo "$project" | sed 's|tests/UnitTests/||' | sed 's|/[^/]*\.csproj$||' | sed 's|/|.|g')
     echo "Running tests for: $name"
 
     dotnet test "$project" \

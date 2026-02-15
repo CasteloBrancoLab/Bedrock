@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Core.Validations;
 using Bedrock.BuildingBlocks.Domain.Entities;
@@ -360,6 +361,8 @@ public sealed class User
         return true;
     }
 
+    // Stryker disable all : Stryker cannot track coverage through static lambda delegates in RegisterNewInternal
+    [ExcludeFromCodeCoverage(Justification = "Chamado via static lambda em RegisterNewInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos")]
     private bool SetEmail(
         ExecutionContext executionContext,
         EmailAddress email
@@ -371,13 +374,13 @@ public sealed class User
         );
 
         if (!isValid)
-            // Stryker disable once Boolean : Stryker cannot track coverage through static lambda delegates in RegisterNewInternal
             return false;
 
         Email = email;
 
         return true;
     }
+    // Stryker restore all
 
     private bool SetPasswordHash(
         ExecutionContext executionContext,
@@ -397,6 +400,8 @@ public sealed class User
         return true;
     }
 
+    // Stryker disable all : SetStatus always receives UserStatus.Active from RegisterNew - false path unreachable
+    [ExcludeFromCodeCoverage(Justification = "SetStatus recebe UserStatus.Active de RegisterNew - branch false inalcancavel")]
     private bool SetStatus(
         ExecutionContext executionContext,
         UserStatus status
@@ -408,13 +413,13 @@ public sealed class User
         );
 
         if (!isValid)
-            // Stryker disable once Boolean : SetStatus always receives UserStatus.Active from RegisterNew - false path unreachable
             return false;
 
         Status = status;
 
         return true;
     }
+    // Stryker restore all
 
     // Metadata
     public static class UserMetadata

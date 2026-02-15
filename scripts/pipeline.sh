@@ -259,9 +259,8 @@ echo "  Generating consolidated summary..."
 echo ""
 
 # === UNIVERSAL GATE ===
-# Gate checks: architecture violations, surviving mutants, and SonarCloud issues
-# Coverage is delegated to SonarCloud (local Coverlet reports include transitive deps, producing false positives)
-PENDING_COUNT=$(find artifacts/pending -name "*.txt" ! -name "SUMMARY.txt" ! -name "coverage_*.txt" 2>/dev/null | wc -l)
+# Gate checks: architecture violations, surviving mutants, coverage gaps, and SonarCloud issues
+PENDING_COUNT=$(find artifacts/pending -name "*.txt" ! -name "SUMMARY.txt" 2>/dev/null | wc -l)
 PENDING_COUNT=${PENDING_COUNT//[^0-9]/}
 
 if [ "$PENDING_COUNT" -gt 0 ]; then
