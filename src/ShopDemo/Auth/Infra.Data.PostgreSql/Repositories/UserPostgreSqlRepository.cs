@@ -176,20 +176,8 @@ public sealed class UserPostgreSqlRepository
         PaginationInfo paginationInfo,
         EnumerateAllItemHandler<User> handler)
     {
-        return (dataModel, cancellationToken) =>
-            HandleEnumerateAllItemAsync(executionContext, paginationInfo, handler, dataModel, cancellationToken);
-    }
-
-    [ExcludeFromCodeCoverage(Justification = "Delegate interno capturado pelo mock - testado via callback nos testes de EnumerateAllAsync")]
-    private static async Task<bool> HandleEnumerateAllItemAsync(
-        ExecutionContext executionContext,
-        PaginationInfo paginationInfo,
-        EnumerateAllItemHandler<User> handler,
-        UserDataModel dataModel,
-        CancellationToken cancellationToken)
-    {
-        User entity = UserFactory.Create(dataModel);
-        return await handler(executionContext, entity, paginationInfo, cancellationToken);
+        var adapter = new EnumerateAllHandlerAdapter(executionContext, paginationInfo, handler);
+        return adapter.InvokeAsync;
     }
 
     // Stryker restore all
@@ -201,21 +189,39 @@ public sealed class UserPostgreSqlRepository
         DateTimeOffset since,
         EnumerateModifiedSinceItemHandler<User> handler)
     {
-        return (dataModel, cancellationToken) =>
-            HandleEnumerateModifiedSinceItemAsync(executionContext, timeProvider, since, handler, dataModel, cancellationToken);
+        var adapter = new EnumerateModifiedSinceHandlerAdapter(executionContext, timeProvider, since, handler);
+        return adapter.InvokeAsync;
     }
 
-    [ExcludeFromCodeCoverage(Justification = "Delegate interno capturado pelo mock - testado via callback nos testes de EnumerateModifiedSinceAsync")]
-    private static async Task<bool> HandleEnumerateModifiedSinceItemAsync(
+    // Stryker restore all
+
+    // Handler classes replace compiler-generated closures so that [ExcludeFromCodeCoverage]
+    // is properly recognized by dotnet-coverage (which does NOT propagate the attribute
+    // from parent methods to compiler-generated lambda/closure classes).
+    [ExcludeFromCodeCoverage(Justification = "Delegate interno - requer infraestrutura real para execucao")]
+    private sealed class EnumerateAllHandlerAdapter(
+        ExecutionContext executionContext,
+        PaginationInfo paginationInfo,
+        EnumerateAllItemHandler<User> handler)
+    {
+        public async Task<bool> InvokeAsync(UserDataModel dataModel, CancellationToken cancellationToken)
+        {
+            User entity = UserFactory.Create(dataModel);
+            return await handler(executionContext, entity, paginationInfo, cancellationToken);
+        }
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Delegate interno - requer infraestrutura real para execucao")]
+    private sealed class EnumerateModifiedSinceHandlerAdapter(
         ExecutionContext executionContext,
         TimeProvider timeProvider,
         DateTimeOffset since,
-        EnumerateModifiedSinceItemHandler<User> handler,
-        UserDataModel dataModel,
-        CancellationToken cancellationToken)
+        EnumerateModifiedSinceItemHandler<User> handler)
     {
-        User entity = UserFactory.Create(dataModel);
-        return await handler(executionContext, entity, timeProvider, since, cancellationToken);
+        public async Task<bool> InvokeAsync(UserDataModel dataModel, CancellationToken cancellationToken)
+        {
+            User entity = UserFactory.Create(dataModel);
+            return await handler(executionContext, entity, timeProvider, since, cancellationToken);
+        }
     }
-    // Stryker restore all
 }
