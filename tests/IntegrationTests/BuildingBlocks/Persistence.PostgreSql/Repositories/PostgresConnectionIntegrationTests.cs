@@ -95,8 +95,10 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         // Insert
         await using var insertCommand = new NpgsqlCommand(
             """
-            INSERT INTO test_entities (id, tenant_code, name, created_by, created_at)
-            VALUES (@id, @tenantCode, @name, @createdBy, @createdAt)
+            INSERT INTO test_entities (id, tenant_code, name, created_by, created_at,
+                created_correlation_id, created_execution_origin, created_business_operation_code)
+            VALUES (@id, @tenantCode, @name, @createdBy, @createdAt,
+                @createdCorrelationId, @createdExecutionOrigin, @createdBusinessOperationCode)
             """,
             connection);
 
@@ -105,6 +107,9 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
         insertCommand.Parameters.AddWithValue("name", entityName);
         insertCommand.Parameters.AddWithValue("createdBy", "test_user");
         insertCommand.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+        insertCommand.Parameters.AddWithValue("createdCorrelationId", Guid.NewGuid());
+        insertCommand.Parameters.AddWithValue("createdExecutionOrigin", "IntegrationTests");
+        insertCommand.Parameters.AddWithValue("createdBusinessOperationCode", "TEST_OPERATION");
 
         await insertCommand.ExecuteNonQueryAsync();
         LogSql("INSERT executed successfully");
@@ -146,8 +151,10 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
 
             await using var insertCommand = new NpgsqlCommand(
                 """
-                INSERT INTO test_entities (id, tenant_code, name, created_by, created_at)
-                VALUES (@id, @tenantCode, @name, @createdBy, @createdAt)
+                INSERT INTO test_entities (id, tenant_code, name, created_by, created_at,
+                    created_correlation_id, created_execution_origin, created_business_operation_code)
+                VALUES (@id, @tenantCode, @name, @createdBy, @createdAt,
+                    @createdCorrelationId, @createdExecutionOrigin, @createdBusinessOperationCode)
                 """,
                 adminConnection);
 
@@ -156,6 +163,9 @@ public class PostgresConnectionIntegrationTests : IntegrationTestBase
             insertCommand.Parameters.AddWithValue("name", entityName);
             insertCommand.Parameters.AddWithValue("createdBy", "test_user");
             insertCommand.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+            insertCommand.Parameters.AddWithValue("createdCorrelationId", Guid.NewGuid());
+            insertCommand.Parameters.AddWithValue("createdExecutionOrigin", "IntegrationTests");
+            insertCommand.Parameters.AddWithValue("createdBusinessOperationCode", "TEST_OPERATION");
 
             await insertCommand.ExecuteNonQueryAsync();
         }

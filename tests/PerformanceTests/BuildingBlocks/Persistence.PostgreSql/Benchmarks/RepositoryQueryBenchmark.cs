@@ -47,8 +47,10 @@ public class RepositoryQueryBenchmark : BenchmarkBase
 
             await using var command = new NpgsqlCommand(
                 """
-                INSERT INTO test_entities (id, tenant_code, name, created_by, created_at, entity_version)
-                VALUES (@id, @tenantCode, @name, @createdBy, @createdAt, @entityVersion)
+                INSERT INTO test_entities (id, tenant_code, name, created_by, created_at,
+                    created_correlation_id, created_execution_origin, created_business_operation_code, entity_version)
+                VALUES (@id, @tenantCode, @name, @createdBy, @createdAt,
+                    @createdCorrelationId, @createdExecutionOrigin, @createdBusinessOperationCode, @entityVersion)
                 """,
                 connection,
                 transaction);
@@ -58,6 +60,9 @@ public class RepositoryQueryBenchmark : BenchmarkBase
             command.Parameters.AddWithValue("name", $"SeedEntity_{i}");
             command.Parameters.AddWithValue("createdBy", "benchmark_seed");
             command.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+            command.Parameters.AddWithValue("createdCorrelationId", Guid.NewGuid());
+            command.Parameters.AddWithValue("createdExecutionOrigin", "Benchmarks");
+            command.Parameters.AddWithValue("createdBusinessOperationCode", "BENCHMARK_SEED");
             command.Parameters.AddWithValue("entityVersion", 1L);
 
             await command.ExecuteNonQueryAsync();

@@ -160,12 +160,14 @@ public sealed class UserPostgreSqlRepository
         if (existingDataModel is null)
             return false;
 
+        long expectedVersion = existingDataModel.EntityVersion;
+
         UserDataModelAdapter.Adapt(existingDataModel, aggregateRoot);
 
         return await _dataModelRepository.UpdateAsync(
             executionContext,
             existingDataModel,
-            aggregateRoot.EntityInfo.EntityVersion,
+            expectedVersion,
             cancellationToken);
     }
 

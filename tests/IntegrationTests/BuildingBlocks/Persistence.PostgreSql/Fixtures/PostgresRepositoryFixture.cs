@@ -143,6 +143,9 @@ public class PostgresRepositoryFixture : ServiceCollectionFixture
             Name = name ?? $"TestEntity_{Guid.NewGuid():N}",
             CreatedBy = "integration_test_user",
             CreatedAt = DateTimeOffset.UtcNow,
+            CreatedCorrelationId = Guid.NewGuid(),
+            CreatedExecutionOrigin = "IntegrationTests",
+            CreatedBusinessOperationCode = "TEST_OPERATION",
             EntityVersion = entityVersion
         };
     }
@@ -174,9 +177,11 @@ public class PostgresRepositoryFixture : ServiceCollectionFixture
         await using var command = new NpgsqlCommand(
             """
             INSERT INTO test_entities (id, tenant_code, name, created_by, created_at,
+                created_correlation_id, created_execution_origin, created_business_operation_code,
                 last_changed_by, last_changed_at, last_changed_execution_origin,
                 last_changed_correlation_id, last_changed_business_operation_code, entity_version)
             VALUES (@id, @tenantCode, @name, @createdBy, @createdAt,
+                @createdCorrelationId, @createdExecutionOrigin, @createdBusinessOperationCode,
                 @lastChangedBy, @lastChangedAt, @lastChangedExecutionOrigin,
                 @lastChangedCorrelationId, @lastChangedBusinessOperationCode, @entityVersion)
             """,
@@ -187,6 +192,9 @@ public class PostgresRepositoryFixture : ServiceCollectionFixture
         command.Parameters.AddWithValue("name", entity.Name);
         command.Parameters.AddWithValue("createdBy", entity.CreatedBy);
         command.Parameters.AddWithValue("createdAt", entity.CreatedAt);
+        command.Parameters.AddWithValue("createdCorrelationId", entity.CreatedCorrelationId);
+        command.Parameters.AddWithValue("createdExecutionOrigin", entity.CreatedExecutionOrigin);
+        command.Parameters.AddWithValue("createdBusinessOperationCode", entity.CreatedBusinessOperationCode);
         command.Parameters.AddWithValue("lastChangedBy", (object?)entity.LastChangedBy ?? DBNull.Value);
         command.Parameters.AddWithValue("lastChangedAt", (object?)entity.LastChangedAt ?? DBNull.Value);
         command.Parameters.AddWithValue("lastChangedExecutionOrigin", (object?)entity.LastChangedExecutionOrigin ?? DBNull.Value);
@@ -211,6 +219,7 @@ public class PostgresRepositoryFixture : ServiceCollectionFixture
         await using var command = new NpgsqlCommand(
             """
             SELECT id, tenant_code, name, created_by, created_at,
+                created_correlation_id, created_execution_origin, created_business_operation_code,
                 last_changed_by, last_changed_at, last_changed_execution_origin,
                 last_changed_correlation_id, last_changed_business_operation_code, entity_version
             FROM test_entities
@@ -234,12 +243,15 @@ public class PostgresRepositoryFixture : ServiceCollectionFixture
             Name = reader.GetString(2),
             CreatedBy = reader.GetString(3),
             CreatedAt = new DateTimeOffset(reader.GetDateTime(4), TimeSpan.Zero),
-            LastChangedBy = reader.IsDBNull(5) ? null : reader.GetString(5),
-            LastChangedAt = reader.IsDBNull(6) ? null : new DateTimeOffset(reader.GetDateTime(6), TimeSpan.Zero),
-            LastChangedExecutionOrigin = reader.IsDBNull(7) ? null : reader.GetString(7),
-            LastChangedCorrelationId = reader.IsDBNull(8) ? null : reader.GetGuid(8),
-            LastChangedBusinessOperationCode = reader.IsDBNull(9) ? null : reader.GetString(9),
-            EntityVersion = reader.GetInt64(10)
+            CreatedCorrelationId = reader.GetGuid(5),
+            CreatedExecutionOrigin = reader.GetString(6),
+            CreatedBusinessOperationCode = reader.GetString(7),
+            LastChangedBy = reader.IsDBNull(8) ? null : reader.GetString(8),
+            LastChangedAt = reader.IsDBNull(9) ? null : new DateTimeOffset(reader.GetDateTime(9), TimeSpan.Zero),
+            LastChangedExecutionOrigin = reader.IsDBNull(10) ? null : reader.GetString(10),
+            LastChangedCorrelationId = reader.IsDBNull(11) ? null : reader.GetGuid(11),
+            LastChangedBusinessOperationCode = reader.IsDBNull(12) ? null : reader.GetString(12),
+            EntityVersion = reader.GetInt64(13)
         };
     }
 
@@ -286,6 +298,9 @@ public class PostgresRepositoryFixture : ServiceCollectionFixture
                             name TEXT NOT NULL,
                             created_by TEXT NOT NULL,
                             created_at TIMESTAMPTZ NOT NULL,
+                            created_correlation_id UUID NOT NULL,
+                            created_execution_origin TEXT NOT NULL,
+                            created_business_operation_code TEXT NOT NULL,
                             last_changed_by TEXT,
                             last_changed_at TIMESTAMPTZ,
                             last_changed_execution_origin TEXT,

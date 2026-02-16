@@ -69,7 +69,7 @@ public class PG001_MapBinaryImporterWritesAllColumnsRuleTests : TestBase
     public void Mapper_WithCorrectWriteCount_ShouldPass()
     {
         // Arrange
-        LogArrange("Creating mapper with 14 Write calls (10 base + 4 MapColumn)");
+        LogArrange("Creating mapper with 17 Write calls (13 base + 4 MapColumn)");
         var rule = new PG001_MapBinaryImporterWritesAllColumnsRule();
         var source = CreateValidMapperSource(4);
         var compilations = CreateCompilationWithSource("ShopDemo.Auth.Infra.Data.PostgreSql", source);
@@ -101,7 +101,7 @@ public class PG001_MapBinaryImporterWritesAllColumnsRuleTests : TestBase
     public void Mapper_WithTooFewWrites_ShouldGenerateViolation()
     {
         // Arrange
-        LogArrange("Creating mapper with 12 Write calls but 4 MapColumn (expected 14)");
+        LogArrange("Creating mapper with 12 Write calls but 4 MapColumn (expected 17)");
         var rule = new PG001_MapBinaryImporterWritesAllColumnsRule();
         var source = CreateMapperWithMismatchedWrites(4, 12);
         var compilations = CreateCompilationWithSource("ShopDemo.Auth.Infra.Data.PostgreSql", source);
@@ -119,7 +119,7 @@ public class PG001_MapBinaryImporterWritesAllColumnsRuleTests : TestBase
             .ToList();
         violations.Count.ShouldBe(1);
         violations[0].Message.ShouldContain("12");
-        violations[0].Message.ShouldContain("14");
+        violations[0].Message.ShouldContain("17");
     }
 
     #endregion
@@ -130,7 +130,7 @@ public class PG001_MapBinaryImporterWritesAllColumnsRuleTests : TestBase
     public void Mapper_WithTooManyWrites_ShouldGenerateViolation()
     {
         // Arrange
-        LogArrange("Creating mapper with 16 Write calls but 4 MapColumn (expected 14)");
+        LogArrange("Creating mapper with 16 Write calls but 4 MapColumn (expected 17)");
         var rule = new PG001_MapBinaryImporterWritesAllColumnsRule();
         var source = CreateMapperWithMismatchedWrites(4, 16);
         var compilations = CreateCompilationWithSource("ShopDemo.Auth.Infra.Data.PostgreSql", source);
@@ -148,7 +148,7 @@ public class PG001_MapBinaryImporterWritesAllColumnsRuleTests : TestBase
             .ToList();
         violations.Count.ShouldBe(1);
         violations[0].Message.ShouldContain("16");
-        violations[0].Message.ShouldContain("14");
+        violations[0].Message.ShouldContain("17");
     }
 
     #endregion
@@ -209,10 +209,10 @@ public class PG001_MapBinaryImporterWritesAllColumnsRuleTests : TestBase
     #region Zero MapColumn With Only Base Writes Should Pass
 
     [Fact]
-    public void Mapper_WithZeroMapColumn_And10Writes_ShouldPass()
+    public void Mapper_WithZeroMapColumn_And13Writes_ShouldPass()
     {
         // Arrange
-        LogArrange("Creating mapper with 0 MapColumn and 10 Write calls (base only)");
+        LogArrange("Creating mapper with 0 MapColumn and 13 Write calls (base only)");
         var rule = new PG001_MapBinaryImporterWritesAllColumnsRule();
         var source = CreateValidMapperSource(0);
         var compilations = CreateCompilationWithSource("ShopDemo.Auth.Infra.Data.PostgreSql", source);
@@ -239,7 +239,7 @@ public class PG001_MapBinaryImporterWritesAllColumnsRuleTests : TestBase
         var mapColumns = string.Join("\n                        ",
             Enumerable.Range(0, mapColumnCount).Select(i => $".MapColumn(\"Col{i}\")"));
 
-        var totalWrites = 10 + mapColumnCount;
+        var totalWrites = 13 + mapColumnCount;
         var writes = string.Join("\n                        ",
             Enumerable.Range(0, totalWrites).Select(i => $"importer.Write(model, {i});"));
 

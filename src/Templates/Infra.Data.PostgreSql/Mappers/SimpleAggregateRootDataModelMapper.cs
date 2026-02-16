@@ -26,6 +26,9 @@ public sealed class SimpleAggregateRootDataModelMapper
         importer.Write(model.TenantCode, NpgsqlDbType.Uuid);
         importer.Write(model.CreatedBy, NpgsqlDbType.Varchar);
         importer.Write(model.CreatedAt, NpgsqlDbType.TimestampTz);
+        importer.Write(model.CreatedCorrelationId, NpgsqlDbType.Uuid);
+        importer.Write(model.CreatedExecutionOrigin, NpgsqlDbType.Varchar);
+        importer.Write(model.CreatedBusinessOperationCode, NpgsqlDbType.Varchar);
         importer.Write(model.LastChangedBy, NpgsqlDbType.Varchar);
         importer.Write(model.LastChangedAt, NpgsqlDbType.TimestampTz);
         importer.Write(model.LastChangedExecutionOrigin, NpgsqlDbType.Varchar);

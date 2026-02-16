@@ -462,15 +462,17 @@ public class UserPostgreSqlRepositoryTests : TestBase
     }
 
     [Fact]
-    public async Task UpdateAsync_ShouldPassEntityVersionToDataModelRepository()
+    public async Task UpdateAsync_ShouldPassExistingDataModelVersionToDataModelRepository()
     {
         // Arrange
-        LogArrange("Setting up mock to capture entity version");
+        LogArrange("Setting up mock to capture existing data model version (not entity version)");
         var executionContext = CreateTestExecutionContext();
         var entityId = Guid.NewGuid();
-        long expectedVersion = Faker.Random.Long(1);
+        long dbVersion = Faker.Random.Long(1);
+        long entityNewVersion = dbVersion + 100;
         var existingDataModel = CreateTestDataModel(entityId);
-        var user = CreateTestUserWithVersion("testuser", "test@example.com", [1, 2, 3], UserStatus.Active, entityId, expectedVersion);
+        existingDataModel.EntityVersion = dbVersion;
+        var user = CreateTestUserWithVersion("testuser", "test@example.com", [1, 2, 3], UserStatus.Active, entityId, entityNewVersion);
 
         _dataModelRepositoryMock
             .Setup(static x => x.GetByIdAsync(
@@ -492,12 +494,12 @@ public class UserPostgreSqlRepositoryTests : TestBase
         await _repository.UpdateAsync(executionContext, user, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying entity version was passed correctly");
+        LogAssert("Verifying existing data model version was passed (not entity version)");
         _dataModelRepositoryMock.Verify(
             x => x.UpdateAsync(
                 It.IsAny<ExecutionContext>(),
                 It.IsAny<UserDataModel>(),
-                expectedVersion,
+                dbVersion,
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

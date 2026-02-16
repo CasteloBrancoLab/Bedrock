@@ -6,9 +6,9 @@ namespace Bedrock.BuildingBlocks.Testing.Architecture.Rules.PostgreSqlRules;
 
 /// <summary>
 /// PG-001: O metodo MapBinaryImporter de cada Mapper deve chamar importer.Write()
-/// exatamente para todas as colunas mapeadas: 10 colunas base (DataModelBase)
+/// exatamente para todas as colunas mapeadas: 13 colunas base (DataModelBase)
 /// + N colunas especificas (MapColumn calls em ConfigureInternal).
-/// A quantidade de Write() deve ser igual a 10 + MapColumn count.
+/// A quantidade de Write() deve ser igual a 13 + MapColumn count.
 /// </summary>
 public sealed class PG001_MapBinaryImporterWritesAllColumnsRule : InfrastructureTypeRuleBase
 {
@@ -19,14 +19,14 @@ public sealed class PG001_MapBinaryImporterWritesAllColumnsRule : Infrastructure
     private const string WriteMethodName = "Write";
     private const string MapColumnMethodName = "MapColumn";
     private const string AutoMapColumnsMethodName = "AutoMapColumns";
-    private const int BaseColumnCount = 10;
+    private const int BaseColumnCount = 13;
 
     public override string Category => "PostgreSQL";
 
     public override string Name => "PG001_MapBinaryImporterWritesAllColumns";
 
     public override string Description =>
-        "MapBinaryImporter deve escrever todas as colunas mapeadas: 10 base + N especificas (PG-001).";
+        "MapBinaryImporter deve escrever todas as colunas mapeadas: 13 base + N especificas (PG-001).";
 
     public override Severity DefaultSeverity => Severity.Error;
 
@@ -117,10 +117,10 @@ public sealed class PG001_MapBinaryImporterWritesAllColumnsRule : Infrastructure
                             Line = lineNumber,
                             Message = $"Mapper '{mapper.Name}' em '{projectName}': " +
                                       $"MapBinaryImporter tem {writeCount} Write() mas esperado {expectedCount} " +
-                                      $"(10 base + {mapColumnCount} MapColumn).",
+                                      $"({BaseColumnCount} base + {mapColumnCount} MapColumn).",
                             LlmHint = $"No mapper '{mapper.Name}', ajuste MapBinaryImporter para ter " +
                                       $"exatamente {expectedCount} chamadas a importer.Write() " +
-                                      $"(10 colunas base + {mapColumnCount} colunas especificas). " +
+                                      $"({BaseColumnCount} colunas base + {mapColumnCount} colunas especificas). " +
                                       $"Consulte a ADR PG-001."
                         }
                     });

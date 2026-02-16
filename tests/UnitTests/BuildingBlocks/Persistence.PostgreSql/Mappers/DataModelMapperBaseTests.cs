@@ -672,6 +672,18 @@ public class DataModelMapperBaseTests : TestBase
         columns["CreatedAt"].ColumnName.ShouldBe("created_at");
         columns["CreatedAt"].Type.ShouldBe(typeof(DateTimeOffset));
 
+        columns.ShouldContainKey("CreatedCorrelationId");
+        columns["CreatedCorrelationId"].ColumnName.ShouldBe("created_correlation_id");
+        columns["CreatedCorrelationId"].Type.ShouldBe(typeof(Guid));
+
+        columns.ShouldContainKey("CreatedExecutionOrigin");
+        columns["CreatedExecutionOrigin"].ColumnName.ShouldBe("created_execution_origin");
+        columns["CreatedExecutionOrigin"].Type.ShouldBe(typeof(string));
+
+        columns.ShouldContainKey("CreatedBusinessOperationCode");
+        columns["CreatedBusinessOperationCode"].ColumnName.ShouldBe("created_business_operation_code");
+        columns["CreatedBusinessOperationCode"].Type.ShouldBe(typeof(string));
+
         columns.ShouldContainKey("LastChangedBy");
         columns["LastChangedBy"].ColumnName.ShouldBe("last_changed_by");
         columns["LastChangedBy"].Type.ShouldBe(typeof(string));

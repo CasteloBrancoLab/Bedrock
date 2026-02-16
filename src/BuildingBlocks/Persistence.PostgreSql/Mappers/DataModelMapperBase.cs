@@ -845,6 +845,9 @@ public abstract class DataModelMapperBase<TDataModel>
         _columnMapDictionary.Add(nameof(DataModelBase.TenantCode), ColumnMap.Create(nameof(DataModelBase.TenantCode).ToSnakeCase(), typeof(Guid)));
         _columnMapDictionary.Add(nameof(DataModelBase.CreatedBy), ColumnMap.Create(nameof(DataModelBase.CreatedBy).ToSnakeCase(), typeof(string)));
         _columnMapDictionary.Add(nameof(DataModelBase.CreatedAt), ColumnMap.Create(nameof(DataModelBase.CreatedAt).ToSnakeCase(), typeof(DateTimeOffset)));
+        _columnMapDictionary.Add(nameof(DataModelBase.CreatedCorrelationId), ColumnMap.Create(nameof(DataModelBase.CreatedCorrelationId).ToSnakeCase(), typeof(Guid)));
+        _columnMapDictionary.Add(nameof(DataModelBase.CreatedExecutionOrigin), ColumnMap.Create(nameof(DataModelBase.CreatedExecutionOrigin).ToSnakeCase(), typeof(string)));
+        _columnMapDictionary.Add(nameof(DataModelBase.CreatedBusinessOperationCode), ColumnMap.Create(nameof(DataModelBase.CreatedBusinessOperationCode).ToSnakeCase(), typeof(string)));
         _columnMapDictionary.Add(nameof(DataModelBase.LastChangedBy), ColumnMap.Create(nameof(DataModelBase.LastChangedBy).ToSnakeCase(), typeof(string)));
         _columnMapDictionary.Add(nameof(DataModelBase.LastChangedAt), ColumnMap.Create(nameof(DataModelBase.LastChangedAt).ToSnakeCase(), typeof(DateTimeOffset?)));
         _columnMapDictionary.Add(nameof(DataModelBase.LastChangedExecutionOrigin), ColumnMap.Create(nameof(DataModelBase.LastChangedExecutionOrigin).ToSnakeCase(), typeof(string)));
