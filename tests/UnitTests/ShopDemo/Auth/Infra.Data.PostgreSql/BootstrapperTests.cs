@@ -75,7 +75,7 @@ public class BootstrapperTests : TestBase
     }
 
     [Fact]
-    public void ConfigureServices_ShouldRegisterDataModelRepository()
+    public void ConfigureServices_ShouldRegisterUserDataModelRepository()
     {
         // Arrange
         LogArrange("Criando service collection");
@@ -86,7 +86,7 @@ public class BootstrapperTests : TestBase
         Bootstrapper.ConfigureServices(services);
 
         // Assert
-        LogAssert("Verificando que data model repository esta registrado como scoped");
+        LogAssert("Verificando que User data model repository esta registrado como scoped");
         var descriptor = services.SingleOrDefault(d =>
             d.ServiceType == typeof(IUserDataModelRepository));
         descriptor.ShouldNotBeNull();
@@ -94,7 +94,7 @@ public class BootstrapperTests : TestBase
     }
 
     [Fact]
-    public void ConfigureServices_ShouldRegisterPostgreSqlRepository()
+    public void ConfigureServices_ShouldRegisterRefreshTokenDataModelRepository()
     {
         // Arrange
         LogArrange("Criando service collection");
@@ -105,11 +105,68 @@ public class BootstrapperTests : TestBase
         Bootstrapper.ConfigureServices(services);
 
         // Assert
-        LogAssert("Verificando que repositorio PostgreSql esta registrado como scoped");
+        LogAssert("Verificando que RefreshToken data model repository esta registrado como scoped");
+        var descriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(IRefreshTokenDataModelRepository));
+        descriptor.ShouldNotBeNull();
+        descriptor.Lifetime.ShouldBe(ServiceLifetime.Scoped);
+    }
+
+    [Fact]
+    public void ConfigureServices_ShouldRegisterUserPostgreSqlRepository()
+    {
+        // Arrange
+        LogArrange("Criando service collection");
+        var services = new ServiceCollection();
+
+        // Act
+        LogAct("Chamando Bootstrapper.ConfigureServices");
+        Bootstrapper.ConfigureServices(services);
+
+        // Assert
+        LogAssert("Verificando que User repositorio PostgreSql esta registrado como scoped");
         var descriptor = services.SingleOrDefault(d =>
             d.ServiceType == typeof(IUserPostgreSqlRepository));
         descriptor.ShouldNotBeNull();
         descriptor.Lifetime.ShouldBe(ServiceLifetime.Scoped);
+    }
+
+    [Fact]
+    public void ConfigureServices_ShouldRegisterRefreshTokenPostgreSqlRepository()
+    {
+        // Arrange
+        LogArrange("Criando service collection");
+        var services = new ServiceCollection();
+
+        // Act
+        LogAct("Chamando Bootstrapper.ConfigureServices");
+        Bootstrapper.ConfigureServices(services);
+
+        // Assert
+        LogAssert("Verificando que RefreshToken repositorio PostgreSql esta registrado como scoped");
+        var descriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(IRefreshTokenPostgreSqlRepository));
+        descriptor.ShouldNotBeNull();
+        descriptor.Lifetime.ShouldBe(ServiceLifetime.Scoped);
+    }
+
+    [Fact]
+    public void ConfigureServices_ShouldRegisterRefreshTokenMapper()
+    {
+        // Arrange
+        LogArrange("Criando service collection");
+        var services = new ServiceCollection();
+
+        // Act
+        LogAct("Chamando Bootstrapper.ConfigureServices");
+        Bootstrapper.ConfigureServices(services);
+
+        // Assert
+        LogAssert("Verificando que RefreshToken mapper esta registrado como singleton");
+        var descriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(IDataModelMapper<RefreshTokenDataModel>));
+        descriptor.ShouldNotBeNull();
+        descriptor.Lifetime.ShouldBe(ServiceLifetime.Singleton);
     }
 
     [Fact]
@@ -143,9 +200,12 @@ public class BootstrapperTests : TestBase
         // Assert
         LogAssert("Verificando que nao duplicou registros (TryAdd)");
         services.Count(d => d.ServiceType == typeof(IDataModelMapper<UserDataModel>)).ShouldBe(1);
+        services.Count(d => d.ServiceType == typeof(IDataModelMapper<RefreshTokenDataModel>)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IAuthPostgreSqlConnection)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IAuthPostgreSqlUnitOfWork)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IUserDataModelRepository)).ShouldBe(1);
+        services.Count(d => d.ServiceType == typeof(IRefreshTokenDataModelRepository)).ShouldBe(1);
         services.Count(d => d.ServiceType == typeof(IUserPostgreSqlRepository)).ShouldBe(1);
+        services.Count(d => d.ServiceType == typeof(IRefreshTokenPostgreSqlRepository)).ShouldBe(1);
     }
 }
