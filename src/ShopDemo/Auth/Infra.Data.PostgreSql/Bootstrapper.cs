@@ -23,6 +23,7 @@ public static class Bootstrapper
     {
         // Mappers (singleton — stateless, caches internamente)
         services.TryAddSingleton<IDataModelMapper<UserDataModel>, UserDataModelMapper>();
+        services.TryAddSingleton<IDataModelMapper<RefreshTokenDataModel>, RefreshTokenDataModelMapper>();
 
         // Connection (scoped — mantém NpgsqlConnection por request)
         services.TryAddScoped<IAuthPostgreSqlConnection, AuthPostgreSqlConnection>();
@@ -32,9 +33,11 @@ public static class Bootstrapper
 
         // DataModel Repositories (scoped — dependem do UoW)
         services.TryAddScoped<IUserDataModelRepository, UserDataModelRepository>();
+        services.TryAddScoped<IRefreshTokenDataModelRepository, RefreshTokenDataModelRepository>();
 
         // PostgreSql Repositories (scoped — dependem do DataModel Repository)
         services.TryAddScoped<IUserPostgreSqlRepository, UserPostgreSqlRepository>();
+        services.TryAddScoped<IRefreshTokenPostgreSqlRepository, RefreshTokenPostgreSqlRepository>();
 
         return services;
     }
