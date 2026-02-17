@@ -46,6 +46,7 @@ public class IN006_ConnectionMarkerInterfaceRuleTests : TestBase
     [InlineData("ShopDemo.Auth.Application")]
     [InlineData("ShopDemo.Auth.Infra.Data")]
     [InlineData("Bedrock.BuildingBlocks.Core")]
+    [InlineData("ShopDemo.Auth.Infra.Data.PostgreSql.Migrations")]
     public void NonInfraDataTechProject_ShouldBeIgnored(string projectName)
     {
         // Arrange

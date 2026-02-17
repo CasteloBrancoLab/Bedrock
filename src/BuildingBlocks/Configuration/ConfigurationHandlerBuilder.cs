@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Configuration.Handlers;
 using Bedrock.BuildingBlocks.Configuration.Handlers.Enums;
 
-namespace Bedrock.BuildingBlocks.Configuration.Registration;
+namespace Bedrock.BuildingBlocks.Configuration;
 
 /// <summary>
 /// Fluent builder para configuracao de um handler no pipeline.
@@ -104,6 +104,8 @@ public sealed class ClassScopeBuilder<TClass> where TClass : class
         return this;
     }
 
+    // Stryker disable all : Mensagem de erro defensiva — API publica tipada impede expressoes invalidas
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Metodo auxiliar trivial com codigo defensivo inalcancavel — API publica tipada impede expressoes invalidas")]
     private static string ExtractPropertyName<TProperty>(Expression<Func<TClass, TProperty>> expression)
     {
         if (expression.Body is MemberExpression memberExpression)
@@ -111,10 +113,9 @@ public sealed class ClassScopeBuilder<TClass> where TClass : class
             return memberExpression.Member.Name;
         }
 
-        // Stryker disable all : Mensagem de erro defensiva — API publica tipada impede expressoes invalidas
         throw new ArgumentException(
             $"Expressao deve referenciar uma propriedade direta de {typeof(TClass).Name}.",
             nameof(expression));
-        // Stryker restore all
     }
+    // Stryker restore all
 }

@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Connections;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Connections.Models;
-using Microsoft.Extensions.Configuration;
+using ShopDemo.Auth.Infra.CrossCutting.Configuration;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
 
 namespace ShopDemo.Auth.Infra.Data.PostgreSql.Connections;
@@ -10,17 +10,14 @@ public sealed class AuthPostgreSqlConnection
     : PostgreSqlConnectionBase,
     IAuthPostgreSqlConnection
 {
-    // Constants
-    private const string ConnectionStringConfigKey = "ConnectionStrings:AuthPostgreSql";
-
     // Fields
-    private readonly IConfiguration _configuration;
+    private readonly AuthConfigurationManager _configurationManager;
 
     // Constructors
     // Stryker disable all : Construtor armazena dependencia usada em ConfigureInternal (excluido de cobertura)
-    public AuthPostgreSqlConnection(IConfiguration configuration)
+    public AuthPostgreSqlConnection(AuthConfigurationManager configurationManager)
     {
-        _configuration = configuration;
+        _configurationManager = configurationManager;
     }
     // Stryker restore all
 
@@ -29,11 +26,11 @@ public sealed class AuthPostgreSqlConnection
     [ExcludeFromCodeCoverage(Justification = "Requer conexao PostgreSQL real - coberto por testes de integracao")]
     protected override void ConfigureInternal(PostgreSqlConnectionOptions options)
     {
-        string? connectionString = _configuration[ConnectionStringConfigKey];
+        AuthDatabaseConfig config = _configurationManager.Get<AuthDatabaseConfig>();
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        ArgumentException.ThrowIfNullOrWhiteSpace(config.ConnectionString);
 
-        options.WithConnectionString(connectionString);
+        options.WithConnectionString(config.ConnectionString);
     }
     // Stryker restore all
 }

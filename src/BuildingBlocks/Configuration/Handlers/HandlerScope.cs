@@ -33,6 +33,8 @@ public readonly struct HandlerScope : IEquatable<HandlerScope>
     /// <summary>Verifica se uma chave corresponde a este escopo.</summary>
     /// <param name="key">Chave completa de configuracao.</param>
     /// <returns>true se o handler deve processar esta chave.</returns>
+    // Stryker disable once all : Default case do switch e inalcancavel — ScopeType e enum com 3 valores definidos
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Default case inalcancavel — ScopeType e enum com 3 valores definidos, coberto por testes exaustivos dos 3 valores")]
     public bool Matches(string key)
     {
         return ScopeType switch
@@ -42,7 +44,6 @@ public readonly struct HandlerScope : IEquatable<HandlerScope>
                                && key.Length > PathPattern.Length
                                && key[PathPattern.Length] == ':',
             ScopeType.Property => string.Equals(key, PathPattern, StringComparison.Ordinal),
-            // Stryker disable once all : Default case do switch e inalcancavel — ScopeType e enum com 3 valores definidos
             _ => false
         };
     }

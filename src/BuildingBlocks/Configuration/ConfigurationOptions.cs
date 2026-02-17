@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Configuration.Handlers;
 using Bedrock.BuildingBlocks.Configuration.Pipeline;
 
-namespace Bedrock.BuildingBlocks.Configuration.Registration;
+namespace Bedrock.BuildingBlocks.Configuration;
 
 /// <summary>
 /// Opcoes de configuracao para o pipeline de handlers.

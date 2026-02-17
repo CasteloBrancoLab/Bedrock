@@ -13,6 +13,7 @@
 
   <ItemGroup Label="Test Visibility">
     <InternalsVisibleTo Include="Bedrock.UnitTests.BuildingBlocks.Persistence.PostgreSql.Migrations" />
+    <InternalsVisibleTo Include="ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Migrations" />
   </ItemGroup>
 
   <ItemGroup>

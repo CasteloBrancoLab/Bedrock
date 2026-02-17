@@ -14,8 +14,9 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 | **DE** | [Domain Entities](./domain-entities/README.md) | Entidades de domínio, agregados e value objects | 60 ADRs |
 | **RE** | Repositories | Persistência e acesso a dados | Em breve |
 | **AS** | Application Services | Serviços de aplicação e casos de uso | Em breve |
-| **IN** | [Infrastructure](./infrastructure/README.md) | Infraestrutura, cross-cutting concerns | 5 ADRs |
+| **IN** | [Infrastructure](./infrastructure/README.md) | Infraestrutura, cross-cutting concerns | 17 ADRs |
 | **RL** | [Relational](./relational/README.md) | Mapeamento objeto-relacional, SQL generation, data models | 4 ADRs |
+| **CF** | [Configuration](./configuration/README.md) | Pipeline de handlers, configuracao tipada, caching e escopo | 6 ADRs |
 | **PG** | [PostgreSQL](./postgresql/README.md) | Padroes especificos do PostgreSQL e Npgsql | 2 ADRs |
 | **AP** | API | APIs REST, GraphQL, contratos | Em breve |
 
@@ -29,6 +30,7 @@ Cada ADR segue o padrão:
 
 Exemplos:
 - `CS-001-interfaces-em-namespace-interfaces.md` - Code Style
+- `CF-001-manager-herda-configurationmanagerbase.md` - Configuration
 - `DE-001-entidades-devem-ser-sealed.md` - Domain Entities
 - `RE-001-repository-pattern.md` - Repositories
 - `AS-001-cqrs-segregation.md` - Application Services
@@ -162,6 +164,7 @@ Links para implementações de referência no repositório.
 - [IN-003: Domain É um Projeto Separado de Domain.Entities](./infrastructure/IN-003-domain-projeto-separado.md)
 - [IN-004: Modelo de Dados É Detalhe de Implementacao](./infrastructure/IN-004-modelo-dados-detalhe-implementacao.md)
 - [IN-005: Infra.Data Atua como Facade de Persistencia](./infrastructure/IN-005-infra-data-facade-persistencia.md)
+- [IN-017: Cada Camada Tem Seu Proprio Bootstrapper Para IoC](./infrastructure/IN-017-bootstrapper-por-camada-para-ioc.md)
 - [Ver todas as ADRs de Infrastructure](./infrastructure/)
 
 ### Relational (RL)
@@ -170,6 +173,15 @@ Links para implementações de referência no repositório.
 - [RL-003: Proibir SQL Literal Fora de Mappers](./relational/RL-003-proibir-sql-fora-de-mapper.md)
 - [RL-004: DataModel Deve Ter Apenas Propriedades Primitivas](./relational/RL-004-datamodel-propriedades-primitivas.md)
 - [Ver todas as ADRs de Relational](./relational/)
+
+### Configuration (CF)
+- [CF-001: ConfigurationManager Deve Herdar ConfigurationManagerBase](./configuration/CF-001-manager-herda-configurationmanagerbase.md)
+- [CF-002: ConfigureInternal Deve Registrar Secoes com MapSection](./configuration/CF-002-configurar-secoes-com-mapsection.md)
+- [CF-003: Handler Deve Herdar ConfigurationHandlerBase com LoadStrategy](./configuration/CF-003-handler-herda-configurationhandlerbase.md)
+- [CF-004: Handlers Devem Ter Posicao Explicita e Unica no Pipeline](./configuration/CF-004-posicao-explicita-unica-no-pipeline.md)
+- [CF-005: Escopo de Handler Define Quais Chaves Sao Processadas](./configuration/CF-005-escopo-handler-tres-niveis.md)
+- [CF-006: Acesso a Configuracao Deve Ser Tipado via Expression Trees](./configuration/CF-006-acesso-tipado-expression-trees.md)
+- [Ver todas as ADRs de Configuration](./configuration/)
 
 ### PostgreSQL (PG)
 - [PG-001: MapBinaryImporter Deve Escrever Todas as Colunas](./postgresql/PG-001-binary-importer-todas-colunas.md)

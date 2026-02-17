@@ -1,7 +1,9 @@
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Connections;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
+using ShopDemo.Auth.Infra.CrossCutting.Configuration;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,17 +16,24 @@ public class AuthPostgreSqlConnectionTests : TestBase
     {
     }
 
+    private static AuthConfigurationManager CreateConfigurationManager()
+    {
+        IConfiguration configuration = new ConfigurationBuilder().Build();
+        var logger = new Mock<ILogger<AuthConfigurationManager>>().Object;
+        return new AuthConfigurationManager(configuration, logger);
+    }
+
     [Fact]
     public void Constructor_WithValidConfiguration_ShouldCreateInstance()
     {
         // Arrange
-        LogArrange("Creating mock IConfiguration");
-        var configurationMock = new Mock<IConfiguration>();
+        LogArrange("Creating AuthConfigurationManager");
+        AuthConfigurationManager configurationManager = CreateConfigurationManager();
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection");
         var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
-            configurationMock.Object);
+            configurationManager);
 
         // Assert
         LogAssert("Verifying instance was created successfully");
@@ -35,13 +44,13 @@ public class AuthPostgreSqlConnectionTests : TestBase
     public void Constructor_ShouldInheritFromPostgreSqlConnectionBase()
     {
         // Arrange
-        LogArrange("Creating mock IConfiguration");
-        var configurationMock = new Mock<IConfiguration>();
+        LogArrange("Creating AuthConfigurationManager");
+        AuthConfigurationManager configurationManager = CreateConfigurationManager();
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection");
         var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
-            configurationMock.Object);
+            configurationManager);
 
         // Assert
         LogAssert("Verifying inheritance from PostgreSqlConnectionBase");
@@ -52,13 +61,13 @@ public class AuthPostgreSqlConnectionTests : TestBase
     public void Constructor_ConnectionShouldNotBeOpenInitially()
     {
         // Arrange
-        LogArrange("Creating mock IConfiguration");
-        var configurationMock = new Mock<IConfiguration>();
+        LogArrange("Creating AuthConfigurationManager");
+        AuthConfigurationManager configurationManager = CreateConfigurationManager();
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection and checking state");
         var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
-            configurationMock.Object);
+            configurationManager);
 
         // Assert
         LogAssert("Verifying connection is not open initially");
@@ -69,13 +78,13 @@ public class AuthPostgreSqlConnectionTests : TestBase
     public void Constructor_ShouldImplementIAuthPostgreSqlConnection()
     {
         // Arrange
-        LogArrange("Creating mock IConfiguration");
-        var configurationMock = new Mock<IConfiguration>();
+        LogArrange("Creating AuthConfigurationManager");
+        AuthConfigurationManager configurationManager = CreateConfigurationManager();
 
         // Act
         LogAct("Instantiating AuthPostgreSqlConnection");
         var connection = new ShopDemo.Auth.Infra.Data.PostgreSql.Connections.AuthPostgreSqlConnection(
-            configurationMock.Object);
+            configurationManager);
 
         // Assert
         LogAssert("Verifying implementation of IAuthPostgreSqlConnection");

@@ -45,6 +45,18 @@ Decisoes arquiteturais sobre infraestrutura, camadas de persistencia, cross-cutt
 | [IN-015](./IN-015-estrutura-pastas-canonica-infra-data-tech.md) | Estrutura Canonica de Pastas em Infra.Data.{Tech} | Aceita | IN015 |
 | [IN-016](./IN-016-repositorio-tech-agnostico-delega-para-tech.md) | Repositorio Tech-Agnostico Delega Para Tech | Aceita | IN016 |
 
+### IoC e Composicao
+
+| ADR | Titulo | Status | Rule |
+|-----|--------|--------|------|
+| [IN-017](./IN-017-bootstrapper-por-camada-para-ioc.md) | Cada Camada Tem Seu Proprio Bootstrapper Para IoC | Aceita | IN017 |
+
+### Organizacao no .sln
+
+| ADR | Titulo | Status | Rule |
+|-----|--------|--------|------|
+| [IN-018](./IN-018-solution-folders-canonicos-bounded-context.md) | Solution Folders Canonicos Para Bounded Context | Aceita | IN018 |
+
 ## Escopo
 
 - **IN-***: Regras que definem a estrutura de projetos de infraestrutura, camadas de dados, persistencia e cross-cutting concerns.

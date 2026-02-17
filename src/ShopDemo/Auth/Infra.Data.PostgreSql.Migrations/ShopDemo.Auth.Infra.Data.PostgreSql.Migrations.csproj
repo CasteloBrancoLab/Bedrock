@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup Label="Embedded SQL Scripts">
+    <EmbeddedResource Include="Scripts\**\*.sql" />
+  </ItemGroup>
+
+  <ItemGroup Label="Test Visibility">
+    <InternalsVisibleTo Include="ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Migrations" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Infra.CrossCutting.Configuration\ShopDemo.Auth.Infra.CrossCutting.Configuration.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Persistence.PostgreSql.Migrations\Bedrock.BuildingBlocks.Persistence.PostgreSql.Migrations.csproj" />
+  </ItemGroup>
+
+</Project>

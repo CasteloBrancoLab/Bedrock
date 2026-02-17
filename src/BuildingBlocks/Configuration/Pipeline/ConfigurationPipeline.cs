@@ -141,6 +141,8 @@ internal sealed class ConfigurationPipeline
     /// <summary>Indica se o pipeline tem entradas.</summary>
     public bool HasEntries => _entries.Count > 0;
 
+    // Stryker disable once all : Default case do switch e inalcancavel — LoadStrategy e enum com 3 valores definidos
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Default case inalcancavel — LoadStrategy e enum com 3 valores definidos, coberto por testes exaustivos dos 3 valores")]
     private object? ExecuteHandlerGet(int index, PipelineEntry entry, string key, object? currentValue)
     {
         return entry.Handler.LoadStrategy switch

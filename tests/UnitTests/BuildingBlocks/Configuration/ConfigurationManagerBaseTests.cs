@@ -1,7 +1,6 @@
 using Bedrock.BuildingBlocks.Configuration;
 using Bedrock.BuildingBlocks.Configuration.Handlers;
 using Bedrock.BuildingBlocks.Configuration.Handlers.Enums;
-using Bedrock.BuildingBlocks.Configuration.Registration;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

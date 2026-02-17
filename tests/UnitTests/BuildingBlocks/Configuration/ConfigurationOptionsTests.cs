@@ -1,10 +1,10 @@
-using Bedrock.BuildingBlocks.Configuration.Registration;
+using Bedrock.BuildingBlocks.Configuration;
 using Bedrock.BuildingBlocks.Testing;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Bedrock.UnitTests.BuildingBlocks.Configuration.Registration;
+namespace Bedrock.UnitTests.BuildingBlocks.Configuration;
 
 public sealed class ConfigurationOptionsTests : TestBase
 {

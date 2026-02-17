@@ -9,6 +9,14 @@ namespace Bedrock.UnitTests.BuildingBlocks.Configuration.Handlers;
 
 #region Test Handlers
 
+public sealed class DefaultConstructorHandler : ConfigurationHandlerBase
+{
+    public DefaultConstructorHandler() { }
+
+    public override object? HandleGet(string key, object? currentValue) => currentValue;
+    public override object? HandleSet(string key, object? currentValue) => currentValue;
+}
+
 public sealed class PassthroughHandler : ConfigurationHandlerBase
 {
     public PassthroughHandler() : base(LoadStrategy.AllTime) { }
@@ -91,6 +99,19 @@ public sealed class FailingHandler : ConfigurationHandlerBase
 public sealed class ConfigurationHandlerBaseTests : TestBase
 {
     public ConfigurationHandlerBaseTests(ITestOutputHelper output) : base(output) { }
+
+    [Fact]
+    public void DefaultConstructor_ShouldDefaultToAllTimeStrategy()
+    {
+        // Arrange & Act
+        LogArrange("Criando handler com construtor padrao (sem parametro)");
+        LogAct("Verificando que LoadStrategy padrao e AllTime");
+        var handler = new DefaultConstructorHandler();
+
+        // Assert
+        LogAssert("Verificando que LoadStrategy e AllTime por padrao");
+        handler.LoadStrategy.ShouldBe(LoadStrategy.AllTime);
+    }
 
     [Fact]
     public void Constructor_WithLoadStrategy_ShouldSetProperty()

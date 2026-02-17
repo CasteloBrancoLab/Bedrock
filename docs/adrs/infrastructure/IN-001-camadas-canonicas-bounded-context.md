@@ -212,7 +212,7 @@ src/ShopDemo/Auth/
     ShopDemo.Auth.Infra.Data.csproj
   Infra.Data.PostgreSql/
     ShopDemo.Auth.Infra.Data.PostgreSql.csproj
-  Infra.CrossCutting.Configuration/          # futuro
+  Infra.CrossCutting.Configuration/
     ShopDemo.Auth.Infra.CrossCutting.Configuration.csproj
   Infra.CrossCutting.Bootstrapper/           # futuro
     ShopDemo.Auth.Infra.CrossCutting.Bootstrapper.csproj

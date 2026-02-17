@@ -23,7 +23,14 @@ public abstract class InfrastructureTypeRuleBase : Rule
 
         // Deve ter algo apos ".Infra.Data." (o nome da tecnologia)
         var afterMarker = projectName[(idx + marker.Length)..];
-        return afterMarker.Length > 0;
+        if (afterMarker.Length == 0)
+            return false;
+
+        // Projetos de Migrations nao sao InfraDataTech (nao tem Connection/UoW/DataModel)
+        if (afterMarker.EndsWith(".Migrations", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return true;
     }
 
     /// <summary>

@@ -45,6 +45,7 @@ public class IN015_CanonicalFolderStructureRuleTests : TestBase
     [InlineData("ShopDemo.Auth.Domain")]
     [InlineData("ShopDemo.Auth.Infra.Data")]
     [InlineData("Bedrock.BuildingBlocks.Core")]
+    [InlineData("ShopDemo.Auth.Infra.Data.PostgreSql.Migrations")]
     public void NonInfraDataTechProject_ShouldBeIgnored(string projectName)
     {
         // Arrange

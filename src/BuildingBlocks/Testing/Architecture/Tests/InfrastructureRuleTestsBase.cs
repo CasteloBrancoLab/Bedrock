@@ -91,4 +91,16 @@ public abstract class InfrastructureRuleTestsBase<TFixture> : RuleTestBase<TFixt
     {
         AssertNoViolations(new IN015_CanonicalFolderStructureRule());
     }
+
+    [Fact]
+    public void IN017_Projeto_de_infraestrutura_deve_ter_Bootstrapper_com_ConfigureServices()
+    {
+        AssertNoViolations(new IN017_BootstrapperPerLayerRule());
+    }
+
+    [Fact]
+    public void IN018_Projetos_de_bounded_context_devem_estar_nos_solution_folders_canonicos()
+    {
+        AssertNoViolations(new IN018_CanonicalSolutionFoldersRule());
+    }
 }

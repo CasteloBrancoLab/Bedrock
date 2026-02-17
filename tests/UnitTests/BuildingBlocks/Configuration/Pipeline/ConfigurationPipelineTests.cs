@@ -426,6 +426,28 @@ public sealed class ConfigurationPipelineTests : TestBase
         ex.Message.ShouldContain("Set");
     }
 
+    [Fact]
+    public void ExecuteSet_WithScopedHandler_NonMatchingKey_ShouldSkipHandler()
+    {
+        // Arrange
+        LogArrange("Criando pipeline com handler scoped que nao corresponde a chave");
+        var counter = new CountingHandler();
+        var entries = new List<PipelineEntry>
+        {
+            new(counter, HandlerScope.ForProperty("Other:Section:Property"), 1)
+        };
+        var pipeline = new ConfigurationPipeline(entries);
+
+        // Act
+        LogAct("Executando Set com chave diferente do escopo");
+        var result = pipeline.ExecuteSet("Persistence:PostgreSql:ConnectionString", "value");
+
+        // Assert
+        LogAssert("Verificando que handler nao executou (scope skip)");
+        counter.SetCallCount.ShouldBe(0);
+        result.ShouldBe("value");
+    }
+
     #region T036: LoadStrategy tests
 
     [Fact]

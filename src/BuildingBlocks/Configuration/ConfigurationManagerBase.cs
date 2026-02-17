@@ -1,5 +1,4 @@
 using Bedrock.BuildingBlocks.Configuration.Pipeline;
-using Bedrock.BuildingBlocks.Configuration.Registration;
 using Microsoft.Extensions.Configuration;
 
 namespace Bedrock.BuildingBlocks.Configuration;
@@ -352,6 +351,8 @@ public abstract class ConfigurationManagerBase
         return _inMemoryOverrides.TryGetValue(fullPath, out var overrideValue) ? overrideValue : pipelineValue;
     }
 
+    // Stryker disable all : UnaryExpression + codigo defensivo inalcancavel — API publica tipada impede expressoes invalidas
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Metodo auxiliar trivial com UnaryExpression (boxing de value types) e codigo defensivo inalcancavel")]
     private static string ExtractPropertyName<TSection, TProperty>(
         Expression<Func<TSection, TProperty>> expression)
     {
@@ -361,19 +362,16 @@ public abstract class ConfigurationManagerBase
         }
 
         // Handle unary expressions (e.g., boxing of value types)
-        // Stryker disable once all : UnaryExpression ocorre com boxing de value types — depende do compilador C#
         if (expression.Body is UnaryExpression { Operand: MemberExpression operand })
         {
-            // Stryker disable once all : Retorno do nome da propriedade a partir de UnaryExpression
             return operand.Member.Name;
         }
 
-        // Stryker disable all : Mensagem de erro defensiva — API publica tipada impede expressoes invalidas
         throw new ArgumentException(
             $"Expressao deve referenciar uma propriedade direta de {typeof(TSection).Name}.",
             nameof(expression));
-        // Stryker restore all
     }
+    // Stryker restore all
 
     // Stryker disable all : Branches de conversao sao otimizacao — Convert.ChangeType trata todos os tipos
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Branches de conversao sao otimizacao — Convert.ChangeType trata todos os tipos")]

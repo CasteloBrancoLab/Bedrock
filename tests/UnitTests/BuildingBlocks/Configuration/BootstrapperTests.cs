@@ -1,5 +1,4 @@
 using Bedrock.BuildingBlocks.Configuration;
-using Bedrock.BuildingBlocks.Configuration.Registration;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +7,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Bedrock.UnitTests.BuildingBlocks.Configuration.Registration;
+namespace Bedrock.UnitTests.BuildingBlocks.Configuration;
 
 /// <summary>Manager simples para testes de DI (construtor com 2 parametros).</summary>
 public sealed class DiTestConfigurationManager : ConfigurationManagerBase
@@ -24,9 +23,9 @@ public sealed class DiTestConfigurationManager : ConfigurationManagerBase
     }
 }
 
-public sealed class ServiceCollectionExtensionsTests : TestBase
+public sealed class BootstrapperTests : TestBase
 {
-    public ServiceCollectionExtensionsTests(ITestOutputHelper output) : base(output) { }
+    public BootstrapperTests(ITestOutputHelper output) : base(output) { }
 
     [Fact]
     public void AddBedrockConfiguration_ShouldRegisterManagerAsSingleton()

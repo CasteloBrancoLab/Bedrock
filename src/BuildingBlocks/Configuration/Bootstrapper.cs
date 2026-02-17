@@ -1,12 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Bedrock.BuildingBlocks.Configuration.Registration;
+namespace Bedrock.BuildingBlocks.Configuration;
 
 /// <summary>
-/// Extension methods para registro do Configuration BuildingBlock no IoC.
+/// Registra o Configuration BuildingBlock no IoC.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class Bootstrapper
 {
     /// <summary>
     /// Registra um ConfigurationManager concreto e seus handlers no container de DI.
