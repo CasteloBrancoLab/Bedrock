@@ -10,9 +10,9 @@ using Xunit.Abstractions;
 
 namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Migrations.Migrations;
 
-public class V202602160001_CreateAuthUsersTableTests : TestBase
+public class V202602180001_CreateAuthTablesTests : TestBase
 {
-    public V202602160001_CreateAuthUsersTableTests(ITestOutputHelper output) : base(output) { }
+    public V202602180001_CreateAuthTablesTests(ITestOutputHelper output) : base(output) { }
 
     [Fact]
     public void ShouldHaveMigrationAttribute_WithCorrectVersion()
@@ -22,13 +22,13 @@ public class V202602160001_CreateAuthUsersTableTests : TestBase
 
         // Act
         LogAct("Lendo versao do atributo");
-        var attribute = typeof(V202602160001_CreateAuthUsersTable)
+        var attribute = typeof(V202602180001_CreateAuthTables)
             .GetCustomAttribute<MigrationAttribute>();
 
         // Assert
-        LogAssert("Verificando versao 202602160001");
+        LogAssert("Verificando versao 202602180001");
         attribute.ShouldNotBeNull();
-        attribute.Version.ShouldBe(202602160001);
+        attribute.Version.ShouldBe(202602180001);
     }
 
     [Fact]
@@ -39,14 +39,14 @@ public class V202602160001_CreateAuthUsersTableTests : TestBase
 
         // Act
         LogAct("Lendo paths dos scripts");
-        var attribute = typeof(V202602160001_CreateAuthUsersTable)
+        var attribute = typeof(V202602180001_CreateAuthTables)
             .GetCustomAttribute<SqlScriptAttribute>();
 
         // Assert
         LogAssert("Verificando paths Up e Down");
         attribute.ShouldNotBeNull();
-        attribute.UpScriptResourceName.ShouldBe("Up/V202602160001__create_auth_users_table.sql");
-        attribute.DownScriptResourceName.ShouldBe("Down/V202602160001__create_auth_users_table.sql");
+        attribute.UpScriptResourceName.ShouldBe("Up/V202602180001__create_auth_tables.sql");
+        attribute.DownScriptResourceName.ShouldBe("Down/V202602180001__create_auth_tables.sql");
     }
 
     [Fact]
@@ -56,8 +56,8 @@ public class V202602160001_CreateAuthUsersTableTests : TestBase
         LogArrange("Preparando instanciacao da migration");
 
         // Act
-        LogAct("Criando instancia de V202602160001_CreateAuthUsersTable");
-        var migration = new V202602160001_CreateAuthUsersTable();
+        LogAct("Criando instancia de V202602180001_CreateAuthTables");
+        var migration = new V202602180001_CreateAuthTables();
 
         // Assert
         LogAssert("Verificando que a migration foi criada (embedded scripts existem)");
@@ -72,7 +72,7 @@ public class V202602160001_CreateAuthUsersTableTests : TestBase
 
         // Act
         LogAct("Checando tipo base");
-        var inherits = typeof(V202602160001_CreateAuthUsersTable)
+        var inherits = typeof(V202602180001_CreateAuthTables)
             .IsSubclassOf(typeof(SqlScriptMigrationBase));
 
         // Assert
