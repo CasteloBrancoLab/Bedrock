@@ -61,11 +61,17 @@ Set `ATTEMPT = 1` and `MAX_ATTEMPTS = 10`.
 ./scripts/sonar-check.sh
 ```
 
-#### 3b. Check Results
+#### 3b. Extract Pending Items
 
-Read `artifacts/pending/SUMMARY.txt` (if exists) or count `artifacts/pending/sonar_*.txt` files.
+```bash
+./scripts/generate-pending-summary.sh
+```
 
-- **If no sonar issues**: Report SUCCESS and stop.
+#### 3c. Check Results
+
+Read `artifacts/pending/SUMMARY.txt` and check the `SONARCLOUD ISSUES` count.
+
+- **If `SONARCLOUD ISSUES: 0`**: Report SUCCESS and stop.
 - **If issues exist**:
   1. Read each `artifacts/pending/sonar_*.txt` file
   2. **Triage each issue** (see Triage Rules below)

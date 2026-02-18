@@ -62,17 +62,18 @@ Set `ATTEMPT = 1` and `MAX_ATTEMPTS = 10`.
 ./scripts/mutate.sh
 ```
 
-#### 3b. Extract Pending Mutants
+#### 3b. Extract Pending Items
 
 ```bash
 ./scripts/summarize.sh
+./scripts/generate-pending-summary.sh
 ```
 
 #### 3c. Check Results
 
-Read `artifacts/pending/SUMMARY.txt`.
+Read `artifacts/pending/SUMMARY.txt` and check the `MUTANTES PENDENTES` count.
 
-- **If no surviving mutants**: Report SUCCESS and stop.
+- **If `MUTANTES PENDENTES: 0`**: Report SUCCESS and stop.
 - **If surviving mutants exist**:
   1. Read each `artifacts/pending/mutant_*.txt` file
   2. For each surviving mutant:

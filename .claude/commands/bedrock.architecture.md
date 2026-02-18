@@ -54,9 +54,17 @@ Set `ATTEMPT = 1` and `MAX_ATTEMPTS = 10`.
 ./scripts/architecture.sh
 ```
 
-#### 3b. Check Results
+#### 3b. Extract Pending Items
 
-- **If all tests pass (exit code 0)**: Report SUCCESS and stop.
+```bash
+./scripts/generate-pending-summary.sh
+```
+
+#### 3c. Check Results
+
+Read `artifacts/pending/SUMMARY.txt` and check the `VIOLACOES ARQUITETURA` count.
+
+- **If `VIOLACOES ARQUITETURA: 0`**: Report SUCCESS and stop.
 - **If violations found**:
   1. Read each `artifacts/pending/architecture_*.txt` file
   2. For each violation:
