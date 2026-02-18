@@ -225,6 +225,16 @@ public sealed class ApiKey
         if (!keyPrefixIsRequiredValidation)
             return false;
 
+        bool keyPrefixMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<ApiKey>(propertyName: ApiKeyMetadata.KeyPrefixPropertyName),
+            minLength: 1,
+            value: keyPrefix!.Length
+        );
+
+        if (!keyPrefixMinLengthValidation)
+            return false;
+
         bool keyPrefixMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<ApiKey>(propertyName: ApiKeyMetadata.KeyPrefixPropertyName),
@@ -248,6 +258,16 @@ public sealed class ApiKey
         );
 
         if (!keyHashIsRequiredValidation)
+            return false;
+
+        bool keyHashMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<ApiKey>(propertyName: ApiKeyMetadata.KeyHashPropertyName),
+            minLength: 1,
+            value: keyHash!.Length
+        );
+
+        if (!keyHashMinLengthValidation)
             return false;
 
         bool keyHashMaxLengthValidation = ValidationUtils.ValidateMaxLength(

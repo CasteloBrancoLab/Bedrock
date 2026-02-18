@@ -212,6 +212,16 @@ public sealed class KeyChain
         if (!publicKeyIsRequiredValidation)
             return false;
 
+        bool publicKeyMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<KeyChain>(propertyName: KeyChainMetadata.PublicKeyPropertyName),
+            minLength: 1,
+            value: publicKey!.Length
+        );
+
+        if (!publicKeyMinLengthValidation)
+            return false;
+
         bool publicKeyMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<KeyChain>(propertyName: KeyChainMetadata.PublicKeyPropertyName),
@@ -235,6 +245,16 @@ public sealed class KeyChain
         );
 
         if (!encryptedSharedSecretIsRequiredValidation)
+            return false;
+
+        bool encryptedSharedSecretMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<KeyChain>(propertyName: KeyChainMetadata.EncryptedSharedSecretPropertyName),
+            minLength: 1,
+            value: encryptedSharedSecret!.Length
+        );
+
+        if (!encryptedSharedSecretMinLengthValidation)
             return false;
 
         bool encryptedSharedSecretMaxLengthValidation = ValidationUtils.ValidateMaxLength(

@@ -192,7 +192,17 @@ public sealed class MfaSetup
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<MfaSetup>(propertyName: MfaSetupMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateEncryptedSharedSecret(
@@ -208,6 +218,16 @@ public sealed class MfaSetup
         );
 
         if (!encryptedSharedSecretIsRequiredValidation)
+            return false;
+
+        bool encryptedSharedSecretMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<MfaSetup>(propertyName: MfaSetupMetadata.EncryptedSharedSecretPropertyName),
+            minLength: 1,
+            value: encryptedSharedSecret!.Length
+        );
+
+        if (!encryptedSharedSecretMinLengthValidation)
             return false;
 
         bool encryptedSharedSecretMaxLengthValidation = ValidationUtils.ValidateMaxLength(

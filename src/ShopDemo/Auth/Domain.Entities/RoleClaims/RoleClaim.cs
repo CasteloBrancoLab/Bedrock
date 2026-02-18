@@ -144,7 +144,17 @@ public sealed class RoleClaim
             value: roleId
         );
 
-        return roleIdIsRequiredValidation;
+        if (!roleIdIsRequiredValidation)
+            return false;
+
+        if (roleId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<RoleClaim>(propertyName: RoleClaimMetadata.RoleIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateClaimId(
@@ -159,7 +169,17 @@ public sealed class RoleClaim
             value: claimId
         );
 
-        return claimIdIsRequiredValidation;
+        if (!claimIdIsRequiredValidation)
+            return false;
+
+        if (claimId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<RoleClaim>(propertyName: RoleClaimMetadata.ClaimIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateValue(

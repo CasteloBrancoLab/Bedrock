@@ -187,6 +187,16 @@ public sealed class ServiceClient
         if (!clientIdIsRequiredValidation)
             return false;
 
+        bool clientIdMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<ServiceClient>(propertyName: ServiceClientMetadata.ClientIdPropertyName),
+            minLength: 1,
+            value: clientId!.Length
+        );
+
+        if (!clientIdMinLengthValidation)
+            return false;
+
         bool clientIdMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<ServiceClient>(propertyName: ServiceClientMetadata.ClientIdPropertyName),
@@ -212,6 +222,16 @@ public sealed class ServiceClient
         if (!clientSecretHashIsRequiredValidation)
             return false;
 
+        bool clientSecretHashMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<ServiceClient>(propertyName: ServiceClientMetadata.ClientSecretHashPropertyName),
+            minLength: 1,
+            value: clientSecretHash!.Length
+        );
+
+        if (!clientSecretHashMinLengthValidation)
+            return false;
+
         bool clientSecretHashMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<ServiceClient>(propertyName: ServiceClientMetadata.ClientSecretHashPropertyName),
@@ -235,6 +255,16 @@ public sealed class ServiceClient
         );
 
         if (!nameIsRequiredValidation)
+            return false;
+
+        bool nameMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<ServiceClient>(propertyName: ServiceClientMetadata.NamePropertyName),
+            minLength: 1,
+            value: name!.Length
+        );
+
+        if (!nameMinLengthValidation)
             return false;
 
         bool nameMaxLengthValidation = ValidationUtils.ValidateMaxLength(
@@ -274,7 +304,17 @@ public sealed class ServiceClient
             value: createdByUserId
         );
 
-        return createdByUserIdIsRequiredValidation;
+        if (!createdByUserIdIsRequiredValidation)
+            return false;
+
+        if (createdByUserId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ServiceClient>(propertyName: ServiceClientMetadata.CreatedByUserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateStatusTransition(

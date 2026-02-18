@@ -107,7 +107,17 @@ public sealed class ServiceClientScope
             value: serviceClientId
         );
 
-        return serviceClientIdIsRequiredValidation;
+        if (!serviceClientIdIsRequiredValidation)
+            return false;
+
+        if (serviceClientId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ServiceClientScope>(propertyName: ServiceClientScopeMetadata.ServiceClientIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateScope(
@@ -123,6 +133,16 @@ public sealed class ServiceClientScope
         );
 
         if (!scopeIsRequiredValidation)
+            return false;
+
+        bool scopeMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<ServiceClientScope>(propertyName: ServiceClientScopeMetadata.ScopePropertyName),
+            minLength: 1,
+            value: scope!.Length
+        );
+
+        if (!scopeMinLengthValidation)
             return false;
 
         bool scopeMaxLengthValidation = ValidationUtils.ValidateMaxLength(

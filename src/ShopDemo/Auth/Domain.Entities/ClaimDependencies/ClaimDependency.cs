@@ -106,7 +106,17 @@ public sealed class ClaimDependency
             value: claimId
         );
 
-        return claimIdIsRequiredValidation;
+        if (!claimIdIsRequiredValidation)
+            return false;
+
+        if (claimId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ClaimDependency>(propertyName: ClaimDependencyMetadata.ClaimIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateDependsOnClaimId(
@@ -121,7 +131,17 @@ public sealed class ClaimDependency
             value: dependsOnClaimId
         );
 
-        return dependsOnClaimIdIsRequiredValidation;
+        if (!dependsOnClaimIdIsRequiredValidation)
+            return false;
+
+        if (dependsOnClaimId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ClaimDependency>(propertyName: ClaimDependencyMetadata.DependsOnClaimIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     // Set Methods

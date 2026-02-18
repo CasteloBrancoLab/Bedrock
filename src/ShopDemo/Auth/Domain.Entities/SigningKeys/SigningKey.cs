@@ -235,6 +235,16 @@ public sealed class SigningKey
         if (!algorithmIsRequiredValidation)
             return false;
 
+        bool algorithmMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<SigningKey>(propertyName: SigningKeyMetadata.AlgorithmPropertyName),
+            minLength: 1,
+            value: algorithm!.Length
+        );
+
+        if (!algorithmMinLengthValidation)
+            return false;
+
         bool algorithmMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<SigningKey>(propertyName: SigningKeyMetadata.AlgorithmPropertyName),
@@ -260,6 +270,16 @@ public sealed class SigningKey
         if (!publicKeyIsRequiredValidation)
             return false;
 
+        bool publicKeyMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<SigningKey>(propertyName: SigningKeyMetadata.PublicKeyPropertyName),
+            minLength: 1,
+            value: publicKey!.Length
+        );
+
+        if (!publicKeyMinLengthValidation)
+            return false;
+
         bool publicKeyMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<SigningKey>(propertyName: SigningKeyMetadata.PublicKeyPropertyName),
@@ -283,6 +303,16 @@ public sealed class SigningKey
         );
 
         if (!encryptedPrivateKeyIsRequiredValidation)
+            return false;
+
+        bool encryptedPrivateKeyMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<SigningKey>(propertyName: SigningKeyMetadata.EncryptedPrivateKeyPropertyName),
+            minLength: 1,
+            value: encryptedPrivateKey!.Length
+        );
+
+        if (!encryptedPrivateKeyMinLengthValidation)
             return false;
 
         bool encryptedPrivateKeyMaxLengthValidation = ValidationUtils.ValidateMaxLength(

@@ -170,6 +170,16 @@ public sealed class IdempotencyRecord
         if (!idempotencyKeyIsRequiredValidation)
             return false;
 
+        bool idempotencyKeyMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<IdempotencyRecord>(propertyName: IdempotencyRecordMetadata.IdempotencyKeyPropertyName),
+            minLength: 1,
+            value: idempotencyKey!.Length
+        );
+
+        if (!idempotencyKeyMinLengthValidation)
+            return false;
+
         bool idempotencyKeyMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<IdempotencyRecord>(propertyName: IdempotencyRecordMetadata.IdempotencyKeyPropertyName),
@@ -193,6 +203,16 @@ public sealed class IdempotencyRecord
         );
 
         if (!requestHashIsRequiredValidation)
+            return false;
+
+        bool requestHashMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<IdempotencyRecord>(propertyName: IdempotencyRecordMetadata.RequestHashPropertyName),
+            minLength: 1,
+            value: requestHash!.Length
+        );
+
+        if (!requestHashMinLengthValidation)
             return false;
 
         bool requestHashMaxLengthValidation = ValidationUtils.ValidateMaxLength(

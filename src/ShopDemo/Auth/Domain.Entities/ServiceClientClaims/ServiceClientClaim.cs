@@ -116,7 +116,17 @@ public sealed class ServiceClientClaim
             value: serviceClientId
         );
 
-        return serviceClientIdIsRequiredValidation;
+        if (!serviceClientIdIsRequiredValidation)
+            return false;
+
+        if (serviceClientId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ServiceClientClaim>(propertyName: ServiceClientClaimMetadata.ServiceClientIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateClaimId(
@@ -131,7 +141,17 @@ public sealed class ServiceClientClaim
             value: claimId
         );
 
-        return claimIdIsRequiredValidation;
+        if (!claimIdIsRequiredValidation)
+            return false;
+
+        if (claimId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ServiceClientClaim>(propertyName: ServiceClientClaimMetadata.ClaimIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateValue(

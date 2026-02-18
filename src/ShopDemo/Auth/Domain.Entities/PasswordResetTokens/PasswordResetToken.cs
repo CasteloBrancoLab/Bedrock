@@ -165,7 +165,17 @@ public sealed class PasswordResetToken
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<PasswordResetToken>(propertyName: PasswordResetTokenMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateTokenHash(
@@ -181,6 +191,16 @@ public sealed class PasswordResetToken
         );
 
         if (!tokenHashIsRequiredValidation)
+            return false;
+
+        bool tokenHashMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<PasswordResetToken>(propertyName: PasswordResetTokenMetadata.TokenHashPropertyName),
+            minLength: 1,
+            value: tokenHash!.Length
+        );
+
+        if (!tokenHashMinLengthValidation)
             return false;
 
         bool tokenHashMaxLengthValidation = ValidationUtils.ValidateMaxLength(

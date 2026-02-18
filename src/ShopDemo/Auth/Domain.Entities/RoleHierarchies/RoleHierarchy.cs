@@ -107,7 +107,17 @@ public sealed class RoleHierarchy
             value: roleId
         );
 
-        return roleIdIsRequiredValidation;
+        if (!roleIdIsRequiredValidation)
+            return false;
+
+        if (roleId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<RoleHierarchy>(propertyName: RoleHierarchyMetadata.RoleIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateParentRoleId(
@@ -122,7 +132,17 @@ public sealed class RoleHierarchy
             value: parentRoleId
         );
 
-        return parentRoleIdIsRequiredValidation;
+        if (!parentRoleIdIsRequiredValidation)
+            return false;
+
+        if (parentRoleId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<RoleHierarchy>(propertyName: RoleHierarchyMetadata.ParentRoleIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     private static bool CheckSelfReferenceProhibited(

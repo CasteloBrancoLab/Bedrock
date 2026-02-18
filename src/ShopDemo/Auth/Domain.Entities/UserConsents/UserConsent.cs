@@ -173,7 +173,17 @@ public sealed class UserConsent
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<UserConsent>(propertyName: UserConsentMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateConsentTermId(
@@ -188,7 +198,17 @@ public sealed class UserConsent
             value: consentTermId
         );
 
-        return consentTermIdIsRequiredValidation;
+        if (!consentTermIdIsRequiredValidation)
+            return false;
+
+        if (consentTermId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<UserConsent>(propertyName: UserConsentMetadata.ConsentTermIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateAcceptedAt(

@@ -156,7 +156,17 @@ public sealed class RecoveryCode
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<RecoveryCode>(propertyName: RecoveryCodeMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateCodeHash(
@@ -172,6 +182,16 @@ public sealed class RecoveryCode
         );
 
         if (!codeHashIsRequiredValidation)
+            return false;
+
+        bool codeHashMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<RecoveryCode>(propertyName: RecoveryCodeMetadata.CodeHashPropertyName),
+            minLength: 1,
+            value: codeHash!.Length
+        );
+
+        if (!codeHashMinLengthValidation)
             return false;
 
         bool codeHashMaxLengthValidation = ValidationUtils.ValidateMaxLength(

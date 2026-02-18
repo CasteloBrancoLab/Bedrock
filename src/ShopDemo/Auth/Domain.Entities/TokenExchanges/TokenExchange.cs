@@ -145,7 +145,17 @@ public sealed class TokenExchange
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<TokenExchange>(propertyName: TokenExchangeMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateSubjectTokenJti(
@@ -161,6 +171,16 @@ public sealed class TokenExchange
         );
 
         if (!subjectTokenJtiIsRequiredValidation)
+            return false;
+
+        bool subjectTokenJtiMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<TokenExchange>(propertyName: TokenExchangeMetadata.SubjectTokenJtiPropertyName),
+            minLength: 1,
+            value: subjectTokenJti!.Length
+        );
+
+        if (!subjectTokenJtiMinLengthValidation)
             return false;
 
         bool subjectTokenJtiMaxLengthValidation = ValidationUtils.ValidateMaxLength(
@@ -188,6 +208,16 @@ public sealed class TokenExchange
         if (!requestedAudienceIsRequiredValidation)
             return false;
 
+        bool requestedAudienceMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<TokenExchange>(propertyName: TokenExchangeMetadata.RequestedAudiencePropertyName),
+            minLength: 1,
+            value: requestedAudience!.Length
+        );
+
+        if (!requestedAudienceMinLengthValidation)
+            return false;
+
         bool requestedAudienceMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<TokenExchange>(propertyName: TokenExchangeMetadata.RequestedAudiencePropertyName),
@@ -211,6 +241,16 @@ public sealed class TokenExchange
         );
 
         if (!issuedTokenJtiIsRequiredValidation)
+            return false;
+
+        bool issuedTokenJtiMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<TokenExchange>(propertyName: TokenExchangeMetadata.IssuedTokenJtiPropertyName),
+            minLength: 1,
+            value: issuedTokenJti!.Length
+        );
+
+        if (!issuedTokenJtiMinLengthValidation)
             return false;
 
         bool issuedTokenJtiMaxLengthValidation = ValidationUtils.ValidateMaxLength(

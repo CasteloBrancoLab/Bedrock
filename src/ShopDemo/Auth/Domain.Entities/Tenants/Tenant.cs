@@ -214,6 +214,16 @@ public sealed class Tenant
         if (!nameIsRequiredValidation)
             return false;
 
+        bool nameMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<Tenant>(propertyName: TenantMetadata.NamePropertyName),
+            minLength: 1,
+            value: name!.Length
+        );
+
+        if (!nameMinLengthValidation)
+            return false;
+
         bool nameMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<Tenant>(propertyName: TenantMetadata.NamePropertyName),
@@ -239,6 +249,16 @@ public sealed class Tenant
         if (!domainIsRequiredValidation)
             return false;
 
+        bool domainMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<Tenant>(propertyName: TenantMetadata.DomainPropertyName),
+            minLength: 1,
+            value: domain!.Length
+        );
+
+        if (!domainMinLengthValidation)
+            return false;
+
         bool domainMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
             propertyName: CreateMessageCode<Tenant>(propertyName: TenantMetadata.DomainPropertyName),
@@ -262,6 +282,16 @@ public sealed class Tenant
         );
 
         if (!schemaNameIsRequiredValidation)
+            return false;
+
+        bool schemaNameMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<Tenant>(propertyName: TenantMetadata.SchemaNamePropertyName),
+            minLength: 1,
+            value: schemaName!.Length
+        );
+
+        if (!schemaNameMinLengthValidation)
             return false;
 
         bool schemaNameMaxLengthValidation = ValidationUtils.ValidateMaxLength(
@@ -350,6 +380,16 @@ public sealed class Tenant
         );
 
         if (!dbVersionIsRequiredValidation)
+            return false;
+
+        bool dbVersionMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<Tenant>(propertyName: TenantMetadata.DbVersionPropertyName),
+            minLength: 1,
+            value: dbVersion!.Length
+        );
+
+        if (!dbVersionMinLengthValidation)
             return false;
 
         bool dbVersionMaxLengthValidation = ValidationUtils.ValidateMaxLength(

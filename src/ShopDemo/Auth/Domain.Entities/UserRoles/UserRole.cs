@@ -106,7 +106,17 @@ public sealed class UserRole
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<UserRole>(propertyName: UserRoleMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateRoleId(
@@ -121,7 +131,17 @@ public sealed class UserRole
             value: roleId
         );
 
-        return roleIdIsRequiredValidation;
+        if (!roleIdIsRequiredValidation)
+            return false;
+
+        if (roleId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<UserRole>(propertyName: UserRoleMetadata.RoleIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     // Set Methods

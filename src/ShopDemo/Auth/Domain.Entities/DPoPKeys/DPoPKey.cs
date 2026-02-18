@@ -176,7 +176,17 @@ public sealed class DPoPKey
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<DPoPKey>(propertyName: DPoPKeyMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateJwkThumbprint(
@@ -207,6 +217,16 @@ public sealed class DPoPKey
         );
 
         if (!publicKeyJwkIsRequiredValidation)
+            return false;
+
+        bool publicKeyJwkMinLengthValidation = ValidationUtils.ValidateMinLength(
+            executionContext,
+            propertyName: CreateMessageCode<DPoPKey>(propertyName: DPoPKeyMetadata.PublicKeyJwkPropertyName),
+            minLength: 1,
+            value: publicKeyJwk!.Length
+        );
+
+        if (!publicKeyJwkMinLengthValidation)
             return false;
 
         bool publicKeyJwkMaxLengthValidation = ValidationUtils.ValidateMaxLength(

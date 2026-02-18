@@ -167,7 +167,17 @@ public sealed class ImpersonationSession
             value: operatorUserId
         );
 
-        return operatorUserIdIsRequiredValidation;
+        if (!operatorUserIdIsRequiredValidation)
+            return false;
+
+        if (operatorUserId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ImpersonationSession>(propertyName: ImpersonationSessionMetadata.OperatorUserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateTargetUserId(
@@ -182,7 +192,17 @@ public sealed class ImpersonationSession
             value: targetUserId
         );
 
-        return targetUserIdIsRequiredValidation;
+        if (!targetUserIdIsRequiredValidation)
+            return false;
+
+        if (targetUserId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ImpersonationSession>(propertyName: ImpersonationSessionMetadata.TargetUserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateExpiresAt(

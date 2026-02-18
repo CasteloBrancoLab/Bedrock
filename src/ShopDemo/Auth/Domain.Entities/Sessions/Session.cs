@@ -224,7 +224,17 @@ public sealed class Session
             value: userId
         );
 
-        return userIdIsRequiredValidation;
+        if (!userIdIsRequiredValidation)
+            return false;
+
+        if (userId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<Session>(propertyName: SessionMetadata.UserIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateRefreshTokenId(
@@ -239,7 +249,17 @@ public sealed class Session
             value: refreshTokenId
         );
 
-        return refreshTokenIdIsRequiredValidation;
+        if (!refreshTokenIdIsRequiredValidation)
+            return false;
+
+        if (refreshTokenId!.Value.Value == Guid.Empty)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<Session>(propertyName: SessionMetadata.RefreshTokenIdPropertyName)}.IsRequired");
+            return false;
+        }
+
+        return true;
     }
 
     public static bool ValidateDeviceInfo(
