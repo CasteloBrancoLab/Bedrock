@@ -32,7 +32,7 @@ This command does **NOT** run: mutation tests, architecture tests, SonarCloud ch
 ### 1. Clean Artifacts
 
 ```bash
-./scripts/clean-artifacts.sh
+cmd //c "bash ./scripts/clean-artifacts.sh"
 ```
 
 ### 2. Build → Test Loop
@@ -44,7 +44,7 @@ Set `ATTEMPT = 1` and `MAX_ATTEMPTS = 10`.
 #### 2a. Build
 
 ```bash
-./scripts/build.sh
+cmd //c "bash ./scripts/build.sh"
 ```
 
 If build fails: read the build output, identify the errors, fix them, and restart from step 2a (same attempt, do not increment counter).
@@ -52,7 +52,7 @@ If build fails: read the build output, identify the errors, fix them, and restar
 #### 2b. Unit Tests
 
 ```bash
-./scripts/test.sh
+cmd //c "bash ./scripts/test.sh"
 ```
 
 #### 2c. Check Test Results
@@ -67,7 +67,7 @@ If build fails: read the build output, identify the errors, fix them, and restar
   3. Run `dotnet build` to verify the fix compiles
   4. Increment `ATTEMPT`
   5. If `ATTEMPT > MAX_ATTEMPTS`: **stop and report** (see section 4)
-  6. Clean artifacts: `./scripts/clean-artifacts.sh`
+  6. Clean artifacts: `cmd //c "bash ./scripts/clean-artifacts.sh"`
   7. Go back to step 2a
 - **If all tests pass**: Continue to step 2d (coverage check).
 
@@ -76,8 +76,8 @@ If build fails: read the build output, identify the errors, fix them, and restar
 Run the summarize script to extract coverage pending items from the Cobertura XML reports:
 
 ```bash
-./scripts/summarize.sh
-./scripts/generate-pending-summary.sh
+cmd //c "bash ./scripts/summarize.sh"
+cmd //c "bash ./scripts/generate-pending-summary.sh"
 ```
 
 #### 2e. Check Coverage Results
@@ -104,7 +104,7 @@ Read `artifacts/pending/SUMMARY.txt` and check the `COBERTURA PENDENTE` count.
   3. Run `dotnet build` to verify the fix compiles
   4. Increment `ATTEMPT`
   5. If `ATTEMPT > MAX_ATTEMPTS`: **stop and report** (see section 4)
-  6. Clean artifacts: `./scripts/clean-artifacts.sh`
+  6. Clean artifacts: `cmd //c "bash ./scripts/clean-artifacts.sh"`
   7. Go back to step 2a (full re-run: build, tests, coverage)
 
 ### 3. Coverage Fix Guidelines

@@ -39,7 +39,7 @@ If build fails: **stop immediately**. Tell the user to fix build errors first.
 ### 2. Clean Artifacts
 
 ```bash
-./scripts/clean-artifacts.sh
+cmd //c "bash ./scripts/clean-artifacts.sh"
 ```
 
 ### 3. Architecture → Fix Loop
@@ -51,13 +51,13 @@ Set `ATTEMPT = 1` and `MAX_ATTEMPTS = 10`.
 #### 3a. Architecture Tests
 
 ```bash
-./scripts/architecture.sh
+cmd //c "bash ./scripts/architecture.sh"
 ```
 
 #### 3b. Extract Pending Items
 
 ```bash
-./scripts/generate-pending-summary.sh
+cmd //c "bash ./scripts/generate-pending-summary.sh"
 ```
 
 #### 3c. Check Results
@@ -75,7 +75,7 @@ Read `artifacts/pending/SUMMARY.txt` and check the `VIOLACOES ARQUITETURA` count
   3. Verify fixes compile: `dotnet build`
   4. Increment `ATTEMPT`
   5. If `ATTEMPT > MAX_ATTEMPTS`: **stop and report** (see section 4)
-  6. Clean artifacts: `./scripts/clean-artifacts.sh`
+  6. Clean artifacts: `cmd //c "bash ./scripts/clean-artifacts.sh"`
   7. Go back to step 3a
 
 ### 4. On Reaching Max Attempts

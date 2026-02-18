@@ -47,7 +47,7 @@ If tests fail: **stop immediately**. Tell the user to run `/bedrock.unittests` f
 ### 2. Clean Artifacts
 
 ```bash
-./scripts/clean-artifacts.sh
+cmd //c "bash ./scripts/clean-artifacts.sh"
 ```
 
 ### 3. Mutate → Fix Loop
@@ -59,14 +59,14 @@ Set `ATTEMPT = 1` and `MAX_ATTEMPTS = 10`.
 #### 3a. Mutation Tests
 
 ```bash
-./scripts/mutate.sh
+cmd //c "bash ./scripts/mutate.sh"
 ```
 
 #### 3b. Extract Pending Items
 
 ```bash
-./scripts/summarize.sh
-./scripts/generate-pending-summary.sh
+cmd //c "bash ./scripts/summarize.sh"
+cmd //c "bash ./scripts/generate-pending-summary.sh"
 ```
 
 #### 3c. Check Results
@@ -85,7 +85,7 @@ Read `artifacts/pending/SUMMARY.txt` and check the `MUTANTES PENDENTES` count.
   4. Quick-check the new tests pass: `dotnet test <affected-test-project>`
   5. Increment `ATTEMPT`
   6. If `ATTEMPT > MAX_ATTEMPTS`: **stop and report** (see section 4)
-  7. Clean artifacts: `./scripts/clean-artifacts.sh`
+  7. Clean artifacts: `cmd //c "bash ./scripts/clean-artifacts.sh"`
   8. Go back to step 3a
 
 ### 4. On Reaching Max Attempts

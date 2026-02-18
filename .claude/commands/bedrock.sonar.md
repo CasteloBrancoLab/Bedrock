@@ -58,13 +58,13 @@ Set `ATTEMPT = 1` and `MAX_ATTEMPTS = 10`.
 #### 3a. Fetch SonarCloud Issues
 
 ```bash
-./scripts/sonar-check.sh
+cmd //c "bash ./scripts/sonar-check.sh"
 ```
 
 #### 3b. Extract Pending Items
 
 ```bash
-./scripts/generate-pending-summary.sh
+cmd //c "bash ./scripts/generate-pending-summary.sh"
 ```
 
 #### 3c. Check Results
