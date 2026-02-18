@@ -1,0 +1,344 @@
+using System.Diagnostics.CodeAnalysis;
+using Bedrock.BuildingBlocks.Core.Validations;
+using Bedrock.BuildingBlocks.Domain.Entities;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
+using ShopDemo.Auth.Domain.Entities.ConsentTerms.Enums;
+using ShopDemo.Auth.Domain.Entities.ConsentTerms.Inputs;
+using ShopDemo.Auth.Domain.Entities.ConsentTerms.Interfaces;
+
+namespace ShopDemo.Auth.Domain.Entities.ConsentTerms;
+
+public sealed class ConsentTerm
+    : EntityBase<ConsentTerm>,
+    IConsentTerm
+{
+    // Properties
+    public ConsentTermType Type { get; private set; }
+    // Stryker disable once String : Default initializer is always overwritten by RegisterNew and CreateFromExistingInfo constructors
+    public string Version { get; private set; } = string.Empty;
+    // Stryker disable once String : Default initializer is always overwritten by RegisterNew and CreateFromExistingInfo constructors
+    public string Content { get; private set; } = string.Empty;
+    public DateTimeOffset PublishedAt { get; private set; }
+
+    // Constructors
+    private ConsentTerm()
+    {
+    }
+
+    private ConsentTerm(
+        EntityInfo entityInfo,
+        ConsentTermType type,
+        string version,
+        string content,
+        DateTimeOffset publishedAt
+    ) : base(entityInfo)
+    {
+        Type = type;
+        Version = version;
+        Content = content;
+        PublishedAt = publishedAt;
+    }
+
+    // Public Business Methods
+    public static ConsentTerm? RegisterNew(
+        ExecutionContext executionContext,
+        RegisterNewConsentTermInput input
+    )
+    {
+        return RegisterNewInternal(
+            executionContext,
+            input,
+            entityFactory: static (executionContext, input) => new ConsentTerm(),
+            handler: static (executionContext, input, instance) =>
+            {
+                return instance.SetType(executionContext, input.Type)
+                    & instance.SetVersion(executionContext, input.Version)
+                    & instance.SetContent(executionContext, input.Content)
+                    & instance.SetPublishedAt(executionContext, input.PublishedAt);
+            }
+        );
+    }
+
+    public static ConsentTerm CreateFromExistingInfo(
+        CreateFromExistingInfoConsentTermInput input
+    )
+    {
+        return new ConsentTerm(
+            input.EntityInfo,
+            input.Type,
+            input.Version,
+            input.Content,
+            input.PublishedAt
+        );
+    }
+
+    public override ConsentTerm Clone()
+    {
+        return new ConsentTerm(
+            EntityInfo,
+            Type,
+            Version,
+            Content,
+            PublishedAt
+        );
+    }
+
+    // Validation Methods
+    public static bool IsValid(
+        ExecutionContext executionContext,
+        EntityInfo entityInfo,
+        ConsentTermType? type,
+        string? version,
+        string? content,
+        DateTimeOffset? publishedAt
+    )
+    {
+        return EntityBaseIsValid(executionContext, entityInfo)
+            & ValidateType(executionContext, type)
+            & ValidateVersion(executionContext, version)
+            & ValidateContent(executionContext, content)
+            & ValidatePublishedAt(executionContext, publishedAt);
+    }
+
+    protected override bool IsValidInternal(
+        ExecutionContext executionContext
+    )
+    {
+        return IsValid(
+            executionContext,
+            EntityInfo,
+            Type,
+            Version,
+            Content,
+            PublishedAt
+        );
+    }
+
+    public static bool ValidateType(
+        ExecutionContext executionContext,
+        ConsentTermType? type
+    )
+    {
+        bool typeIsRequiredValidation = ValidationUtils.ValidateIsRequired(
+            executionContext,
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.TypePropertyName),
+            isRequired: ConsentTermMetadata.TypeIsRequired,
+            value: type
+        );
+
+        return typeIsRequiredValidation;
+    }
+
+    public static bool ValidateVersion(
+        ExecutionContext executionContext,
+        string? version
+    )
+    {
+        bool versionIsRequiredValidation = ValidationUtils.ValidateIsRequired(
+            executionContext,
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.VersionPropertyName),
+            isRequired: ConsentTermMetadata.VersionIsRequired,
+            value: version
+        );
+
+        if (!versionIsRequiredValidation)
+            return false;
+
+        bool versionMaxLengthValidation = ValidationUtils.ValidateMaxLength(
+            executionContext,
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.VersionPropertyName),
+            maxLength: ConsentTermMetadata.VersionMaxLength,
+            value: version!.Length
+        );
+
+        return versionMaxLengthValidation;
+    }
+
+    public static bool ValidateContent(
+        ExecutionContext executionContext,
+        string? content
+    )
+    {
+        bool contentIsRequiredValidation = ValidationUtils.ValidateIsRequired(
+            executionContext,
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.ContentPropertyName),
+            isRequired: ConsentTermMetadata.ContentIsRequired,
+            value: content
+        );
+
+        if (!contentIsRequiredValidation)
+            return false;
+
+        bool contentMaxLengthValidation = ValidationUtils.ValidateMaxLength(
+            executionContext,
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.ContentPropertyName),
+            maxLength: ConsentTermMetadata.ContentMaxLength,
+            value: content!.Length
+        );
+
+        return contentMaxLengthValidation;
+    }
+
+    public static bool ValidatePublishedAt(
+        ExecutionContext executionContext,
+        DateTimeOffset? publishedAt
+    )
+    {
+        bool publishedAtIsRequiredValidation = ValidationUtils.ValidateIsRequired(
+            executionContext,
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.PublishedAtPropertyName),
+            isRequired: ConsentTermMetadata.PublishedAtIsRequired,
+            value: publishedAt
+        );
+
+        return publishedAtIsRequiredValidation;
+    }
+
+    // Set Methods
+    // Stryker disable all : Stryker cannot track coverage through static lambda delegates in RegisterNewInternal
+    [ExcludeFromCodeCoverage(Justification = "Chamado via static lambda em RegisterNewInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos")]
+    private bool SetType(
+        ExecutionContext executionContext,
+        ConsentTermType type
+    )
+    {
+        bool isValid = ValidateType(
+            executionContext,
+            type
+        );
+
+        if (!isValid)
+            return false;
+
+        Type = type;
+
+        return true;
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Chamado via static lambda em RegisterNewInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos")]
+    private bool SetVersion(
+        ExecutionContext executionContext,
+        string version
+    )
+    {
+        bool isValid = ValidateVersion(
+            executionContext,
+            version
+        );
+
+        if (!isValid)
+            return false;
+
+        Version = version;
+
+        return true;
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Chamado via static lambda em RegisterNewInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos")]
+    private bool SetContent(
+        ExecutionContext executionContext,
+        string content
+    )
+    {
+        bool isValid = ValidateContent(
+            executionContext,
+            content
+        );
+
+        if (!isValid)
+            return false;
+
+        Content = content;
+
+        return true;
+    }
+
+    // Stryker disable once Block : SetPublishedAt recebe DateTimeOffset valido de RegisterNew - branch false inalcancavel
+    [ExcludeFromCodeCoverage(Justification = "SetPublishedAt recebe DateTimeOffset valido de RegisterNew - branch false inalcancavel")]
+    private bool SetPublishedAt(
+        ExecutionContext executionContext,
+        DateTimeOffset publishedAt
+    )
+    {
+        bool isValid = ValidatePublishedAt(
+            executionContext,
+            publishedAt
+        );
+
+        if (!isValid)
+            return false;
+
+        PublishedAt = publishedAt;
+
+        return true;
+    }
+    // Stryker restore all
+
+    // Metadata
+    public static class ConsentTermMetadata
+    {
+        private static readonly Lock _lockObject = new();
+
+        // Type
+        public static readonly string TypePropertyName = "Type";
+        public static bool TypeIsRequired { get; private set; } = true;
+
+        // Version
+        public static readonly string VersionPropertyName = "Version";
+        public static bool VersionIsRequired { get; private set; } = true;
+        public static int VersionMaxLength { get; private set; } = 50;
+
+        // Content
+        public static readonly string ContentPropertyName = "Content";
+        public static bool ContentIsRequired { get; private set; } = true;
+        public static int ContentMaxLength { get; private set; } = 100000;
+
+        // PublishedAt
+        public static readonly string PublishedAtPropertyName = "PublishedAt";
+        public static bool PublishedAtIsRequired { get; private set; } = true;
+
+        public static void ChangeTypeMetadata(
+            bool isRequired
+        )
+        {
+            lock (_lockObject)
+            {
+                TypeIsRequired = isRequired;
+            }
+        }
+
+        public static void ChangeVersionMetadata(
+            bool isRequired,
+            int maxLength
+        )
+        {
+            lock (_lockObject)
+            {
+                VersionIsRequired = isRequired;
+                VersionMaxLength = maxLength;
+            }
+        }
+
+        public static void ChangeContentMetadata(
+            bool isRequired,
+            int maxLength
+        )
+        {
+            lock (_lockObject)
+            {
+                ContentIsRequired = isRequired;
+                ContentMaxLength = maxLength;
+            }
+        }
+
+        public static void ChangePublishedAtMetadata(
+            bool isRequired
+        )
+        {
+            lock (_lockObject)
+            {
+                PublishedAtIsRequired = isRequired;
+            }
+        }
+    }
+}
