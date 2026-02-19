@@ -78,7 +78,7 @@ public sealed class IdempotencyRecord
         );
     }
 
-    public IdempotencyRecord? SetResponse(
+    public IdempotencyRecord? RecordResponse(
         ExecutionContext executionContext,
         SetResponseIdempotencyRecordInput input
     )
@@ -89,7 +89,7 @@ public sealed class IdempotencyRecord
             input,
             handler: static (executionContext, input, newInstance) =>
             {
-                return newInstance.SetResponseInternal(executionContext, input.ResponseBody, input.StatusCode);
+                return newInstance.RecordResponseInternal(executionContext, input.ResponseBody, input.StatusCode);
             }
         );
     }
@@ -109,7 +109,7 @@ public sealed class IdempotencyRecord
     // Private Business Methods
     // Stryker disable all : Chamado via static lambda em RegisterChangeInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos
     [ExcludeFromCodeCoverage(Justification = "Chamado via static lambda em RegisterChangeInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos")]
-    private bool SetResponseInternal(
+    private bool RecordResponseInternal(
         ExecutionContext executionContext,
         string responseBody,
         int statusCode

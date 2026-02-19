@@ -15,7 +15,7 @@ public sealed class ConsentTerm
     // Properties
     public ConsentTermType Type { get; private set; }
     // Stryker disable once String : Default initializer is always overwritten by RegisterNew and CreateFromExistingInfo constructors
-    public string Version { get; private set; } = string.Empty;
+    public string TermVersion { get; private set; } = string.Empty;
     // Stryker disable once String : Default initializer is always overwritten by RegisterNew and CreateFromExistingInfo constructors
     public string Content { get; private set; } = string.Empty;
     public DateTimeOffset PublishedAt { get; private set; }
@@ -28,13 +28,13 @@ public sealed class ConsentTerm
     private ConsentTerm(
         EntityInfo entityInfo,
         ConsentTermType type,
-        string version,
+        string termVersion,
         string content,
         DateTimeOffset publishedAt
     ) : base(entityInfo)
     {
         Type = type;
-        Version = version;
+        TermVersion = termVersion;
         Content = content;
         PublishedAt = publishedAt;
     }
@@ -52,7 +52,7 @@ public sealed class ConsentTerm
             handler: static (executionContext, input, instance) =>
             {
                 return instance.SetType(executionContext, input.Type)
-                    & instance.SetVersion(executionContext, input.Version)
+                    & instance.SetTermVersion(executionContext, input.TermVersion)
                     & instance.SetContent(executionContext, input.Content)
                     & instance.SetPublishedAt(executionContext, input.PublishedAt);
             }
@@ -66,7 +66,7 @@ public sealed class ConsentTerm
         return new ConsentTerm(
             input.EntityInfo,
             input.Type,
-            input.Version,
+            input.TermVersion,
             input.Content,
             input.PublishedAt
         );
@@ -77,7 +77,7 @@ public sealed class ConsentTerm
         return new ConsentTerm(
             EntityInfo,
             Type,
-            Version,
+            TermVersion,
             Content,
             PublishedAt
         );
@@ -88,14 +88,14 @@ public sealed class ConsentTerm
         ExecutionContext executionContext,
         EntityInfo entityInfo,
         ConsentTermType? type,
-        string? version,
+        string? termVersion,
         string? content,
         DateTimeOffset? publishedAt
     )
     {
         return EntityBaseIsValid(executionContext, entityInfo)
             & ValidateType(executionContext, type)
-            & ValidateVersion(executionContext, version)
+            & ValidateTermVersion(executionContext, termVersion)
             & ValidateContent(executionContext, content)
             & ValidatePublishedAt(executionContext, publishedAt);
     }
@@ -108,7 +108,7 @@ public sealed class ConsentTerm
             executionContext,
             EntityInfo,
             Type,
-            Version,
+            TermVersion,
             Content,
             PublishedAt
         );
@@ -129,29 +129,29 @@ public sealed class ConsentTerm
         return typeIsRequiredValidation;
     }
 
-    public static bool ValidateVersion(
+    public static bool ValidateTermVersion(
         ExecutionContext executionContext,
-        string? version
+        string? termVersion
     )
     {
-        bool versionIsRequiredValidation = ValidationUtils.ValidateIsRequired(
+        bool termVersionIsRequiredValidation = ValidationUtils.ValidateIsRequired(
             executionContext,
-            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.VersionPropertyName),
-            isRequired: ConsentTermMetadata.VersionIsRequired,
-            value: version
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.TermVersionPropertyName),
+            isRequired: ConsentTermMetadata.TermVersionIsRequired,
+            value: termVersion
         );
 
-        if (!versionIsRequiredValidation)
+        if (!termVersionIsRequiredValidation)
             return false;
 
-        bool versionMaxLengthValidation = ValidationUtils.ValidateMaxLength(
+        bool termVersionMaxLengthValidation = ValidationUtils.ValidateMaxLength(
             executionContext,
-            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.VersionPropertyName),
-            maxLength: ConsentTermMetadata.VersionMaxLength,
-            value: version!.Length
+            propertyName: CreateMessageCode<ConsentTerm>(propertyName: ConsentTermMetadata.TermVersionPropertyName),
+            maxLength: ConsentTermMetadata.TermVersionMaxLength,
+            value: termVersion!.Length
         );
 
-        return versionMaxLengthValidation;
+        return termVersionMaxLengthValidation;
     }
 
     public static bool ValidateContent(
@@ -216,20 +216,20 @@ public sealed class ConsentTerm
     }
 
     [ExcludeFromCodeCoverage(Justification = "Chamado via static lambda em RegisterNewInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos")]
-    private bool SetVersion(
+    private bool SetTermVersion(
         ExecutionContext executionContext,
-        string version
+        string termVersion
     )
     {
-        bool isValid = ValidateVersion(
+        bool isValid = ValidateTermVersion(
             executionContext,
-            version
+            termVersion
         );
 
         if (!isValid)
             return false;
 
-        Version = version;
+        TermVersion = termVersion;
 
         return true;
     }
@@ -283,10 +283,10 @@ public sealed class ConsentTerm
         public static readonly string TypePropertyName = "Type";
         public static bool TypeIsRequired { get; private set; } = true;
 
-        // Version
-        public static readonly string VersionPropertyName = "Version";
-        public static bool VersionIsRequired { get; private set; } = true;
-        public static int VersionMaxLength { get; private set; } = 50;
+        // TermVersion
+        public static readonly string TermVersionPropertyName = "TermVersion";
+        public static bool TermVersionIsRequired { get; private set; } = true;
+        public static int TermVersionMaxLength { get; private set; } = 50;
 
         // Content
         public static readonly string ContentPropertyName = "Content";
@@ -307,15 +307,15 @@ public sealed class ConsentTerm
             }
         }
 
-        public static void ChangeVersionMetadata(
+        public static void ChangeTermVersionMetadata(
             bool isRequired,
             int maxLength
         )
         {
             lock (_lockObject)
             {
-                VersionIsRequired = isRequired;
-                VersionMaxLength = maxLength;
+                TermVersionIsRequired = isRequired;
+                TermVersionMaxLength = maxLength;
             }
         }
 

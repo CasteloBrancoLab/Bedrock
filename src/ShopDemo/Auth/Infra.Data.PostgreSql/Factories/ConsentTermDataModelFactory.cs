@@ -12,7 +12,7 @@ public static class ConsentTermDataModelFactory
             DataModelBaseFactory.Create<ConsentTermDataModel, ConsentTerm>(entity);
 
         dataModel.Type = (short)entity.Type;
-        dataModel.Version = entity.Version;
+        dataModel.Version = entity.TermVersion;
         dataModel.Content = entity.Content;
         dataModel.PublishedAt = entity.PublishedAt;
 

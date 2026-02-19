@@ -6,7 +6,7 @@ public interface IConsentTerm
     : Bedrock.BuildingBlocks.Domain.Entities.Interfaces.IAggregateRoot
 {
     ConsentTermType Type { get; }
-    string Version { get; }
+    string TermVersion { get; }
     string Content { get; }
     DateTimeOffset PublishedAt { get; }
 }

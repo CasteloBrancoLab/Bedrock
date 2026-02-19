@@ -230,10 +230,10 @@ public class IdempotencyRecordTests : TestBase
 
     #endregion
 
-    #region SetResponse Tests
+    #region RecordResponse Tests
 
     [Fact]
-    public void SetResponse_WithValidInput_ShouldSucceed()
+    public void RecordResponse_WithValidInput_ShouldSucceed()
     {
         // Arrange
         LogArrange("Creating IdempotencyRecord without response");
@@ -244,8 +244,8 @@ public class IdempotencyRecordTests : TestBase
         var input = new SetResponseIdempotencyRecordInput(responseBody, statusCode);
 
         // Act
-        LogAct("Setting response on IdempotencyRecord");
-        var result = entity.SetResponse(executionContext, input);
+        LogAct("Recording response on IdempotencyRecord");
+        var result = entity.RecordResponse(executionContext, input);
 
         // Assert
         LogAssert("Verifying response was set correctly");
@@ -255,7 +255,7 @@ public class IdempotencyRecordTests : TestBase
     }
 
     [Fact]
-    public void SetResponse_ShouldReturnNewInstance()
+    public void RecordResponse_ShouldReturnNewInstance()
     {
         // Arrange
         LogArrange("Creating IdempotencyRecord without response");
@@ -264,8 +264,8 @@ public class IdempotencyRecordTests : TestBase
         var input = new SetResponseIdempotencyRecordInput("{\"ok\": true}", 201);
 
         // Act
-        LogAct("Setting response on IdempotencyRecord");
-        var result = entity.SetResponse(executionContext, input);
+        LogAct("Recording response on IdempotencyRecord");
+        var result = entity.RecordResponse(executionContext, input);
 
         // Assert
         LogAssert("Verifying clone-modify-return pattern");
@@ -276,7 +276,7 @@ public class IdempotencyRecordTests : TestBase
     }
 
     [Fact]
-    public void SetResponse_WithResponseBodyExceedingMaxLength_ShouldReturnNull()
+    public void RecordResponse_WithResponseBodyExceedingMaxLength_ShouldReturnNull()
     {
         // Arrange
         LogArrange("Creating IdempotencyRecord and response body exceeding max length");
@@ -286,9 +286,9 @@ public class IdempotencyRecordTests : TestBase
         var input = new SetResponseIdempotencyRecordInput(responseBody, 200);
 
         // Act
-        LogAct("Setting too-long response on IdempotencyRecord");
+        LogAct("Recording too-long response on IdempotencyRecord");
         var newContext = CreateTestExecutionContext();
-        var result = entity.SetResponse(newContext, input);
+        var result = entity.RecordResponse(newContext, input);
 
         // Assert
         LogAssert("Verifying null is returned due to MaxLength validation failure");

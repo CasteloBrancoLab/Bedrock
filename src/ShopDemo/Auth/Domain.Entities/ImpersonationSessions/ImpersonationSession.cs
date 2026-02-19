@@ -55,7 +55,7 @@ public sealed class ImpersonationSession
             {
                 return instance.SetOperatorUserId(executionContext, input.OperatorUserId)
                     & instance.SetTargetUserId(executionContext, input.TargetUserId)
-                    & instance.ValidateOperatorNotTarget(executionContext, input.OperatorUserId, input.TargetUserId)
+                    & ValidateOperatorNotTarget(executionContext, input.OperatorUserId, input.TargetUserId)
                     & instance.SetExpiresAt(executionContext, input.ExpiresAt)
                     & instance.SetStatus(executionContext, ImpersonationSessionStatus.Active)
                     & instance.SetEndedAt(null);
@@ -137,6 +137,7 @@ public sealed class ImpersonationSession
         return EntityBaseIsValid(executionContext, entityInfo)
             & ValidateOperatorUserId(executionContext, operatorUserId)
             & ValidateTargetUserId(executionContext, targetUserId)
+            & ValidateOperatorNotTarget(executionContext, operatorUserId, targetUserId)
             & ValidateExpiresAt(executionContext, expiresAt)
             & ValidateStatus(executionContext, status);
     }
@@ -235,6 +236,39 @@ public sealed class ImpersonationSession
         return statusIsRequiredValidation;
     }
 
+    public static bool ValidateOperatorNotTarget(
+        ExecutionContext executionContext,
+        Id? operatorUserId,
+        Id? targetUserId
+    )
+    {
+        bool operatorIsRequiredValidation = ValidationUtils.ValidateIsRequired(
+            executionContext,
+            propertyName: CreateMessageCode<ImpersonationSession>(propertyName: ImpersonationSessionMetadata.OperatorUserIdPropertyName),
+            isRequired: true,
+            value: operatorUserId
+        );
+
+        bool targetIsRequiredValidation = ValidationUtils.ValidateIsRequired(
+            executionContext,
+            propertyName: CreateMessageCode<ImpersonationSession>(propertyName: ImpersonationSessionMetadata.TargetUserIdPropertyName),
+            isRequired: true,
+            value: targetUserId
+        );
+
+        if (!operatorIsRequiredValidation || !targetIsRequiredValidation)
+            return false;
+
+        if (operatorUserId == targetUserId)
+        {
+            executionContext.AddErrorMessage(
+                code: $"{CreateMessageCode<ImpersonationSession>(propertyName: ImpersonationSessionMetadata.TargetUserIdPropertyName)}.SelfImpersonation");
+            return false;
+        }
+
+        return true;
+    }
+
     public static bool ValidateStatusTransition(
         ExecutionContext executionContext,
         ImpersonationSessionStatus? from,
@@ -316,23 +350,6 @@ public sealed class ImpersonationSession
             return false;
 
         TargetUserId = targetUserId;
-
-        return true;
-    }
-
-    [ExcludeFromCodeCoverage(Justification = "Chamado via static lambda em RegisterNewInternal - Coverlet nao rastreia cobertura atraves de delegates estaticos")]
-    private bool ValidateOperatorNotTarget(
-        ExecutionContext executionContext,
-        Id operatorUserId,
-        Id targetUserId
-    )
-    {
-        if (operatorUserId == targetUserId)
-        {
-            executionContext.AddErrorMessage(
-                code: $"{CreateMessageCode<ImpersonationSession>(propertyName: ImpersonationSessionMetadata.TargetUserIdPropertyName)}.SelfImpersonation");
-            return false;
-        }
 
         return true;
     }

@@ -8,7 +8,7 @@ namespace ShopDemo.Auth.Domain.Entities.ConsentTerms.Inputs;
 public readonly record struct CreateFromExistingInfoConsentTermInput(
     EntityInfo EntityInfo,
     ConsentTermType Type,
-    string Version,
+    string TermVersion,
     string Content,
     DateTimeOffset PublishedAt
 );

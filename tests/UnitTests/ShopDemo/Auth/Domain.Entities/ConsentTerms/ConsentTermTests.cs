@@ -42,7 +42,7 @@ public class ConsentTermTests : TestBase
         LogAssert("Verifying entity was created with correct properties");
         entity.ShouldNotBeNull();
         entity.Type.ShouldBe(ConsentTermType.TermsOfUse);
-        entity.Version.ShouldBe("1.0");
+        entity.TermVersion.ShouldBe("1.0");
         entity.Content.ShouldBe("Terms content here");
         entity.PublishedAt.ShouldBe(publishedAt);
         entity.EntityInfo.Id.Value.ShouldNotBe(Guid.Empty);
@@ -71,16 +71,16 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void RegisterNew_WithNullVersion_ShouldReturnNull()
+    public void RegisterNew_WithNullTermVersion_ShouldReturnNull()
     {
         // Arrange
-        LogArrange("Creating input with null Version");
+        LogArrange("Creating input with null TermVersion");
         var executionContext = CreateTestExecutionContext();
         var input = new RegisterNewConsentTermInput(
             ConsentTermType.TermsOfUse, null!, "Content", DateTimeOffset.UtcNow);
 
         // Act
-        LogAct("Registering new ConsentTerm with null Version");
+        LogAct("Registering new ConsentTerm with null TermVersion");
         var entity = ConsentTerm.RegisterNew(executionContext, input);
 
         // Assert
@@ -90,17 +90,17 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void RegisterNew_WithVersionExceedingMaxLength_ShouldReturnNull()
+    public void RegisterNew_WithTermVersionExceedingMaxLength_ShouldReturnNull()
     {
         // Arrange
-        LogArrange("Creating input with Version exceeding max length of 50");
+        LogArrange("Creating input with TermVersion exceeding max length of 50");
         var executionContext = CreateTestExecutionContext();
         var longVersion = new string('v', 51);
         var input = new RegisterNewConsentTermInput(
             ConsentTermType.TermsOfUse, longVersion, "Content", DateTimeOffset.UtcNow);
 
         // Act
-        LogAct("Registering new ConsentTerm with oversized Version");
+        LogAct("Registering new ConsentTerm with oversized TermVersion");
         var entity = ConsentTerm.RegisterNew(executionContext, input);
 
         // Assert
@@ -149,23 +149,23 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void RegisterNew_WithVersionAtMaxLength_ShouldCreateEntity()
+    public void RegisterNew_WithTermVersionAtMaxLength_ShouldCreateEntity()
     {
         // Arrange
-        LogArrange("Creating input with Version at exactly max length of 50");
+        LogArrange("Creating input with TermVersion at exactly max length of 50");
         var executionContext = CreateTestExecutionContext();
         var maxVersion = new string('v', 50);
         var input = new RegisterNewConsentTermInput(
             ConsentTermType.PrivacyPolicy, maxVersion, "Content", DateTimeOffset.UtcNow);
 
         // Act
-        LogAct("Registering new ConsentTerm with Version at boundary");
+        LogAct("Registering new ConsentTerm with TermVersion at boundary");
         var entity = ConsentTerm.RegisterNew(executionContext, input);
 
         // Assert
         LogAssert("Verifying entity was created successfully");
         entity.ShouldNotBeNull();
-        entity.Version.ShouldBe(maxVersion);
+        entity.TermVersion.ShouldBe(maxVersion);
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class ConsentTermTests : TestBase
         entity.ShouldNotBeNull();
         entity.EntityInfo.ShouldBe(entityInfo);
         entity.Type.ShouldBe(ConsentTermType.PrivacyPolicy);
-        entity.Version.ShouldBe("2.0");
+        entity.TermVersion.ShouldBe("2.0");
         entity.Content.ShouldBe("Privacy content");
         entity.PublishedAt.ShouldBe(publishedAt);
     }
@@ -240,7 +240,7 @@ public class ConsentTermTests : TestBase
         clone.ShouldNotBeNull();
         clone.ShouldNotBeSameAs(entity);
         clone.Type.ShouldBe(entity.Type);
-        clone.Version.ShouldBe(entity.Version);
+        clone.TermVersion.ShouldBe(entity.TermVersion);
         clone.Content.ShouldBe(entity.Content);
         clone.PublishedAt.ShouldBe(entity.PublishedAt);
     }
@@ -284,18 +284,18 @@ public class ConsentTermTests : TestBase
 
     #endregion
 
-    #region ValidateVersion Tests
+    #region ValidateTermVersion Tests
 
     [Fact]
-    public void ValidateVersion_WithValidVersion_ShouldReturnTrue()
+    public void ValidateTermVersion_WithValidTermVersion_ShouldReturnTrue()
     {
         // Arrange
         LogArrange("Creating execution context and valid version");
         var executionContext = CreateTestExecutionContext();
 
         // Act
-        LogAct("Validating valid Version");
-        bool result = ConsentTerm.ValidateVersion(executionContext, "1.0.0");
+        LogAct("Validating valid TermVersion");
+        bool result = ConsentTerm.ValidateTermVersion(executionContext, "1.0.0");
 
         // Assert
         LogAssert("Verifying validation passes");
@@ -303,15 +303,15 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void ValidateVersion_WithNull_ShouldReturnFalse()
+    public void ValidateTermVersion_WithNull_ShouldReturnFalse()
     {
         // Arrange
         LogArrange("Creating execution context");
         var executionContext = CreateTestExecutionContext();
 
         // Act
-        LogAct("Validating null Version");
-        bool result = ConsentTerm.ValidateVersion(executionContext, null);
+        LogAct("Validating null TermVersion");
+        bool result = ConsentTerm.ValidateTermVersion(executionContext, null);
 
         // Assert
         LogAssert("Verifying validation fails");
@@ -320,15 +320,15 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void ValidateVersion_WithEmpty_ShouldReturnTrue()
+    public void ValidateTermVersion_WithEmpty_ShouldReturnTrue()
     {
         // Arrange
         LogArrange("Creating execution context");
         var executionContext = CreateTestExecutionContext();
 
         // Act
-        LogAct("Validating empty Version (empty string is not null, passes IsRequired)");
-        bool result = ConsentTerm.ValidateVersion(executionContext, "");
+        LogAct("Validating empty TermVersion (empty string is not null, passes IsRequired)");
+        bool result = ConsentTerm.ValidateTermVersion(executionContext, "");
 
         // Assert
         LogAssert("Verifying validation passes (empty string has length 0 which is within max length)");
@@ -336,7 +336,7 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void ValidateVersion_ExceedingMaxLength_ShouldReturnFalse()
+    public void ValidateTermVersion_ExceedingMaxLength_ShouldReturnFalse()
     {
         // Arrange
         LogArrange("Creating execution context and oversized version");
@@ -344,8 +344,8 @@ public class ConsentTermTests : TestBase
         var longVersion = new string('v', 51);
 
         // Act
-        LogAct("Validating oversized Version");
-        bool result = ConsentTerm.ValidateVersion(executionContext, longVersion);
+        LogAct("Validating oversized TermVersion");
+        bool result = ConsentTerm.ValidateTermVersion(executionContext, longVersion);
 
         // Assert
         LogAssert("Verifying validation fails");
@@ -354,7 +354,7 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void ValidateVersion_AtMaxLength_ShouldReturnTrue()
+    public void ValidateTermVersion_AtMaxLength_ShouldReturnTrue()
     {
         // Arrange
         LogArrange("Creating execution context and version at max length");
@@ -362,8 +362,8 @@ public class ConsentTermTests : TestBase
         var maxVersion = new string('v', 50);
 
         // Act
-        LogAct("Validating Version at max length boundary");
-        bool result = ConsentTerm.ValidateVersion(executionContext, maxVersion);
+        LogAct("Validating TermVersion at max length boundary");
+        bool result = ConsentTerm.ValidateTermVersion(executionContext, maxVersion);
 
         // Assert
         LogAssert("Verifying validation passes");
@@ -519,15 +519,15 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void IsValid_WithNullVersion_ShouldReturnFalse()
+    public void IsValid_WithNullTermVersion_ShouldReturnFalse()
     {
         // Arrange
-        LogArrange("Creating execution context with null Version");
+        LogArrange("Creating execution context with null TermVersion");
         var executionContext = CreateTestExecutionContext();
         var entityInfo = CreateTestEntityInfo();
 
         // Act
-        LogAct("Validating with null Version");
+        LogAct("Validating with null TermVersion");
         bool result = ConsentTerm.IsValid(
             executionContext, entityInfo, ConsentTermType.TermsOfUse,
             null, "Content", DateTimeOffset.UtcNow);
@@ -565,27 +565,27 @@ public class ConsentTermTests : TestBase
     }
 
     [Fact]
-    public void Metadata_ChangeVersionMetadata_ShouldUpdateValues()
+    public void Metadata_ChangeTermVersionMetadata_ShouldUpdateValues()
     {
         // Arrange
-        LogArrange("Saving original Version metadata values");
-        bool originalIsRequired = ConsentTermMetadata.VersionIsRequired;
-        int originalMaxLength = ConsentTermMetadata.VersionMaxLength;
+        LogArrange("Saving original TermVersion metadata values");
+        bool originalIsRequired = ConsentTermMetadata.TermVersionIsRequired;
+        int originalMaxLength = ConsentTermMetadata.TermVersionMaxLength;
 
         try
         {
             // Act
-            LogAct("Changing Version metadata");
-            ConsentTermMetadata.ChangeVersionMetadata(isRequired: false, maxLength: 100);
+            LogAct("Changing TermVersion metadata");
+            ConsentTermMetadata.ChangeTermVersionMetadata(isRequired: false, maxLength: 100);
 
             // Assert
-            LogAssert("Verifying Version metadata was updated");
-            ConsentTermMetadata.VersionIsRequired.ShouldBeFalse();
-            ConsentTermMetadata.VersionMaxLength.ShouldBe(100);
+            LogAssert("Verifying TermVersion metadata was updated");
+            ConsentTermMetadata.TermVersionIsRequired.ShouldBeFalse();
+            ConsentTermMetadata.TermVersionMaxLength.ShouldBe(100);
         }
         finally
         {
-            ConsentTermMetadata.ChangeVersionMetadata(
+            ConsentTermMetadata.ChangeTermVersionMetadata(
                 isRequired: originalIsRequired, maxLength: originalMaxLength);
         }
     }
