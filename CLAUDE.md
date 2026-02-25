@@ -338,7 +338,7 @@ scripts/
 ├── test.sh                     # Executa testes com cobertura
 ├── mutate.sh                   # Executa testes de mutação
 ├── summarize.sh                # Extrai pendências locais (mutantes, arquitetura)
-├── sonar-check.sh              # Busca issues do SonarCloud
+├── sonar-check.sh              # Busca issues do SonarCloud (executar pontualmente, não faz parte da pipeline)
 ├── generate-pending-summary.sh # Gera SUMMARY.txt consolidado
 └── pipeline.sh                 # Executa pipeline completa
 ```
@@ -366,8 +366,7 @@ artifacts/
 ├── pending/          # Pendências extraídas para análise
 │   ├── SUMMARY.txt           # Resumo consolidado das pendências
 │   ├── architecture_*.txt    # Violações de arquitetura
-│   ├── mutant_*.txt          # Mutantes sobreviventes (um arquivo por mutante)
-│   └── sonar_*.txt           # Issues do SonarCloud (um arquivo por issue)
+│   └── mutant_*.txt          # Mutantes sobreviventes (um arquivo por mutante)
 └── summary.json      # Resumo consolidado da pipeline
 ```
 
@@ -420,12 +419,11 @@ pipeline completa — basta build e testes focados.
 3. Se houver pendências:
    - **Arquitetura**: Ler `artifacts/pending/architecture_*.txt` e corrigir violações
    - **Mutantes**: Ler `artifacts/pending/mutant_*.txt` e corrigir testes
-   - **SonarCloud**: Ler `artifacts/pending/sonar_*.txt` e corrigir issues
    - Repetir até atingir **100%** de mutação
-   - Repetir até não ter mais issue do SonarCloud para resolver
 4. Só abrir a PR quando a pipeline passar completamente
 
 > **Nota**: Cobertura é delegada ao SonarCloud. Local Coverlet reports incluem dependências transitivas e produzem falsos positivos.
+> **Nota**: SonarCloud analisa apenas a branch `main` (plano Community). A análise local via `./scripts/sonar-check.sh` deve ser executada **pontualmente** pelo usuário, não faz parte da pipeline automática.
 
 ### Limite de Retentativas
 
@@ -494,7 +492,6 @@ Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Ne
 │     - Ler artifacts/pending/SUMMARY.txt                  │
 │     - Ler artifacts/pending/architecture_*.txt           │
 │     - Ler artifacts/pending/mutant_*.txt                 │
-│     - Ler artifacts/pending/sonar_*.txt                  │
 │     - Corrigir e voltar ao passo 4                       │
 │  6. Se SUCCESS: commitar e push                          │
 │  7. Criar PR: gh pr create                               │
