@@ -147,7 +147,7 @@ jobs:
             /o:"castelobrancolab" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage/coverage.xml" \
-            /d:sonar.exclusions="**/tests/**/*,**/scripts/**/*,**/obj/**/*,**/bin/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/playground/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*,**/src/BuildingBlocks/Testing/Integration/**/*,**/src/BuildingBlocks/Testing/Attributes/**/*,**/src/BuildingBlocks/Testing/TestBase.cs,**/src/BuildingBlocks/Testing/ServiceCollectionFixture.cs" \
+            /d:sonar.exclusions="**/tests/**/*,**/scripts/**/*,**/obj/**/*,**/bin/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/playground/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*,**/src/BuildingBlocks/Testing/Integration/**/*,**/src/BuildingBlocks/Testing/Attributes/**/*,**/src/BuildingBlocks/Testing/TestBase.cs,**/src/BuildingBlocks/Testing/ServiceCollectionFixture.cs,**/Migrations/Scripts/**/*.sql" \
             /d:sonar.coverage.exclusions="**/tests/**/*,**/samples/**/*,**/templates/**/*,**/tools/**/*,**/playground/**/*,**/src/BuildingBlocks/Testing/Benchmarks/**/*,**/src/BuildingBlocks/Testing/Integration/**/*,**/src/BuildingBlocks/Testing/Attributes/**/*,**/src/BuildingBlocks/Testing/TestBase.cs,**/src/BuildingBlocks/Testing/ServiceCollectionFixture.cs" \
             /d:sonar.cpd.exclusions="**/Serialization.Avro/AvroSerializerBase.cs,**/Serialization.Protobuf/ProtobufSerializerBase.cs,**/Serialization.Parquet/ParquetSerializerBase.cs"
 
