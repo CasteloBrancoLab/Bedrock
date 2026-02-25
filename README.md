@@ -149,6 +149,17 @@ Codigo Fonte
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - Git + Bash (WSL/Git Bash no Windows)
+- [Docker](https://docs.docker.com/get-docker/) (para testes de integracao com Testcontainers)
+
+#### Docker no WSL2 (Windows)
+
+Se voce usa Docker dentro do WSL2 com acesso remoto via TCP, configure a variavel de ambiente no seu shell:
+
+```bash
+export DOCKER_HOST=tcp://127.0.0.1:2375
+```
+
+> **Importante**: Use `127.0.0.1` em vez de `localhost`. O .NET tenta IPv6 (`::1`) primeiro quando usa `localhost`, causando timeouts de ~21s por conexao quando o Docker escuta apenas em IPv4. O projeto detecta e corrige isso automaticamente via `DockerHostSetup`, mas a variavel precisa existir.
 
 ### Clone e Execute
 

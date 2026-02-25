@@ -159,6 +159,29 @@ SONAR_TOKEN=<seu-token-do-sonarcloud>
 
 > **Nota**: Sem o `SONAR_TOKEN`, a pipeline local funcionará normalmente, mas a etapa de busca de issues do SonarCloud será ignorada (bypass). Isso permite que qualquer pessoa rode a pipeline local sem precisar de acesso ao SonarCloud.
 
+### Docker (Testes de Integração)
+
+Os testes de integração usam **Testcontainers** que requer Docker disponível.
+
+**Docker no WSL2 (Windows):**
+
+Se o Docker roda dentro do WSL2 com API TCP exposta, configurar:
+
+```bash
+export DOCKER_HOST=tcp://127.0.0.1:2375
+```
+
+> **IMPORTANTE**: Usar `127.0.0.1` e **não** `localhost`. O .NET resolve `localhost` para IPv6 (`::1`) primeiro, causando timeouts de ~21s por conexão quando o Docker escuta apenas em IPv4.
+
+**Auto-configuração (`DockerHostSetup`):**
+
+O projeto inclui um `[ModuleInitializer]` em `src/BuildingBlocks/Testing/Integration/DockerHostSetup.cs` que corrige automaticamente dois problemas ao detectar `DOCKER_HOST` com TCP:
+
+1. **IPv6 → IPv4**: Substitui `localhost` por `127.0.0.1` no `DOCKER_HOST`
+2. **Ryuk socket**: Configura `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`
+
+Isso significa que basta ter `DOCKER_HOST` definido — o resto é automático, zero setup adicional ao clonar.
+
 ## Testes
 
 ### Estrutura
