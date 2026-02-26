@@ -436,6 +436,48 @@ public class ServiceClientClaimTests : TestBase
 
     #endregion
 
+    #region IsValid Tests
+
+    [Fact]
+    public void IsValid_Static_WithValidInput_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating execution context, entity info, and valid properties");
+        var executionContext = CreateTestExecutionContext();
+        var entityInfo = CreateTestEntityInfo();
+        var serviceClientId = Id.GenerateNewId();
+        var claimId = Id.GenerateNewId();
+
+        // Act
+        LogAct("Validating with static IsValid");
+        bool result = ServiceClientClaim.IsValid(executionContext, entityInfo, serviceClientId, claimId, ClaimValue.Granted);
+
+        // Assert
+        LogAssert("Verifying static validation passes");
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsValid_Instance_WithValidEntity_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating valid entity via RegisterNew");
+        var executionContext = CreateTestExecutionContext();
+        var input = new RegisterNewServiceClientClaimInput(Id.GenerateNewId(), Id.GenerateNewId(), ClaimValue.Granted);
+        var entity = ServiceClientClaim.RegisterNew(executionContext, input)!;
+
+        // Act
+        LogAct("Validating instance with IsValid");
+        var validationContext = CreateTestExecutionContext();
+        bool result = entity.IsValid(validationContext);
+
+        // Assert
+        LogAssert("Verifying instance validation passes");
+        result.ShouldBeTrue();
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static ExecutionContext CreateTestExecutionContext()

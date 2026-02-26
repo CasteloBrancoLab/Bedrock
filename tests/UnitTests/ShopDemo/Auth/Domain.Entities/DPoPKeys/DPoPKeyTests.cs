@@ -420,6 +420,24 @@ public class DPoPKeyTests : TestBase
         executionContext.HasErrorMessages.ShouldBeTrue();
     }
 
+    [Fact]
+    public void ValidateUserId_WithEmptyGuid_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Creating execution context and UserId with empty GUID");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.CreateFromExistingInfo(Guid.Empty);
+
+        // Act
+        LogAct("Validating UserId with empty GUID");
+        bool result = DPoPKey.ValidateUserId(executionContext, userId);
+
+        // Assert
+        LogAssert("Verifying validation fails for empty GUID");
+        result.ShouldBeFalse();
+        executionContext.HasErrorMessages.ShouldBeTrue();
+    }
+
     #endregion
 
     #region ValidateJwkThumbprint Tests
@@ -970,6 +988,53 @@ public class DPoPKeyTests : TestBase
         {
             DPoPKeyMetadata.ChangeStatusMetadata(isRequired: originalIsRequired);
         }
+    }
+
+    #endregion
+
+    #region IsValid Tests
+
+    [Fact]
+    public void IsValid_Static_WithValidInput_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating execution context, entity info, and valid properties");
+        var executionContext = CreateTestExecutionContext();
+        var entityInfo = CreateTestEntityInfo();
+        var userId = Id.GenerateNewId();
+        var jwkThumbprint = JwkThumbprint.CreateNew("NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs");
+
+        // Act
+        LogAct("Validating with static IsValid");
+        bool result = DPoPKey.IsValid(executionContext, entityInfo, userId, jwkThumbprint,
+            "{\"kty\":\"EC\",\"crv\":\"P-256\"}", DateTimeOffset.UtcNow.AddHours(24), DPoPKeyStatus.Active);
+
+        // Assert
+        LogAssert("Verifying static validation passes");
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsValid_Instance_WithValidEntity_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating valid entity via RegisterNew");
+        var executionContext = CreateTestExecutionContext();
+        var input = new RegisterNewDPoPKeyInput(
+            Id.GenerateNewId(),
+            JwkThumbprint.CreateNew("NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs"),
+            "{\"kty\":\"EC\",\"crv\":\"P-256\"}",
+            DateTimeOffset.UtcNow.AddHours(24));
+        var entity = DPoPKey.RegisterNew(executionContext, input)!;
+
+        // Act
+        LogAct("Validating instance with IsValid");
+        var validationContext = CreateTestExecutionContext();
+        bool result = entity.IsValid(validationContext);
+
+        // Assert
+        LogAssert("Verifying instance validation passes");
+        result.ShouldBeTrue();
     }
 
     #endregion

@@ -499,6 +499,50 @@ public class PasswordHistoryTests : TestBase
 
     #endregion
 
+    #region IsValid Tests
+
+    [Fact]
+    public void IsValid_Static_WithValidInput_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating execution context, entity info, and valid properties");
+        var executionContext = CreateTestExecutionContext();
+        var entityInfo = CreateTestEntityInfo();
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+
+        // Act
+        LogAct("Validating with static IsValid");
+        bool result = PasswordHistory.IsValid(executionContext, entityInfo, userId,
+            "$argon2id$v=19$m=65536,t=3,p=1$hashvalue", DateTimeOffset.UtcNow);
+
+        // Assert
+        LogAssert("Verifying static validation passes");
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsValid_Instance_WithValidEntity_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating valid entity via RegisterNew");
+        var executionContext = CreateTestExecutionContext();
+        var input = new RegisterNewPasswordHistoryInput(
+            Id.CreateFromExistingInfo(Guid.NewGuid()),
+            "$argon2id$v=19$m=65536,t=3,p=1$hashvalue");
+        var entity = PasswordHistory.RegisterNew(executionContext, input)!;
+
+        // Act
+        LogAct("Validating instance with IsValid");
+        var validationContext = CreateTestExecutionContext();
+        bool result = entity.IsValid(validationContext);
+
+        // Assert
+        LogAssert("Verifying instance validation passes");
+        result.ShouldBeTrue();
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static ExecutionContext CreateTestExecutionContext()

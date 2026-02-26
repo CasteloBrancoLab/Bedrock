@@ -97,6 +97,25 @@ public class DenyListServiceTests : TestBase
             Times.Once);
     }
 
+    [Fact]
+    public async Task RevokeTokenAsync_WhenEntityCreationFails_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up with null JTI to trigger entity creation failure");
+        var executionContext = CreateTestExecutionContext();
+        _denyListRepositoryMock
+            .Setup(x => x.ExistsByTypeAndValueAsync(executionContext, DenyListEntryType.Jti, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Revoking token with null JTI");
+        var result = await _sut.RevokeTokenAsync(executionContext, null!, DateTimeOffset.UtcNow.AddHours(1), "test", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false when entity creation fails");
+        result.ShouldBeFalse();
+    }
+
     #endregion
 
     #region RevokeUserAsync Tests
@@ -140,6 +159,25 @@ public class DenyListServiceTests : TestBase
         // Assert
         LogAssert("Verifying entry was created");
         result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task RevokeUserAsync_WhenEntityCreationFails_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up with null userId to trigger entity creation failure");
+        var executionContext = CreateTestExecutionContext();
+        _denyListRepositoryMock
+            .Setup(x => x.ExistsByTypeAndValueAsync(executionContext, DenyListEntryType.UserId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Revoking user with null userId");
+        var result = await _sut.RevokeUserAsync(executionContext, null!, DateTimeOffset.UtcNow.AddDays(1), "test", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false when entity creation fails");
+        result.ShouldBeFalse();
     }
 
     #endregion
@@ -205,6 +243,25 @@ public class DenyListServiceTests : TestBase
         // Assert
         LogAssert("Verifying returns true");
         result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task IsUserRevokedAsync_WhenNotRevoked_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up repository with no user revocation");
+        var executionContext = CreateTestExecutionContext();
+        _denyListRepositoryMock
+            .Setup(x => x.ExistsByTypeAndValueAsync(executionContext, DenyListEntryType.UserId, "user-123", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Checking if user is revoked");
+        var result = await _sut.IsUserRevokedAsync(executionContext, "user-123", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false");
+        result.ShouldBeFalse();
     }
 
     #endregion

@@ -90,6 +90,22 @@ public class BruteForceProtectionServiceTests : TestBase
         result.ShouldBeNull();
     }
 
+    [Fact]
+    public async Task RecordLoginAttemptAsync_WithNullUsername_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with null username to trigger entity creation failure");
+        var executionContext = CreateTestExecutionContext();
+
+        // Act
+        LogAct("Recording login attempt with null username");
+        var result = await _sut.RecordLoginAttemptAsync(executionContext, null!, null, false, null, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned because LoginAttempt.RegisterNew returns null");
+        result.ShouldBeNull();
+    }
+
     #endregion
 
     #region IsLockedOutAsync Tests

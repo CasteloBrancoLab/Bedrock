@@ -548,6 +548,48 @@ public class DenyListEntryTests : TestBase
 
     #endregion
 
+    #region IsValid Tests
+
+    [Fact]
+    public void IsValid_Static_WithValidInput_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating execution context, entity info, and valid properties");
+        var executionContext = CreateTestExecutionContext();
+        var entityInfo = CreateTestEntityInfo();
+
+        // Act
+        LogAct("Validating with static IsValid");
+        bool result = DenyListEntry.IsValid(executionContext, entityInfo,
+            DenyListEntryType.Jti, "some-jti-value", DateTimeOffset.UtcNow.AddHours(1));
+
+        // Assert
+        LogAssert("Verifying static validation passes");
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsValid_Instance_WithValidEntity_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating valid entity via RegisterNew");
+        var executionContext = CreateTestExecutionContext();
+        var input = new RegisterNewDenyListEntryInput(
+            DenyListEntryType.Jti, "some-jti-value", DateTimeOffset.UtcNow.AddHours(1), "Compromised token");
+        var entity = DenyListEntry.RegisterNew(executionContext, input)!;
+
+        // Act
+        LogAct("Validating instance with IsValid");
+        var validationContext = CreateTestExecutionContext();
+        bool result = entity.IsValid(validationContext);
+
+        // Assert
+        LogAssert("Verifying instance validation passes");
+        result.ShouldBeTrue();
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static ExecutionContext CreateTestExecutionContext()

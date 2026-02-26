@@ -128,35 +128,30 @@ INTEGRATION_FAILED=0
 INTEGRATION_DURATION=0
 INTEGRATION_PROJECTS_COUNT=0
 
-if [ $MUTATION_FAILED -eq 0 ]; then
-    echo ">>> Step 6/6: Integration Tests"
-    INTEGRATION_START=$(date +%s%3N)
+echo ">>> Step 6/6: Integration Tests"
+INTEGRATION_START=$(date +%s%3N)
 
-    # Find all integration test projects dynamically
-    INTEGRATION_PROJECTS=$(find tests/IntegrationTests -name "*.csproj" 2>/dev/null)
+# Find all integration test projects dynamically
+INTEGRATION_PROJECTS=$(find tests/IntegrationTests -name "*.csproj" 2>/dev/null)
 
-    if [ -n "$INTEGRATION_PROJECTS" ]; then
-        for project in $INTEGRATION_PROJECTS; do
-            INTEGRATION_PROJECTS_COUNT=$((INTEGRATION_PROJECTS_COUNT + 1))
-            name=$(basename "$(dirname "$project")")
-            echo "Running integration tests for: $name"
+if [ -n "$INTEGRATION_PROJECTS" ]; then
+    for project in $INTEGRATION_PROJECTS; do
+        INTEGRATION_PROJECTS_COUNT=$((INTEGRATION_PROJECTS_COUNT + 1))
+        name=$(basename "$(dirname "$project")")
+        echo "Running integration tests for: $name"
 
-            if ! dotnet test "$project" --no-build --logger "trx;LogFileName=integration-$name.trx" --results-directory "artifacts/test-results"; then
-                INTEGRATION_FAILED=1
-                echo "FAILED: Integration tests failed for $name"
-            fi
-        done
-    else
-        echo "No integration test projects found in tests/IntegrationTests"
-    fi
-
-    INTEGRATION_END=$(date +%s%3N)
-    INTEGRATION_DURATION=$((INTEGRATION_END - INTEGRATION_START))
-    echo ""
+        if ! dotnet test "$project" --no-build --logger "trx;LogFileName=integration-$name.trx" --results-directory "artifacts/test-results"; then
+            INTEGRATION_FAILED=1
+            echo "FAILED: Integration tests failed for $name"
+        fi
+    done
 else
-    echo ">>> Step 6/6: Integration Tests (SKIPPED - mutation tests failed)"
-    echo ""
+    echo "No integration test projects found in tests/IntegrationTests"
 fi
+
+INTEGRATION_END=$(date +%s%3N)
+INTEGRATION_DURATION=$((INTEGRATION_END - INTEGRATION_START))
+echo ""
 
 # === GENERATE REPORTS ===
 # Reports are generated after all steps so all artifacts (coverage, mutation, integration) are available
@@ -164,10 +159,8 @@ echo ">>> Generating Reports..."
 echo "  Unit Test Report..."
 "$SCRIPT_DIR/generate-unittest-report.sh" || echo "Warning: Unit test report generation failed"
 
-if [ $INTEGRATION_FAILED -eq 0 ] && [ $MUTATION_FAILED -eq 0 ]; then
-    echo "  Integration Test Report..."
-    "$SCRIPT_DIR/generate-integration-report.sh" || echo "Warning: Integration report generation failed"
-fi
+echo "  Integration Test Report..."
+"$SCRIPT_DIR/generate-integration-report.sh" || echo "Warning: Integration report generation failed"
 echo ""
 
 END_TIME=$(date +%s%3N)
@@ -222,7 +215,6 @@ cat > artifacts/summary.json << SUMMARY_EOF
   },
   "integration": {
     "success": $([ $INTEGRATION_FAILED -eq 0 ] && echo "true" || echo "false"),
-    "skipped": $([ $MUTATION_FAILED -eq 1 ] && echo "true" || echo "false"),
     "projects_count": $INTEGRATION_PROJECTS_COUNT,
     "duration_ms": $INTEGRATION_DURATION
   }

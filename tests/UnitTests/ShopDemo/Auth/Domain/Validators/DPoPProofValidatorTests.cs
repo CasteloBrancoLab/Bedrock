@@ -1,9 +1,13 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.Ids;
+using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.DPoPKeys;
+using ShopDemo.Auth.Domain.Entities.DPoPKeys.Enums;
+using ShopDemo.Auth.Domain.Entities.DPoPKeys.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Validators;
 using ShopDemo.Auth.Domain.Validators.Interfaces;
@@ -110,6 +114,90 @@ public class DPoPProofValidatorTests : TestBase
         executionContext.HasErrorMessages.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task ValidateProofAsync_WhenHttpMethodMismatch_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up valid proof and registered key but mismatched HTTP method");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var thumbprint = JwkThumbprint.CreateNew("test-thumbprint");
+
+        _proofVerifierMock
+            .Setup(x => x.ParseAndVerifyProof("valid-jwt"))
+            .Returns(new DPoPProofInfo(thumbprint, "jwk", "POST", "https://api.example.com", DateTimeOffset.UtcNow));
+
+        var dPoPKey = CreateTestDPoPKey(userId, thumbprint);
+        _dPoPKeyRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAndThumbprintAsync(executionContext, userId, thumbprint, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dPoPKey);
+
+        // Act
+        LogAct("Validating proof with mismatched HTTP method (POST vs GET)");
+        var result = await _sut.ValidateProofAsync(executionContext, userId, "valid-jwt", "GET", "https://api.example.com", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false with HTTP method mismatch error");
+        result.ShouldBeFalse();
+        executionContext.HasErrorMessages.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidateProofAsync_WhenHttpUriMismatch_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up valid proof and registered key but mismatched HTTP URI");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var thumbprint = JwkThumbprint.CreateNew("test-thumbprint");
+
+        _proofVerifierMock
+            .Setup(x => x.ParseAndVerifyProof("valid-jwt"))
+            .Returns(new DPoPProofInfo(thumbprint, "jwk", "GET", "https://api.example.com/wrong", DateTimeOffset.UtcNow));
+
+        var dPoPKey = CreateTestDPoPKey(userId, thumbprint);
+        _dPoPKeyRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAndThumbprintAsync(executionContext, userId, thumbprint, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dPoPKey);
+
+        // Act
+        LogAct("Validating proof with mismatched HTTP URI");
+        var result = await _sut.ValidateProofAsync(executionContext, userId, "valid-jwt", "GET", "https://api.example.com", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false with HTTP URI mismatch error");
+        result.ShouldBeFalse();
+        executionContext.HasErrorMessages.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidateProofAsync_WhenAllChecksPass_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Setting up valid proof, registered key, matching method and URI");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var thumbprint = JwkThumbprint.CreateNew("test-thumbprint");
+
+        _proofVerifierMock
+            .Setup(x => x.ParseAndVerifyProof("valid-jwt"))
+            .Returns(new DPoPProofInfo(thumbprint, "jwk", "GET", "https://api.example.com", DateTimeOffset.UtcNow));
+
+        var dPoPKey = CreateTestDPoPKey(userId, thumbprint);
+        _dPoPKeyRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAndThumbprintAsync(executionContext, userId, thumbprint, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dPoPKey);
+
+        // Act
+        LogAct("Validating proof with all matching parameters");
+        var result = await _sut.ValidateProofAsync(executionContext, userId, "valid-jwt", "GET", "https://api.example.com", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns true (all checks passed)");
+        result.ShouldBeTrue();
+        executionContext.HasErrorMessages.ShouldBeFalse();
+    }
+
     #endregion
 
     #region Helper Methods
@@ -125,6 +213,34 @@ public class DPoPProofValidatorTests : TestBase
             businessOperationCode: "TEST_OP",
             minimumMessageType: MessageType.Trace,
             timeProvider: TimeProvider.System);
+    }
+
+    private static DPoPKey CreateTestDPoPKey(Id userId, JwkThumbprint thumbprint)
+    {
+        var entityInfo = EntityInfo.CreateFromExistingInfo(
+            id: Id.CreateFromExistingInfo(Guid.NewGuid()),
+            tenantInfo: TenantInfo.Create(Guid.NewGuid(), "Test Tenant"),
+            entityChangeInfo: EntityChangeInfo.CreateFromExistingInfo(
+                createdAt: DateTimeOffset.UtcNow,
+                createdBy: "creator",
+                createdCorrelationId: Guid.NewGuid(),
+                createdExecutionOrigin: "UnitTest",
+                createdBusinessOperationCode: "TEST_OP",
+                lastChangedAt: null,
+                lastChangedBy: null,
+                lastChangedCorrelationId: null,
+                lastChangedExecutionOrigin: null,
+                lastChangedBusinessOperationCode: null),
+            entityVersion: RegistryVersion.CreateFromExistingInfo(DateTimeOffset.UtcNow));
+
+        return DPoPKey.CreateFromExistingInfo(new CreateFromExistingInfoDPoPKeyInput(
+            entityInfo,
+            userId,
+            thumbprint,
+            "test-public-key-jwk",
+            DateTimeOffset.UtcNow.AddHours(1),
+            DPoPKeyStatus.Active,
+            null));
     }
 
     #endregion

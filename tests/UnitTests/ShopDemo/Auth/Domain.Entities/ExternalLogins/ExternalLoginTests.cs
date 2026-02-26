@@ -660,6 +660,48 @@ public class ExternalLoginTests : TestBase
 
     #endregion
 
+    #region IsValid Tests
+
+    [Fact]
+    public void IsValid_Static_WithValidInput_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating execution context, entity info, and valid properties");
+        var executionContext = CreateTestExecutionContext();
+        var entityInfo = CreateTestEntityInfo();
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+
+        // Act
+        LogAct("Validating with static IsValid");
+        bool result = ExternalLogin.IsValid(executionContext, entityInfo, userId, LoginProvider.Google, "google-user-123");
+
+        // Assert
+        LogAssert("Verifying static validation passes");
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsValid_Instance_WithValidEntity_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Creating valid entity via RegisterNew");
+        var executionContext = CreateTestExecutionContext();
+        var input = new RegisterNewExternalLoginInput(
+            Id.CreateFromExistingInfo(Guid.NewGuid()), LoginProvider.Google, "google-user-123", "user@gmail.com");
+        var entity = ExternalLogin.RegisterNew(executionContext, input)!;
+
+        // Act
+        LogAct("Validating instance with IsValid");
+        var validationContext = CreateTestExecutionContext();
+        bool result = entity.IsValid(validationContext);
+
+        // Assert
+        LogAssert("Verifying instance validation passes");
+        result.ShouldBeTrue();
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static ExecutionContext CreateTestExecutionContext()

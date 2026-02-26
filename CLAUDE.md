@@ -1,544 +1,115 @@
-# Instruções do Projeto Bedrock
+# Instrucoes do Projeto Bedrock
 
-## Prompts Reutilizáveis
-
-Prompts padronizados em `.claude/prompts/`:
-
-| Prompt | Descrição |
-|--------|-----------|
-| [review-zero-allocation.md](.claude/prompts/review-zero-allocation.md) | Revisão de performance focada em eliminar alocações |
-
-**Uso:** Substituir variáveis `{{variavel}}` pelos valores reais e colar no chat.
-
-## Gestão de Tarefas
-
-- Todas as tarefas são gerenciadas por **issues no GitHub**
-- Usar a CLI `gh` para todas as operações (já instalada)
-- Comandos úteis:
-  - `gh issue list` — listar issues
-  - `gh issue view <number>` — ver detalhes de uma issue
-  - `gh issue create` — criar nova issue
-  - `gh issue close <number>` — fechar issue
-  - `gh label list` — listar labels
-
-### Campo Type (Obrigatório)
-
-Toda issue deve ter o campo **Type** definido. Os tipos disponíveis são:
-
-| Type | Descrição |
-|------|-----------|
-| `Bug` | Problema inesperado ou comportamento incorreto |
-| `Feature` | Nova funcionalidade ou melhoria |
-| `Task` | Tarefa específica de trabalho |
-
-**Como definir o Type via GraphQL:**
-
-```bash
-# 1. Obter o ID da issue e os tipos disponíveis
-gh api graphql -f query='
-{
-  repository(owner: "CasteloBrancoLab", name: "Bedrock") {
-    issue(number: <NUMERO>) {
-      id
-    }
-    issueTypes(first: 10) {
-      nodes { id name }
-    }
-  }
-}'
-
-# 2. Atualizar o tipo da issue
-gh api graphql -f query='
-mutation {
-  updateIssue(input: {
-    id: "<ISSUE_ID>"
-    issueTypeId: "<TYPE_ID>"
-  }) {
-    issue { issueType { name } }
-  }
-}'
-```
-
-> **Nota**: O campo Type não pode ser definido via `gh issue create` ou `gh issue edit`. É necessário usar a API GraphQL.
-
-## Fluxo de Trabalho
-
-### Branches
-- Criar uma branch por issue: `<type>/<issue-number>-<descricao>`
-- Exemplos: `feature/42-add-value-objects`, `migration/15-core-execution-context`
-
-### Pipeline
-```
-Upstream          Middlestream              Downstream
-─────────────────────────────────────────────────────────
-backlog → ready → in-progress → review → approved → merged
-```
-
-### Ciclo de Vida da Issue
-1. **Issue criada** → `status:backlog`
-2. **Refinada/priorizada** → `status:ready`
-3. **Branch criada, desenvolvimento iniciado** → `status:in-progress`
-4. **PR aberto** → `status:review` (PR deve conter `Closes #<issue>`)
-5. **PR aprovado** → `status:approved`
-6. **Merge** → Issue fechada automaticamente
-
-## Labels
-
-### Tipo (`type:`)
-| Label | Descrição |
-|-------|-----------|
-| `type:feature` | Nova funcionalidade |
-| `type:refactor` | Refatoração de código |
-| `type:migration` | Migração de código legado |
-| `type:test` | Testes |
-| `type:chore` | Manutenção e tarefas auxiliares |
-
-### Componente (`component:`)
-| Label | Descrição |
-|-------|-----------|
-| `component:core` | BuildingBlocks.Core |
-| `component:domain` | BuildingBlocks.Domain |
-| `component:data` | BuildingBlocks.Data |
-| `component:persistence` | BuildingBlocks.Persistence |
-| `component:serialization` | BuildingBlocks.Serialization |
-| `component:observability` | BuildingBlocks.Observability |
-
-### Prioridade (`priority:`)
-| Label | Descrição |
-|-------|-----------|
-| `priority:high` | Alta prioridade |
-| `priority:medium` | Média prioridade |
-| `priority:low` | Baixa prioridade |
-
-### Status (`status:`)
-| Label | Estágio | Descrição |
-|-------|---------|-----------|
-| `status:backlog` | Upstream | Aguardando priorização |
-| `status:ready` | Upstream | Pronto para iniciar (refinado) |
-| `status:in-progress` | Middlestream | Em desenvolvimento |
-| `status:review` | Middlestream | PR aberto, aguardando review |
-| `status:approved` | Downstream | Aprovado, pronto para merge |
-| `status:blocked` | — | Bloqueado por dependência |
-
-### Padrão GitHub
-Labels padrão do GitHub também disponíveis: `bug`, `documentation`, `enhancement`, `question`, etc.
-
-## Convenções
+## Convencoes
 
 - Nome do framework: **Bedrock**
 - Namespace base: `Bedrock`
 - Target Framework: .NET 10.0
-- Diagramas nas issues devem ser feitos em **Mermaid**
+- Diagramas em **Mermaid**
 
-## Configuração do Ambiente Local
+## Gestao de Tarefas
 
-### Arquivo .env
-
-O projeto utiliza um arquivo `.env` na raiz para configurações sensíveis. Este arquivo **não é versionado** (está no `.gitignore`).
-
-**Criar o arquivo `.env`:**
+- Issues no GitHub via CLI `gh`
+- Toda issue deve ter o campo **Type** (Bug, Feature, Task) via GraphQL:
 
 ```bash
-# Na raiz do projeto
-touch .env
+# Obter IDs
+gh api graphql -f query='{ repository(owner: "CasteloBrancoLab", name: "Bedrock") { issue(number: <N>) { id } issueTypes(first: 10) { nodes { id name } } } }'
+
+# Definir Type
+gh api graphql -f query='mutation { updateIssue(input: { id: "<ISSUE_ID>" issueTypeId: "<TYPE_ID>" }) { issue { issueType { name } } } }'
 ```
 
-**Conteúdo do arquivo:**
+## Fluxo de Trabalho
 
-```env
-SONAR_TOKEN=<seu-token-do-sonarcloud>
-```
+### Branches
 
-**Onde obter o SONAR_TOKEN:**
+`<type>/<issue-number>-<descricao>` (ex: `feature/42-add-value-objects`)
 
-1. Acesse [SonarCloud](https://sonarcloud.io)
-2. Faça login com sua conta GitHub
-3. Vá em **My Account** → **Security**
-4. Gere um novo token em **Generate Tokens**
-5. Copie o token e adicione ao `.env`
-
-> **Nota**: Sem o `SONAR_TOKEN`, a pipeline local funcionará normalmente, mas a etapa de busca de issues do SonarCloud será ignorada (bypass). Isso permite que qualquer pessoa rode a pipeline local sem precisar de acesso ao SonarCloud.
-
-### Docker (Testes de Integração)
-
-Os testes de integração usam **Testcontainers** que requer Docker disponível.
-
-**Docker no WSL2 (Windows):**
-
-Se o Docker roda dentro do WSL2 com API TCP exposta, configurar:
-
-```bash
-export DOCKER_HOST=tcp://127.0.0.1:2375
-```
-
-> **IMPORTANTE**: Usar `127.0.0.1` e **não** `localhost`. O .NET resolve `localhost` para IPv6 (`::1`) primeiro, causando timeouts de ~21s por conexão quando o Docker escuta apenas em IPv4.
-
-**Auto-configuração (`DockerHostSetup`):**
-
-O projeto inclui um `[ModuleInitializer]` em `src/BuildingBlocks/Testing/Integration/DockerHostSetup.cs` que corrige automaticamente dois problemas ao detectar `DOCKER_HOST` com TCP:
-
-1. **IPv6 → IPv4**: Substitui `localhost` por `127.0.0.1` no `DOCKER_HOST`
-2. **Ryuk socket**: Configura `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`
-
-Isso significa que basta ter `DOCKER_HOST` definido — o resto é automático, zero setup adicional ao clonar.
-
-## Testes
-
-### Estrutura
+### Ciclo de Vida
 
 ```
-src/BuildingBlocks/Testing/           # BuildingBlock base para testes
-tests/UnitTests/BuildingBlocks/       # Testes unitários por componente
-tests/MutationTests/BuildingBlocks/   # Testes de mutação por componente
+Issue criada → status:backlog → status:ready → status:in-progress → status:review → merged
 ```
 
-### Convenções
+PR deve conter `Closes #<issue>` para auto-close.
 
-- Relação **1:1** entre projeto `src` e projeto `tests`
-- Nomenclatura UnitTests: `Bedrock.UnitTests.<namespace-do-src>`
-- Nomenclatura MutationTests: `Bedrock.MutationTests.<namespace-do-src>`
-- Padrão obrigatório: **AAA (Arrange, Act, Assert)**
-- Motivo da relação 1:1: Compatibilidade com **Stryker.NET** (mutation testing)
+## Fases de Desenvolvimento (Skills)
 
-### Bibliotecas Obrigatórias
-
-| Biblioteca | Propósito |
-|------------|-----------|
-| xUnit | Framework de testes |
-| Shouldly | Assertions fluentes |
-| Moq | Mocking |
-| Bogus | Geração de dados fake |
-| Humanizer | Formatação humanizada de logs |
-| Coverlet | Cobertura de código |
-| Stryker.NET | Testes de mutação |
-
-### Classes Base
-
-#### TestBase
-Classe base para todos os testes. Herdar para ter acesso a logging padronizado.
-
-```csharp
-public class MyTests : TestBase
-{
-    public MyTests(ITestOutputHelper output) : base(output) { }
-
-    [Fact]
-    public void MyTest()
-    {
-        // Arrange
-        LogArrange("Preparando dados");
-
-        // Act
-        LogAct("Executando ação");
-
-        // Assert
-        LogAssert("Verificando resultado");
-    }
-}
-```
-
-#### ServiceCollectionFixture
-Fixture para testes que precisam de IoC. Herdar e implementar `ConfigureServices`.
-
-```csharp
-public class MyFixture : ServiceCollectionFixture
-{
-    protected override void ConfigureServices(IServiceCollection services)
-    {
-        services.AddSingleton<IMyService, MyService>();
-    }
-}
-
-[CollectionDefinition("MyServices")]
-public class MyCollection : ICollectionFixture<MyFixture> { }
-
-[Collection("MyServices")]
-public class MyTests : TestBase
-{
-    private readonly MyFixture _fixture;
-
-    public MyTests(MyFixture fixture, ITestOutputHelper output) : base(output)
-    {
-        _fixture = fixture;
-    }
-}
-```
-
-### Testes de Mutação
-
-Testes de mutação validam a qualidade dos testes unitários através do **Stryker.NET**.
-
-#### Estrutura
-
-Cada projeto de UnitTests tem um correspondente em MutationTests:
+O desenvolvimento segue **7 fases sequenciais**, cada uma com sua skill:
 
 ```
-tests/MutationTests/BuildingBlocks/Core/
-└── stryker-config.json
+/code → /arch → /test → /mutate → /integration → /pipeline → /pr
 ```
 
-#### Configuração (stryker-config.json)
+| Fase | Skill | Script | O que faz |
+|------|-------|--------|-----------|
+| 1. Implementacao | `/code` | `build-check.sh` | Codigo-fonte + build |
+| 2. Arquitetura | `/arch` | `arch-check.sh` | Validacao de regras arquiteturais |
+| 3. Testes | `/test` | `test-check.sh` | Testes unitarios |
+| 4. Mutacao | `/mutate` | `mutate-check.sh` | Testes de mutacao (100%) |
+| 5. Integracao | `/integration` | `integration-check.sh` | Testes de integracao (Docker) |
+| 6. Pipeline | `/pipeline` | `pipeline-check.sh` | Validacao final completa |
+| 7. Pull Request | `/pr` | `gh` CLI | Criar PR, acompanhar CI, merge |
 
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
-  "stryker-config": {
-    "project": "Bedrock.BuildingBlocks.Core.csproj",
-    "test-projects": [
-      "../../../UnitTests/BuildingBlocks/Core/Bedrock.UnitTests.BuildingBlocks.Core.csproj"
-    ],
-    "reporters": ["html", "progress"],
-    "thresholds": {
-      "high": 100,
-      "low": 100,
-      "break": 100
-    }
-  }
-}
-```
+### Principio: Scripts fazem o trabalho pesado
 
-#### Regras
+- Cada script gera artefatos em `artifacts/pending/`
+- Claude le **apenas** `artifacts/pending/SUMMARY.txt` e os pending files
+- **NAO** interprete output bruto de dotnet/stryker — leia somente os pending files
+- Maximo **5 iteracoes** por fase; se atingir, pare e informe o usuario
 
-- Threshold mínimo: **100%** (código desenvolvido com IA não aceita mutantes sobreviventes)
-- Cada projeto de mutação referencia **apenas** seu projeto de UnitTests correspondente
-- Relatórios HTML são armazenados como artifacts na pipeline (retenção: 3 dias)
+### Desenvolvimento rapido (sem skills)
 
-#### Exclusões de Código Não-Testável
+Para iteracoes intermediarias sem skills:
 
-Para código **genuinamente impossível de testar** (ex: spin-wait, overflow que requer milhões de iterações), usar:
+| Fase | Comando |
+|------|---------|
+| Build rapido | `dotnet build` |
+| Testes focados | `dotnet test <projeto>` |
+| Pipeline completa | `./scripts/pipeline.sh` |
 
-1. **Stryker comments** - para ignorar mutações
-2. **`[ExcludeFromCodeCoverage]`** - para ignorar cobertura (Coverlet e SonarCloud)
+## Prompts Reutilizaveis
 
-**Exemplo completo:**
+Prompts padronizados em `.claude/prompts/`:
 
-```csharp
-/// <summary>
-/// Método impossível de testar em tempo razoável.
-/// </summary>
-// Stryker disable all : Counter overflow requires 67M+ IDs to test - impractical
-[ExcludeFromCodeCoverage(Justification = "Counter overflow requer 67M+ IDs para testar - impraticavel")]
-private static void HandleCounterOverflowIfNeeded(ref long timestamp)
-{
-    if (_counter > 0x3FFFFFF)
-    {
-        SpinWaitForNextMillisecond(ref timestamp, ref _lastTimestamp);
-        _counter = 0;
-    }
-}
-// Stryker restore all
-```
+| Prompt | Descricao |
+|--------|-----------|
+| [review-zero-allocation.md](.claude/prompts/review-zero-allocation.md) | Revisao de performance focada em eliminar alocacoes |
+| [implement-domain-entity-rule.md](.claude/prompts/implement-domain-entity-rule.md) | Implementar regra de arquitetura para Domain Entities |
 
-**Regras para exclusão:**
-- Usar **apenas** quando for genuinamente impossível testar
-- **Sempre** incluir justificativa em pt-BR
-- Preferir extrair para método separado com `[ExcludeFromCodeCoverage]`
-- Preferir exclusões granulares (`disable once`) quando possível
-- Documentar no PR o motivo da exclusão
+**Uso:** Substituir variaveis `{{variavel}}` pelos valores reais e colar no chat.
 
-**Stryker comments disponíveis:**
-| Comentário | Uso |
-|------------|-----|
-| `// Stryker disable all : reason` | Desabilita todas as mutações até `restore` |
-| `// Stryker restore all` | Restaura mutações |
-| `// Stryker disable once all : reason` | Desabilita apenas na próxima linha |
-| `// Stryker disable once Statement : reason` | Desabilita remoção de statement |
-| `// Stryker disable Equality,Arithmetic : reason` | Desabilita mutadores específicos |
+## Regras Contextuais (.claude/rules/)
 
-**Requer `using System.Diagnostics.CodeAnalysis;`** para usar o atributo.
+Regras carregadas automaticamente quando Claude toca arquivos nos paths especificados:
 
-### Pipeline Local
+| Regra | Paths | Conteudo |
+|-------|-------|----------|
+| `testing.md` | `tests/UnitTests/**` | AAA, TestBase, libs, nomenclatura |
+| `mutation.md` | `tests/MutationTests/**` | Stryker, threshold 100%, exclusoes |
+| `integration.md` | `tests/IntegrationTests/**` | Docker, Testcontainers, WSL2 |
 
-Scripts bash para execução local da pipeline, otimizados para uso pelo **code agent**.
-
-#### Estrutura
-
-```
-scripts/
-├── clean.sh                    # Limpa bin/ e obj/ recursivamente
-├── clean-artifacts.sh          # Limpa artefatos gerados
-├── build.sh                    # Compila a solução
-├── test.sh                     # Executa testes com cobertura
-├── mutate.sh                   # Executa testes de mutação
-├── summarize.sh                # Extrai pendências locais (mutantes, arquitetura)
-├── sonar-check.sh              # Busca issues do SonarCloud (executar pontualmente, não faz parte da pipeline)
-├── generate-pending-summary.sh # Gera SUMMARY.txt consolidado
-└── pipeline.sh                 # Executa pipeline completa
-```
-
-#### Comandos
-
-```bash
-# Pipeline completa (recomendado)
-./scripts/pipeline.sh
-
-# Comandos individuais
-./scripts/clean.sh           # Limpar bin/obj
-./scripts/clean-artifacts.sh # Limpar artefatos
-./scripts/build.sh           # Compilar
-./scripts/test.sh            # Testar com cobertura
-./scripts/mutate.sh          # Testes de mutação
-```
-
-#### Artefatos Gerados
+## Artefatos Gerados
 
 ```
 artifacts/
-├── coverage/         # Relatórios de cobertura (Cobertura XML)
-├── mutation/         # Relatórios de mutação (JSON)
-├── pending/          # Pendências extraídas para análise
-│   ├── SUMMARY.txt           # Resumo consolidado das pendências
-│   ├── architecture_*.txt    # Violações de arquitetura
-│   └── mutant_*.txt          # Mutantes sobreviventes (um arquivo por mutante)
-└── summary.json      # Resumo consolidado da pipeline
+├── pending/                  # Pendencias para o code agent
+│   ├── SUMMARY.txt           # Resumo consolidado
+│   ├── build_errors.txt      # Erros de build
+│   ├── architecture_*.txt    # Violacoes de arquitetura
+│   ├── test_*.txt            # Testes falhando
+│   ├── mutant_*.txt          # Mutantes sobreviventes
+│   ├── integration_*.txt     # Testes de integracao falhando
+│   ├── coverage_*.txt        # Cobertura incompleta
+│   └── sonar_*.txt           # Issues do SonarCloud
+├── coverage/                 # Relatorios Cobertura XML
+├── mutation/                 # Relatorios Stryker JSON
+└── summary.json              # Resumo da pipeline
 ```
 
-#### Formato dos Arquivos de Pendências
+## Notas
 
-**Mutantes (`mutant_<projeto>_<numero>.txt`):**
-```
-PROJECT: <nome-do-projeto>
-FILE: <caminho-do-arquivo>
-LINE: <linha>
-STATUS: Survived|NoCoverage
-MUTATOR: <tipo-de-mutador>
-DESCRIPTION: <descrição-da-mutação>
-```
-
-**SonarCloud (`sonar_<tipo>_<numero>.txt`):**
-```
-TYPE: BUG|CODE_SMELL|VULNERABILITY|SECURITY_HOTSPOT
-SEVERITY: BLOCKER|CRITICAL|MAJOR|MINOR|INFO
-FILE: <caminho-do-arquivo>
-LINE: <linha>
-RULE: <regra-violada>
-EFFORT: <esforço-estimado>
-MESSAGE: <descrição-do-problema>
-```
-
-> **Tipos de arquivo SonarCloud**: `sonar_bug_*.txt`, `sonar_smell_*.txt`, `sonar_vuln_*.txt`, `sonar_hotspot_*.txt`
-
-#### Instruções para Code Agent
-
-**Fluxo escalonado durante o desenvolvimento:**
-
-O code agent DEVE usar o comando adequado para cada fase do
-desenvolvimento, evitando rodar a pipeline completa em
-iterações intermediárias:
-
-| Fase | Comando | Quando usar |
-|------|---------|-------------|
-| Build rápido | `dotnet build` | Após qualquer alteração de código |
-| Testes focados | `dotnet test <projeto>` | Após escrever/alterar testes |
-| Pipeline completa | `./scripts/pipeline.sh` | **Uma vez no final**, antes de abrir a PR |
-
-Commits intermediários na branch de trabalho NÃO exigem
-pipeline completa — basta build e testes focados.
-
-**IMPORTANTE**: Antes de abrir a PR, o code agent DEVE:
-
-1. Executar `./scripts/pipeline.sh` (pipeline completa)
-2. Verificar `artifacts/pending/SUMMARY.txt`
-3. Se houver pendências:
-   - **Arquitetura**: Ler `artifacts/pending/architecture_*.txt` e corrigir violações
-   - **Mutantes**: Ler `artifacts/pending/mutant_*.txt` e corrigir testes
-   - Repetir até atingir **100%** de mutação
-4. Só abrir a PR quando a pipeline passar completamente
-
-> **Nota**: Cobertura é delegada ao SonarCloud. Local Coverlet reports incluem dependências transitivas e produzem falsos positivos.
-> **Nota**: SonarCloud analisa apenas a branch `main` (plano Community). A análise local via `./scripts/sonar-check.sh` deve ser executada **pontualmente** pelo usuário, não faz parte da pipeline automática.
-
-### Limite de Retentativas
-
-Para evitar loops infinitos, o code agent DEVE respeitar os seguintes limites:
-
-| Etapa | Máximo de Tentativas |
-|-------|---------------------|
-| Pipeline local (passo 3-4) | 5 tentativas |
-| Pipeline GitHub Actions (passo 7-9) | 5 tentativas |
-
-**Ao atingir o limite**:
-1. **Parar imediatamente** a execução
-2. **Informar o usuário** com um resumo claro:
-   - Quantas tentativas foram feitas
-   - Quais pendências ainda existem
-   - Últimos erros encontrados
-3. **Solicitar intervenção humana** para decidir próximos passos
-
-### Após Pipeline Local Passar
-
-Quando a pipeline local passar com sucesso, o code agent DEVE:
-
-1. **Criar a PR** usando `gh pr create`
-   - Título descritivo seguindo o padrão do projeto
-   - Body com `Closes #<issue>` para auto-close
-2. **Aguardar a pipeline do GitHub Actions**
-   - Verificar status com `gh pr checks <number>`
-3. **Se a pipeline passar**:
-   - Fazer merge com `gh pr merge <number> --squash --delete-branch`
-   - Atualizar branch local: `git checkout main && git pull`
-   - Limpar branches locais obsoletas: `git branch -d <branch-name>`
-4. **Se a pipeline falhar** (máximo 5 tentativas):
-   - Analisar os logs com `gh run view <run-id> --log-failed`
-   - Corrigir os problemas localmente
-   - Commitar e push (a PR será atualizada automaticamente)
-   - Repetir até passar ou atingir o limite de tentativas
-
-**Issues do SonarCloud que NÃO fazem sentido:**
-
-Algumas issues do SonarCloud podem não fazer sentido no contexto do projeto. Nestes casos, o code agent DEVE:
-
-1. **Avaliar criticamente** se a issue realmente se aplica ao contexto
-2. **Não resolver** issues que:
-   - Contradizem decisões arquiteturais documentadas em ADRs
-   - São falsos positivos (ex: código gerado, testes, mocks)
-   - Não se aplicam ao contexto específico do projeto
-3. **Informar o usuário** sobre a decisão de não resolver, explicando:
-   - Qual issue foi ignorada
-   - Motivo da decisão (ex: "contradiz ADR-XXX", "falso positivo", etc.)
-4. **Marcar como "Won't Fix"** no SonarCloud se tiver acesso, ou documentar no PR
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  FLUXO OBRIGATÓRIO DO CODE AGENT                         │
-├──────────────────────────────────────────────────────────┤
-│  DURANTE O DESENVOLVIMENTO (iterações rápidas):          │
-│  1. Implementar código                                   │
-│     → dotnet build (verificar compilação)                │
-│  2. Implementar testes                                   │
-│     → dotnet test <projeto> (verificar testes)           │
-│  3. Repetir 1-2 até implementação completa               │
-│                                                          │
-│  ANTES DA PR (pipeline completa, uma vez):                │
-│  4. Executar: ./scripts/pipeline.sh                      │
-│  5. Se FAILED ou com pendências (max 5 tentativas):      │
-│     - Ler artifacts/pending/SUMMARY.txt                  │
-│     - Ler artifacts/pending/architecture_*.txt           │
-│     - Ler artifacts/pending/mutant_*.txt                 │
-│     - Corrigir e voltar ao passo 4                       │
-│  6. Se SUCCESS: commitar e push                          │
-│  7. Criar PR: gh pr create                               │
-│  8. Verificar pipeline: gh pr checks <number>            │
-│  9. Se pipeline PASSOU:                                  │
-│     - gh pr merge <number> --squash --delete-branch      │
-│     - git checkout main && git pull                      │
-│     - git branch -d <branch-local>                       │
-│ 10. Se pipeline FALHOU (max 5 tentativas):               │
-│     - Analisar: gh run view <run-id> --log-failed        │
-│     - Corrigir e voltar ao passo 4                       │
-│ 11. Se atingiu limite: PARAR e informar o usuário        │
-└──────────────────────────────────────────────────────────┘
-```
-
-> **Nota**: Os artefatos são gerados em formato texto para consumo programático. Relatórios HTML são gerados apenas no GitHub Actions.
-
-## Active Technologies
-- C# / .NET 10.0 + Bedrock BuildingBlocks (Core, Domain.Entities, Data, Persistence.PostgreSql, Observability, Testing) (137-auth-scaffolding)
-- N/A (scaffolding apenas — sem entidades nem persistência nesta issue) (137-auth-scaffolding)
-- C# / .NET 10.0 + Bedrock.BuildingBlocks.Core, Bedrock.BuildingBlocks.Domain, Bedrock.BuildingBlocks.Domain.Entities, Bedrock.BuildingBlocks.Testing, Konscious.Security.Cryptography (Argon2id) (001-auth-domain-model)
-- N/A (domain model apenas — persistência é escopo de outra issue) (001-auth-domain-model)
-- C# / .NET 10.0 + Bedrock.BuildingBlocks.Core, Bedrock.BuildingBlocks.Observability, FluentMigrator 8.x, FluentMigrator.Runner.Postgres, Testcontainers.PostgreSql (180-migration-postgresql-building-block)
-
-## Recent Changes
-- 137-auth-scaffolding: Added C# / .NET 10.0 + Bedrock BuildingBlocks (Core, Domain.Entities, Data, Persistence.PostgreSql, Observability, Testing)
-- 180-migration-postgresql-building-block: Added C# / .NET 10.0 + Bedrock.BuildingBlocks.Core, Bedrock.BuildingBlocks.Observability, FluentMigrator 8.x
+- Cobertura e delegada ao SonarCloud (local Coverlet tem falsos positivos)
+- SonarCloud analisa apenas `main` (plano Community); `sonar-check.sh` e pontual
+- ADRs em `docs/adrs/` definem decisoes arquiteturais — respeite-os
