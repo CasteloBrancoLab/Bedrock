@@ -237,9 +237,10 @@ public class AuthenticationServiceTests : TestBase
         var result = await _sut.VerifyCredentialsAsync(executionContext, email, password, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying null returned with generic error");
+        LogAssert("Verifying null returned with InvalidCredentials error code");
         result.ShouldBeNull();
         executionContext.HasErrorMessages.ShouldBeTrue();
+        executionContext.Messages.ShouldContain(m => m.Code == "AuthenticationService.InvalidCredentials");
     }
 
     [Fact]
@@ -260,9 +261,10 @@ public class AuthenticationServiceTests : TestBase
         var result = await _sut.VerifyCredentialsAsync(executionContext, email, password, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying null returned with generic error (anti-enumeration)");
+        LogAssert("Verifying null returned with InvalidCredentials error code (anti-enumeration)");
         result.ShouldBeNull();
         executionContext.HasErrorMessages.ShouldBeTrue();
+        executionContext.Messages.ShouldContain(m => m.Code == "AuthenticationService.InvalidCredentials");
         _passwordHasherMock.Verify(x => x.VerifyPassword(It.IsAny<ExecutionContext>(), It.IsAny<string>(), It.IsAny<byte[]>()), Times.Never);
     }
 
@@ -274,9 +276,10 @@ public class AuthenticationServiceTests : TestBase
         var executionContext = CreateTestExecutionContext();
         string email = "test@example.com";
         string password = "CorrectPassword!";
-        byte[] newHashBytes = CreateValidHashBytes();
+        byte[] newHashBytes = CreateDifferentHashBytes();
 
         var user = CreateTestUser(executionContext);
+        var originalPasswordHash = user.PasswordHash;
 
         _userRepositoryMock
             .Setup(x => x.GetByEmailAsync(executionContext, It.IsAny<EmailAddress>(), It.IsAny<CancellationToken>()))
@@ -297,6 +300,8 @@ public class AuthenticationServiceTests : TestBase
         // Assert
         LogAssert("Verifying user returned with rehashed password");
         result.ShouldNotBeNull();
+        result.PasswordHash.Value.ToArray().ShouldNotBe(originalPasswordHash.Value.ToArray());
+        result.PasswordHash.Value.ToArray().ShouldBe(newHashBytes);
         _passwordHasherMock.Verify(x => x.HashPassword(executionContext, password), Times.Once);
     }
 
@@ -361,6 +366,17 @@ public class AuthenticationServiceTests : TestBase
         for (int i = 1; i < bytes.Length; i++)
         {
             bytes[i] = (byte)(i % 256);
+        }
+        return bytes;
+    }
+
+    private static byte[] CreateDifferentHashBytes()
+    {
+        byte[] bytes = new byte[49];
+        bytes[0] = 2; // different pepper version
+        for (int i = 1; i < bytes.Length; i++)
+        {
+            bytes[i] = (byte)((i + 100) % 256);
         }
         return bytes;
     }
