@@ -450,14 +450,13 @@ public class SessionTests : TestBase
         var input = new UpdateSessionActivityInput();
 
         // Act
-        LogAct("Updating activity");
-        var newContext = CreateTestExecutionContext();
-        var result = session.UpdateActivity(newContext, input);
+        LogAct("Updating activity (same tenant context)");
+        var result = session.UpdateActivity(executionContext, input);
 
         // Assert
         LogAssert("Verifying activity was updated");
         result.ShouldNotBeNull();
-        result.LastActivityAt.ShouldBe(newContext.Timestamp);
+        result.LastActivityAt.ShouldBe(executionContext.Timestamp);
     }
 
     [Fact]
@@ -470,9 +469,8 @@ public class SessionTests : TestBase
         var input = new UpdateSessionActivityInput();
 
         // Act
-        LogAct("Updating activity");
-        var newContext = CreateTestExecutionContext();
-        var result = session.UpdateActivity(newContext, input);
+        LogAct("Updating activity (same tenant context)");
+        var result = session.UpdateActivity(executionContext, input);
 
         // Assert
         LogAssert("Verifying clone-modify-return pattern");

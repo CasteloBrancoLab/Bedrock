@@ -408,19 +408,20 @@ public class TokenExchangeTests : TestBase
     }
 
     [Fact]
-    public void ValidateSubjectTokenJti_WithEmpty_ShouldReturnTrue()
+    public void ValidateSubjectTokenJti_WithEmpty_ShouldReturnFalse()
     {
         // Arrange
         LogArrange("Creating execution context");
         var executionContext = CreateTestExecutionContext();
 
         // Act
-        LogAct("Validating empty SubjectTokenJti (empty string is not null, passes IsRequired)");
+        LogAct("Validating empty SubjectTokenJti (empty string has length 0, fails minLength 1)");
         bool result = TokenExchange.ValidateSubjectTokenJti(executionContext, "");
 
         // Assert
-        LogAssert("Verifying validation passes (empty string has length 0 which is within max length)");
-        result.ShouldBeTrue();
+        LogAssert("Verifying validation fails (minLength is 1)");
+        result.ShouldBeFalse();
+        executionContext.HasErrorMessages.ShouldBeTrue();
     }
 
     [Fact]
