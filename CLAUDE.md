@@ -46,7 +46,7 @@ O desenvolvimento segue **7 fases sequenciais**, cada uma com sua skill:
 |------|-------|--------|-----------|
 | 1. Implementacao | `/code` | `build-check.sh` | Codigo-fonte + build |
 | 2. Arquitetura | `/arch` | `arch-check.sh` | Validacao de regras arquiteturais |
-| 3. Testes | `/test` | `test-check.sh` | Testes unitarios |
+| 3. Testes | `/test` | `test-check.sh` | Testes unitarios + cobertura |
 | 4. Mutacao | `/mutate` | `mutate-check.sh` | Testes de mutacao (100%) |
 | 5. Integracao | `/integration` | `integration-check.sh` | Testes de integracao (Docker) |
 | 6. Pipeline | `/pipeline` | `pipeline-check.sh` | Validacao final completa |

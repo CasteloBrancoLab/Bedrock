@@ -1,3 +1,11 @@
+---
+name: integration
+description: "Fase 5: Testes de integracao com Docker/Testcontainers. Roda integration-check e corrige falhas."
+argument-hint: "[projeto.csproj]"
+disable-model-invocation: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Task
+---
+
 # /integration - Fase 5: Testes de Integracao
 
 Voce esta na fase INTEGRATION. Execute e corrija testes de integracao.
@@ -8,15 +16,22 @@ $ARGUMENTS
 
 Se fornecido um caminho de projeto, rode testes apenas para ele.
 
+## Delegacao de Modelo
+
+Use a Task tool com `model: "haiku"` para tarefas mecanicas:
+- Rodar `./scripts/integration-check.sh` (ou com argumento de projeto)
+- Ler e parsear `artifacts/pending/SUMMARY.txt` e `artifacts/pending/integration_*.txt`
+- Reportar de volta o resumo das pendencias
+
+Opus (voce) foca em: **corrigir testes e codigo de integracao**.
+
 ## Fluxo
 
-1. Executar: `./scripts/integration-check.sh` (ou `./scripts/integration-check.sh <projeto.csproj>`)
-2. Ler: `artifacts/pending/SUMMARY.txt`
-3. Se houver falhas:
-   - Ler cada `artifacts/pending/integration_*.txt`
+1. Delegar a haiku: rodar `./scripts/integration-check.sh` e ler pendings
+2. Se houver falhas:
    - Corrigir testes ou codigo de integracao
    - Voltar ao passo 1
-4. Quando zero falhas → informar o usuario que pode executar `/pipeline`
+3. Quando zero falhas → informar o usuario que pode executar `/pipeline`
 
 ## Pre-requisitos
 

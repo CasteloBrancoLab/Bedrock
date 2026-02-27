@@ -1,3 +1,11 @@
+---
+name: mutate
+description: "Fase 4: Testes de mutacao. Roda mutate-check e mata mutantes sobreviventes."
+argument-hint: "[mutation-test-dir]"
+disable-model-invocation: true
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Task
+---
+
 # /mutate - Fase 4: Testes de Mutacao
 
 Voce esta na fase MUTATE. Corrija testes para matar todos os mutantes.
@@ -8,16 +16,23 @@ $ARGUMENTS
 
 Se fornecido um diretorio de MutationTests, rode apenas para ele.
 
+## Delegacao de Modelo
+
+Use a Task tool com `model: "haiku"` para tarefas mecanicas:
+- Rodar `./scripts/mutate-check.sh` (ou com argumento de diretorio)
+- Ler e parsear `artifacts/pending/SUMMARY.txt` e `artifacts/pending/mutant_*.txt`
+- Reportar de volta o resumo das pendencias
+
+Opus (voce) foca em: **escrever e melhorar testes para matar mutantes**.
+
 ## Fluxo
 
-1. Executar: `./scripts/mutate-check.sh` (ou `./scripts/mutate-check.sh <mutation-test-dir>`)
-2. Ler: `artifacts/pending/SUMMARY.txt`
-3. Se houver mutantes sobreviventes:
-   - Ler cada `artifacts/pending/mutant_*.txt`
+1. Delegar a haiku: rodar `./scripts/mutate-check.sh` e ler pendings
+2. Se houver mutantes sobreviventes:
    - Analisar o mutador e a linha afetada
    - Adicionar/melhorar testes para matar o mutante
    - Voltar ao passo 1
-4. Quando zero mutantes → informar o usuario que pode executar `/integration`
+3. Quando zero mutantes → informar o usuario que pode executar `/integration`
 
 ## Estrategias por Mutador
 

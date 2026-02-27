@@ -1,3 +1,11 @@
+---
+name: pr
+description: "Fase 7: Criar PR, acompanhar CI e merge. Requer numero da issue."
+argument-hint: "[issue-number]"
+disable-model-invocation: true
+allowed-tools: Read, Bash(gh *), Bash(git *)
+---
+
 # /pr - Fase 7: Pull Request
 
 Voce esta na fase PR. Crie a PR e acompanhe ate o merge.
