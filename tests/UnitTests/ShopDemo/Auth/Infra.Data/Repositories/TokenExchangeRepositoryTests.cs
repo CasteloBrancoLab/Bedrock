@@ -1,8 +1,8 @@
 using Bedrock.BuildingBlocks.Core.Ids;
-using Bedrock.BuildingBlocks.Core.Messages;
-using Bedrock.BuildingBlocks.Core.Tenants;
+using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
+using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Domain.Entities.Models;
-using Bedrock.BuildingBlocks.Domain.Entities.Models.Inputs;
 using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;
@@ -271,15 +271,17 @@ public class TokenExchangeRepositoryTests : TestBase
         LogArrange("Preparando paginacao e handler para enumerar todas as trocas de token");
         var paginationInfo = Bedrock.BuildingBlocks.Core.Paginations.PaginationInfo.All;
         var items = new List<TokenExchange>();
-        EnumerateAllItemHandler<TokenExchange> handler = (item, ct) =>
+        EnumerateAllItemHandler<TokenExchange> handler = (_, item, _, _) =>
         {
             items.Add(item);
-            return ValueTask.CompletedTask;
+            return Task.FromResult(true);
         };
+
+        var executionContext = CreateTestExecutionContext();
 
         // Act
         LogAct("Chamando EnumerateAllAsync");
-        await _repository.EnumerateAllAsync(paginationInfo, handler, CancellationToken.None);
+        await _repository.EnumerateAllAsync(executionContext, paginationInfo, handler, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que nenhum item foi enumerado (stub com yield break)");
@@ -294,10 +296,10 @@ public class TokenExchangeRepositoryTests : TestBase
         var executionContext = CreateTestExecutionContext();
         var since = DateTimeOffset.UtcNow.AddDays(-1);
         var items = new List<TokenExchange>();
-        EnumerateModifiedSinceItemHandler<TokenExchange> handler = (item, ct) =>
+        EnumerateModifiedSinceItemHandler<TokenExchange> handler = (_, item, _, _, _) =>
         {
             items.Add(item);
-            return ValueTask.CompletedTask;
+            return Task.FromResult(true);
         };
 
         // Act

@@ -57,10 +57,8 @@ public sealed class SigningKeyManager : ISigningKeyManager
             privateKey,
             executionContext.Timestamp.AddDays(DefaultKeyTtlDays));
 
-        SigningKey? newKey = SigningKey.RegisterNew(executionContext, input);
-
-        if (newKey is null)
-            return null;
+        // RegisterNew sempre sucede com inputs gerados internamente (ECDsa, Kid valido, ES256)
+        SigningKey newKey = SigningKey.RegisterNew(executionContext, input)!;
 
         bool persisted = await _signingKeyRepository.RegisterNewAsync(
             executionContext,

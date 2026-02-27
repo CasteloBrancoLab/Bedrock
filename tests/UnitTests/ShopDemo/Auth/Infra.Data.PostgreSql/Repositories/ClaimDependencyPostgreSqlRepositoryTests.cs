@@ -335,7 +335,7 @@ public class ClaimDependencyPostgreSqlRepositoryTests : TestBase
         _dataModelRepositoryMock
             .Setup(static x => x.DeleteAsync(
                 It.IsAny<ExecutionContext>(),
-                It.IsAny<Id>(),
+                It.IsAny<Guid>(),
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -350,7 +350,7 @@ public class ClaimDependencyPostgreSqlRepositoryTests : TestBase
         _dataModelRepositoryMock.Verify(
             static x => x.DeleteAsync(
                 It.IsAny<ExecutionContext>(),
-                It.IsAny<Id>(),
+                It.IsAny<Guid>(),
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
@@ -381,7 +381,7 @@ public class ClaimDependencyPostgreSqlRepositoryTests : TestBase
         _dataModelRepositoryMock.Verify(
             static x => x.DeleteAsync(
                 It.IsAny<ExecutionContext>(),
-                It.IsAny<Id>(),
+                It.IsAny<Guid>(),
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
@@ -409,7 +409,7 @@ public class ClaimDependencyPostgreSqlRepositoryTests : TestBase
         _dataModelRepositoryMock
             .Setup(static x => x.DeleteAsync(
                 It.IsAny<ExecutionContext>(),
-                It.IsAny<Id>(),
+                It.IsAny<Guid>(),
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -423,7 +423,7 @@ public class ClaimDependencyPostgreSqlRepositoryTests : TestBase
         _dataModelRepositoryMock.Verify(
             x => x.DeleteAsync(
                 It.IsAny<ExecutionContext>(),
-                It.IsAny<Id>(),
+                It.IsAny<Guid>(),
                 dbVersion,
                 It.IsAny<CancellationToken>()),
             Times.Once);

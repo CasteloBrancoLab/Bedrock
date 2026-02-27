@@ -1,16 +1,16 @@
-using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
-using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Core.Ids;
+using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Core.RegistryVersions;
+using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Shouldly;
-using ShopDemo.Auth.Domain.Entities.SigningKeys;
-using ShopDemo.Auth.Domain.Entities.SigningKeys.Enums;
-using ShopDemo.Auth.Domain.Entities.SigningKeys.Inputs;
+using ShopDemo.Auth.Domain.Entities.PasswordResetTokens;
+using ShopDemo.Auth.Domain.Entities.PasswordResetTokens.Inputs;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 using ShopDemo.Auth.Infra.Data.Repositories;
 using Xunit;
@@ -18,18 +18,18 @@ using Xunit.Abstractions;
 
 namespace ShopDemo.UnitTests.Auth.Infra.Data.Repositories;
 
-public class SigningKeyRepositoryTests : TestBase
+public class PasswordResetTokenRepositoryTests : TestBase
 {
-    private readonly Mock<ILogger<SigningKeyRepository>> _loggerMock;
-    private readonly Mock<ISigningKeyPostgreSqlRepository> _postgreSqlRepositoryMock;
-    private readonly SigningKeyRepository _repository;
+    private readonly Mock<ILogger<PasswordResetTokenRepository>> _loggerMock;
+    private readonly Mock<IPasswordResetTokenPostgreSqlRepository> _postgreSqlRepositoryMock;
+    private readonly PasswordResetTokenRepository _repository;
 
-    public SigningKeyRepositoryTests(ITestOutputHelper output) : base(output)
+    public PasswordResetTokenRepositoryTests(ITestOutputHelper output) : base(output)
     {
-        _loggerMock = new Mock<ILogger<SigningKeyRepository>>();
+        _loggerMock = new Mock<ILogger<PasswordResetTokenRepository>>();
         _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
-        _postgreSqlRepositoryMock = new Mock<ISigningKeyPostgreSqlRepository>();
-        _repository = new SigningKeyRepository(_loggerMock.Object, _postgreSqlRepositoryMock.Object);
+        _postgreSqlRepositoryMock = new Mock<IPasswordResetTokenPostgreSqlRepository>();
+        _repository = new PasswordResetTokenRepository(_loggerMock.Object, _postgreSqlRepositoryMock.Object);
     }
 
     // Constructor Tests
@@ -41,49 +41,51 @@ public class SigningKeyRepositoryTests : TestBase
         LogArrange("Preparando logger valido e repositorio PostgreSql nulo");
 
         // Act
-        LogAct("Instanciando SigningKeyRepository com postgreSqlRepository nulo");
-        Action act = () => new SigningKeyRepository(_loggerMock.Object, null!);
+        LogAct("Instanciando PasswordResetTokenRepository com postgreSqlRepository nulo");
+        Action act = () => new PasswordResetTokenRepository(_loggerMock.Object, null!);
 
         // Assert
         LogAssert("Verificando que ArgumentNullException foi lancada");
         act.ShouldThrow<ArgumentNullException>();
     }
 
-    // GetActiveAsync Tests
+    // GetByTokenHashAsync Tests
 
     [Fact]
-    public async Task GetActiveAsync_WhenSigningKeyFound_ShouldReturnSigningKey()
+    public async Task GetByTokenHashAsync_WhenTokenFound_ShouldReturnToken()
     {
         // Arrange
-        LogArrange("Preparando contexto e chave de assinatura ativa para retorno");
+        LogArrange("Preparando contexto e PasswordResetToken para retorno");
         var executionContext = CreateTestExecutionContext();
-        var signingKey = CreateTestSigningKey(executionContext);
+        var tokenHash = "abc123hash";
+        var token = CreateTestPasswordResetToken(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.GetActiveAsync(executionContext, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(signingKey);
+            .Setup(x => x.GetByTokenHashAsync(executionContext, tokenHash, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(token);
 
         // Act
-        LogAct("Chamando GetActiveAsync");
-        var result = await _repository.GetActiveAsync(executionContext, CancellationToken.None);
+        LogAct("Chamando GetByTokenHashAsync");
+        var result = await _repository.GetByTokenHashAsync(executionContext, tokenHash, CancellationToken.None);
 
         // Assert
-        LogAssert("Verificando que a chave de assinatura ativa retornada nao e nula");
+        LogAssert("Verificando que o PasswordResetToken retornado nao e nulo");
         result.ShouldNotBeNull();
     }
 
     [Fact]
-    public async Task GetActiveAsync_WhenNoSigningKeyFound_ShouldReturnNull()
+    public async Task GetByTokenHashAsync_WhenTokenNotFound_ShouldReturnNull()
     {
         // Arrange
-        LogArrange("Preparando contexto e retorno nulo para chave de assinatura ativa nao encontrada");
+        LogArrange("Preparando contexto e retorno nulo para token nao encontrado");
         var executionContext = CreateTestExecutionContext();
+        var tokenHash = "nonexistent_hash";
         _postgreSqlRepositoryMock
-            .Setup(x => x.GetActiveAsync(executionContext, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((SigningKey?)null);
+            .Setup(x => x.GetByTokenHashAsync(executionContext, tokenHash, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PasswordResetToken?)null);
 
         // Act
-        LogAct("Chamando GetActiveAsync");
-        var result = await _repository.GetActiveAsync(executionContext, CancellationToken.None);
+        LogAct("Chamando GetByTokenHashAsync");
+        var result = await _repository.GetByTokenHashAsync(executionContext, tokenHash, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que o resultado retornado e nulo");
@@ -91,163 +93,23 @@ public class SigningKeyRepositoryTests : TestBase
     }
 
     [Fact]
-    public async Task GetActiveAsync_WhenExceptionThrown_ShouldLogAndReturnNull()
+    public async Task GetByTokenHashAsync_WhenExceptionThrown_ShouldLogAndReturnNull()
     {
         // Arrange
         LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
         var executionContext = CreateTestExecutionContext();
+        var tokenHash = "abc123hash";
         _postgreSqlRepositoryMock
-            .Setup(x => x.GetActiveAsync(executionContext, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByTokenHashAsync(executionContext, tokenHash, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act
-        LogAct("Chamando GetActiveAsync esperando excecao");
-        var result = await _repository.GetActiveAsync(executionContext, CancellationToken.None);
+        LogAct("Chamando GetByTokenHashAsync esperando excecao");
+        var result = await _repository.GetByTokenHashAsync(executionContext, tokenHash, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que null foi retornado e o erro foi logado");
         result.ShouldBeNull();
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    // GetByKidAsync Tests
-
-    [Fact]
-    public async Task GetByKidAsync_WhenSigningKeyFound_ShouldReturnSigningKey()
-    {
-        // Arrange
-        LogArrange("Preparando contexto e chave de assinatura por kid para retorno");
-        var executionContext = CreateTestExecutionContext();
-        var kid = Kid.CreateFromExistingInfo("test-kid");
-        var signingKey = CreateTestSigningKey(executionContext);
-        _postgreSqlRepositoryMock
-            .Setup(x => x.GetByKidAsync(executionContext, kid, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(signingKey);
-
-        // Act
-        LogAct("Chamando GetByKidAsync");
-        var result = await _repository.GetByKidAsync(executionContext, kid, CancellationToken.None);
-
-        // Assert
-        LogAssert("Verificando que a chave de assinatura retornada nao e nula");
-        result.ShouldNotBeNull();
-    }
-
-    [Fact]
-    public async Task GetByKidAsync_WhenSigningKeyNotFound_ShouldReturnNull()
-    {
-        // Arrange
-        LogArrange("Preparando contexto e retorno nulo para chave de assinatura nao encontrada");
-        var executionContext = CreateTestExecutionContext();
-        var kid = Kid.CreateFromExistingInfo("nonexistent-kid");
-        _postgreSqlRepositoryMock
-            .Setup(x => x.GetByKidAsync(executionContext, kid, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((SigningKey?)null);
-
-        // Act
-        LogAct("Chamando GetByKidAsync");
-        var result = await _repository.GetByKidAsync(executionContext, kid, CancellationToken.None);
-
-        // Assert
-        LogAssert("Verificando que o resultado retornado e nulo");
-        result.ShouldBeNull();
-    }
-
-    [Fact]
-    public async Task GetByKidAsync_WhenExceptionThrown_ShouldLogAndReturnNull()
-    {
-        // Arrange
-        LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
-        var executionContext = CreateTestExecutionContext();
-        var kid = Kid.CreateFromExistingInfo("test-kid");
-        _postgreSqlRepositoryMock
-            .Setup(x => x.GetByKidAsync(executionContext, kid, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Database error"));
-
-        // Act
-        LogAct("Chamando GetByKidAsync esperando excecao");
-        var result = await _repository.GetByKidAsync(executionContext, kid, CancellationToken.None);
-
-        // Assert
-        LogAssert("Verificando que null foi retornado e o erro foi logado");
-        result.ShouldBeNull();
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    // GetAllValidAsync Tests
-
-    [Fact]
-    public async Task GetAllValidAsync_WhenSigningKeysFound_ShouldReturnList()
-    {
-        // Arrange
-        LogArrange("Preparando contexto e lista de chaves de assinatura validas para retorno");
-        var executionContext = CreateTestExecutionContext();
-        var signingKey = CreateTestSigningKey(executionContext);
-        var expected = new List<SigningKey> { signingKey };
-        _postgreSqlRepositoryMock
-            .Setup(x => x.GetAllValidAsync(executionContext, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expected);
-
-        // Act
-        LogAct("Chamando GetAllValidAsync");
-        var result = await _repository.GetAllValidAsync(executionContext, CancellationToken.None);
-
-        // Assert
-        LogAssert("Verificando que a lista retornada contem as chaves de assinatura esperadas");
-        result.ShouldNotBeEmpty();
-        result.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public async Task GetAllValidAsync_WhenNoSigningKeysFound_ShouldReturnEmptyList()
-    {
-        // Arrange
-        LogArrange("Preparando contexto e lista vazia para retorno");
-        var executionContext = CreateTestExecutionContext();
-        _postgreSqlRepositoryMock
-            .Setup(x => x.GetAllValidAsync(executionContext, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
-
-        // Act
-        LogAct("Chamando GetAllValidAsync");
-        var result = await _repository.GetAllValidAsync(executionContext, CancellationToken.None);
-
-        // Assert
-        LogAssert("Verificando que a lista retornada esta vazia");
-        result.ShouldBeEmpty();
-    }
-
-    [Fact]
-    public async Task GetAllValidAsync_WhenExceptionThrown_ShouldLogAndReturnEmptyList()
-    {
-        // Arrange
-        LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
-        var executionContext = CreateTestExecutionContext();
-        _postgreSqlRepositoryMock
-            .Setup(x => x.GetAllValidAsync(executionContext, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new Exception("Database error"));
-
-        // Act
-        LogAct("Chamando GetAllValidAsync esperando excecao");
-        var result = await _repository.GetAllValidAsync(executionContext, CancellationToken.None);
-
-        // Assert
-        LogAssert("Verificando que a lista vazia foi retornada e o erro foi logado");
-        result.ShouldBeEmpty();
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -266,16 +128,16 @@ public class SigningKeyRepositoryTests : TestBase
     public async Task UpdateAsync_WhenCalled_ShouldReturnExpectedResult(bool expectedResult)
     {
         // Arrange
-        LogArrange("Preparando contexto e chave de assinatura para atualizar");
+        LogArrange("Preparando contexto e PasswordResetToken para atualizar");
         var executionContext = CreateTestExecutionContext();
-        var signingKey = CreateTestSigningKey(executionContext);
+        var token = CreateTestPasswordResetToken(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.UpdateAsync(executionContext, signingKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpdateAsync(executionContext, token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
         LogAct("Chamando UpdateAsync");
-        var result = await _repository.UpdateAsync(executionContext, signingKey, CancellationToken.None);
+        var result = await _repository.UpdateAsync(executionContext, token, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que o resultado retornado e o esperado");
@@ -288,18 +150,158 @@ public class SigningKeyRepositoryTests : TestBase
         // Arrange
         LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
         var executionContext = CreateTestExecutionContext();
-        var signingKey = CreateTestSigningKey(executionContext);
+        var token = CreateTestPasswordResetToken(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.UpdateAsync(executionContext, signingKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpdateAsync(executionContext, token, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act
         LogAct("Chamando UpdateAsync esperando excecao");
-        var result = await _repository.UpdateAsync(executionContext, signingKey, CancellationToken.None);
+        var result = await _repository.UpdateAsync(executionContext, token, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que false foi retornado e o erro foi logado");
         result.ShouldBeFalse();
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    // RevokeAllByUserIdAsync Tests
+
+    [Fact]
+    public async Task RevokeAllByUserIdAsync_WhenTokensRevoked_ShouldReturnCount()
+    {
+        // Arrange
+        LogArrange("Preparando contexto e userId para revogar tokens");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        _postgreSqlRepositoryMock
+            .Setup(x => x.RevokeAllByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(3);
+
+        // Act
+        LogAct("Chamando RevokeAllByUserIdAsync");
+        var result = await _repository.RevokeAllByUserIdAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que o numero de tokens revogados e o esperado");
+        result.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task RevokeAllByUserIdAsync_WhenNoTokensFound_ShouldReturnZero()
+    {
+        // Arrange
+        LogArrange("Preparando contexto e userId sem tokens para revogar");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        _postgreSqlRepositoryMock
+            .Setup(x => x.RevokeAllByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        // Act
+        LogAct("Chamando RevokeAllByUserIdAsync");
+        var result = await _repository.RevokeAllByUserIdAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que zero tokens foram revogados");
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task RevokeAllByUserIdAsync_WhenExceptionThrown_ShouldLogAndReturnZero()
+    {
+        // Arrange
+        LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        _postgreSqlRepositoryMock
+            .Setup(x => x.RevokeAllByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        LogAct("Chamando RevokeAllByUserIdAsync esperando excecao");
+        var result = await _repository.RevokeAllByUserIdAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que zero foi retornado e o erro foi logado");
+        result.ShouldBe(0);
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    // DeleteExpiredAsync Tests
+
+    [Fact]
+    public async Task DeleteExpiredAsync_WhenTokensDeleted_ShouldReturnCount()
+    {
+        // Arrange
+        LogArrange("Preparando contexto e data de referencia para deletar tokens expirados");
+        var executionContext = CreateTestExecutionContext();
+        var referenceDate = DateTimeOffset.UtcNow;
+        _postgreSqlRepositoryMock
+            .Setup(x => x.DeleteExpiredAsync(executionContext, referenceDate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+
+        // Act
+        LogAct("Chamando DeleteExpiredAsync");
+        var result = await _repository.DeleteExpiredAsync(executionContext, referenceDate, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que o numero de tokens deletados e o esperado");
+        result.ShouldBe(5);
+    }
+
+    [Fact]
+    public async Task DeleteExpiredAsync_WhenNoExpiredTokens_ShouldReturnZero()
+    {
+        // Arrange
+        LogArrange("Preparando contexto e data de referencia sem tokens expirados");
+        var executionContext = CreateTestExecutionContext();
+        var referenceDate = DateTimeOffset.UtcNow;
+        _postgreSqlRepositoryMock
+            .Setup(x => x.DeleteExpiredAsync(executionContext, referenceDate, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        // Act
+        LogAct("Chamando DeleteExpiredAsync");
+        var result = await _repository.DeleteExpiredAsync(executionContext, referenceDate, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que zero tokens foram deletados");
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task DeleteExpiredAsync_WhenExceptionThrown_ShouldLogAndReturnZero()
+    {
+        // Arrange
+        LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
+        var executionContext = CreateTestExecutionContext();
+        var referenceDate = DateTimeOffset.UtcNow;
+        _postgreSqlRepositoryMock
+            .Setup(x => x.DeleteExpiredAsync(executionContext, referenceDate, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        LogAct("Chamando DeleteExpiredAsync esperando excecao");
+        var result = await _repository.DeleteExpiredAsync(executionContext, referenceDate, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que zero foi retornado e o erro foi logado");
+        result.ShouldBe(0);
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -340,13 +342,13 @@ public class SigningKeyRepositoryTests : TestBase
     public async Task GetByIdAsync_WhenCalled_ShouldReturnExpectedResult(bool entityFound)
     {
         // Arrange
-        LogArrange("Preparando contexto e id para buscar chave de assinatura por id");
+        LogArrange("Preparando contexto e id para buscar PasswordResetToken por id");
         var executionContext = CreateTestExecutionContext();
         var id = Id.CreateFromExistingInfo(Guid.NewGuid());
-        var signingKey = entityFound ? CreateTestSigningKey(executionContext) : null;
+        var token = entityFound ? CreateTestPasswordResetToken(executionContext) : null;
         _postgreSqlRepositoryMock
             .Setup(x => x.GetByIdAsync(executionContext, id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(signingKey);
+            .ReturnsAsync(token);
 
         // Act
         LogAct("Chamando GetByIdAsync");
@@ -366,16 +368,16 @@ public class SigningKeyRepositoryTests : TestBase
     public async Task RegisterNewAsync_WhenCalled_ShouldReturnExpectedResult(bool expectedResult)
     {
         // Arrange
-        LogArrange("Preparando contexto e chave de assinatura para registrar");
+        LogArrange("Preparando contexto e PasswordResetToken para registrar");
         var executionContext = CreateTestExecutionContext();
-        var signingKey = CreateTestSigningKey(executionContext);
+        var token = CreateTestPasswordResetToken(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.RegisterNewAsync(executionContext, signingKey, It.IsAny<CancellationToken>()))
+            .Setup(x => x.RegisterNewAsync(executionContext, token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
         LogAct("Chamando RegisterNewAsync");
-        var result = await _repository.RegisterNewAsync(executionContext, signingKey, CancellationToken.None);
+        var result = await _repository.RegisterNewAsync(executionContext, token, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que o resultado retornado e o esperado");
@@ -386,10 +388,10 @@ public class SigningKeyRepositoryTests : TestBase
     public async Task EnumerateAllAsync_WhenCalled_ShouldReturnEmptyAsyncEnumerable()
     {
         // Arrange
-        LogArrange("Preparando paginacao e handler para enumerar todas as chaves de assinatura");
-        var paginationInfo = Bedrock.BuildingBlocks.Core.Paginations.PaginationInfo.All;
-        var items = new List<SigningKey>();
-        EnumerateAllItemHandler<SigningKey> handler = (_, item, _, _) =>
+        LogArrange("Preparando paginacao e handler para enumerar todos os PasswordResetTokens");
+        var paginationInfo = PaginationInfo.All;
+        var items = new List<PasswordResetToken>();
+        EnumerateAllItemHandler<PasswordResetToken> handler = (_, item, _, _) =>
         {
             items.Add(item);
             return Task.FromResult(true);
@@ -410,11 +412,11 @@ public class SigningKeyRepositoryTests : TestBase
     public async Task EnumerateModifiedSinceAsync_WhenCalled_ShouldReturnEmptyAsyncEnumerable()
     {
         // Arrange
-        LogArrange("Preparando contexto e handler para enumerar chaves de assinatura modificadas desde data");
+        LogArrange("Preparando contexto e handler para enumerar PasswordResetTokens modificados desde data");
         var executionContext = CreateTestExecutionContext();
         var since = DateTimeOffset.UtcNow.AddDays(-1);
-        var items = new List<SigningKey>();
-        EnumerateModifiedSinceItemHandler<SigningKey> handler = (_, item, _, _, _) =>
+        var items = new List<PasswordResetToken>();
+        EnumerateModifiedSinceItemHandler<PasswordResetToken> handler = (_, item, _, _, _) =>
         {
             items.Add(item);
             return Task.FromResult(true);
@@ -444,7 +446,7 @@ public class SigningKeyRepositoryTests : TestBase
             timeProvider: TimeProvider.System);
     }
 
-    private static SigningKey CreateTestSigningKey(ExecutionContext executionContext)
+    private static PasswordResetToken CreateTestPasswordResetToken(ExecutionContext executionContext)
     {
         var entityInfo = EntityInfo.CreateFromExistingInfo(
             id: Id.CreateFromExistingInfo(Guid.NewGuid()),
@@ -460,15 +462,13 @@ public class SigningKeyRepositoryTests : TestBase
             lastChangedExecutionOrigin: null,
             lastChangedBusinessOperationCode: null,
             entityVersion: RegistryVersion.CreateFromExistingInfo(1));
-        return SigningKey.CreateFromExistingInfo(
-            new CreateFromExistingInfoSigningKeyInput(
+        return PasswordResetToken.CreateFromExistingInfo(
+            new CreateFromExistingInfoPasswordResetTokenInput(
                 entityInfo,
-                Kid.CreateFromExistingInfo("test-kid"),
-                "RS256",
-                "public-key-data",
-                "encrypted-private-key-data",
-                SigningKeyStatus.Active,
-                null,
-                DateTimeOffset.UtcNow.AddYears(1)));
+                Id.CreateFromExistingInfo(Guid.NewGuid()),
+                "token_hash_value",
+                DateTimeOffset.UtcNow.AddHours(1),
+                false,
+                null));
     }
 }

@@ -1,16 +1,16 @@
-using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
-using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Core.Ids;
+using Bedrock.BuildingBlocks.Core.Paginations;
 using Bedrock.BuildingBlocks.Core.RegistryVersions;
+using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Domain.Repositories.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Shouldly;
-using ShopDemo.Auth.Domain.Entities.Claims;
-using ShopDemo.Auth.Domain.Entities.ServiceClientClaims;
-using ShopDemo.Auth.Domain.Entities.ServiceClientClaims.Inputs;
+using ShopDemo.Auth.Domain.Entities.MfaSetups;
+using ShopDemo.Auth.Domain.Entities.MfaSetups.Inputs;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 using ShopDemo.Auth.Infra.Data.Repositories;
 using Xunit;
@@ -18,18 +18,18 @@ using Xunit.Abstractions;
 
 namespace ShopDemo.UnitTests.Auth.Infra.Data.Repositories;
 
-public class ServiceClientClaimRepositoryTests : TestBase
+public class MfaSetupRepositoryTests : TestBase
 {
-    private readonly Mock<ILogger<ServiceClientClaimRepository>> _loggerMock;
-    private readonly Mock<IServiceClientClaimPostgreSqlRepository> _postgreSqlRepositoryMock;
-    private readonly ServiceClientClaimRepository _repository;
+    private readonly Mock<ILogger<MfaSetupRepository>> _loggerMock;
+    private readonly Mock<IMfaSetupPostgreSqlRepository> _postgreSqlRepositoryMock;
+    private readonly MfaSetupRepository _repository;
 
-    public ServiceClientClaimRepositoryTests(ITestOutputHelper output) : base(output)
+    public MfaSetupRepositoryTests(ITestOutputHelper output) : base(output)
     {
-        _loggerMock = new Mock<ILogger<ServiceClientClaimRepository>>();
+        _loggerMock = new Mock<ILogger<MfaSetupRepository>>();
         _loggerMock.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
-        _postgreSqlRepositoryMock = new Mock<IServiceClientClaimPostgreSqlRepository>();
-        _repository = new ServiceClientClaimRepository(_loggerMock.Object, _postgreSqlRepositoryMock.Object);
+        _postgreSqlRepositoryMock = new Mock<IMfaSetupPostgreSqlRepository>();
+        _repository = new MfaSetupRepository(_loggerMock.Object, _postgreSqlRepositoryMock.Object);
     }
 
     // Constructor Tests
@@ -41,77 +41,75 @@ public class ServiceClientClaimRepositoryTests : TestBase
         LogArrange("Preparando logger valido e repositorio PostgreSql nulo");
 
         // Act
-        LogAct("Instanciando ServiceClientClaimRepository com postgreSqlRepository nulo");
-        Action act = () => new ServiceClientClaimRepository(_loggerMock.Object, null!);
+        LogAct("Instanciando MfaSetupRepository com postgreSqlRepository nulo");
+        Action act = () => new MfaSetupRepository(_loggerMock.Object, null!);
 
         // Assert
         LogAssert("Verificando que ArgumentNullException foi lancada");
         act.ShouldThrow<ArgumentNullException>();
     }
 
-    // GetByServiceClientIdAsync Tests
+    // GetByUserIdAsync Tests
 
     [Fact]
-    public async Task GetByServiceClientIdAsync_WhenClaimsFound_ShouldReturnList()
+    public async Task GetByUserIdAsync_WhenMfaSetupFound_ShouldReturnMfaSetup()
     {
         // Arrange
-        LogArrange("Preparando contexto e lista de claims de cliente de servico para retorno");
+        LogArrange("Preparando contexto e MfaSetup para retorno");
         var executionContext = CreateTestExecutionContext();
-        var serviceClientId = Id.CreateFromExistingInfo(Guid.NewGuid());
-        var serviceClientClaim = CreateTestServiceClientClaim(executionContext);
-        var expected = new List<ServiceClientClaim> { serviceClientClaim };
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        var mfaSetup = CreateTestMfaSetup(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.GetByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expected);
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mfaSetup);
 
         // Act
-        LogAct("Chamando GetByServiceClientIdAsync");
-        var result = await _repository.GetByServiceClientIdAsync(executionContext, serviceClientId, CancellationToken.None);
+        LogAct("Chamando GetByUserIdAsync");
+        var result = await _repository.GetByUserIdAsync(executionContext, userId, CancellationToken.None);
 
         // Assert
-        LogAssert("Verificando que a lista retornada contem os claims esperados");
-        result.ShouldNotBeEmpty();
-        result.Count.ShouldBe(1);
+        LogAssert("Verificando que o MfaSetup retornado nao e nulo");
+        result.ShouldNotBeNull();
     }
 
     [Fact]
-    public async Task GetByServiceClientIdAsync_WhenNoClaimsFound_ShouldReturnEmptyList()
+    public async Task GetByUserIdAsync_WhenMfaSetupNotFound_ShouldReturnNull()
     {
         // Arrange
-        LogArrange("Preparando contexto e lista vazia para retorno");
+        LogArrange("Preparando contexto e retorno nulo para MfaSetup nao encontrado");
         var executionContext = CreateTestExecutionContext();
-        var serviceClientId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
         _postgreSqlRepositoryMock
-            .Setup(x => x.GetByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((MfaSetup?)null);
 
         // Act
-        LogAct("Chamando GetByServiceClientIdAsync");
-        var result = await _repository.GetByServiceClientIdAsync(executionContext, serviceClientId, CancellationToken.None);
+        LogAct("Chamando GetByUserIdAsync");
+        var result = await _repository.GetByUserIdAsync(executionContext, userId, CancellationToken.None);
 
         // Assert
-        LogAssert("Verificando que a lista retornada esta vazia");
-        result.ShouldBeEmpty();
+        LogAssert("Verificando que o resultado retornado e nulo");
+        result.ShouldBeNull();
     }
 
     [Fact]
-    public async Task GetByServiceClientIdAsync_WhenExceptionThrown_ShouldLogAndReturnEmptyList()
+    public async Task GetByUserIdAsync_WhenExceptionThrown_ShouldLogAndReturnNull()
     {
         // Arrange
         LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
         var executionContext = CreateTestExecutionContext();
-        var serviceClientId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
         _postgreSqlRepositoryMock
-            .Setup(x => x.GetByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act
-        LogAct("Chamando GetByServiceClientIdAsync esperando excecao");
-        var result = await _repository.GetByServiceClientIdAsync(executionContext, serviceClientId, CancellationToken.None);
+        LogAct("Chamando GetByUserIdAsync esperando excecao");
+        var result = await _repository.GetByUserIdAsync(executionContext, userId, CancellationToken.None);
 
         // Assert
-        LogAssert("Verificando que a lista vazia foi retornada e o erro foi logado");
-        result.ShouldBeEmpty();
+        LogAssert("Verificando que null foi retornado e o erro foi logado");
+        result.ShouldBeNull();
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -122,24 +120,24 @@ public class ServiceClientClaimRepositoryTests : TestBase
             Times.Once);
     }
 
-    // DeleteByServiceClientIdAsync Tests
+    // UpdateAsync Tests
 
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task DeleteByServiceClientIdAsync_WhenCalled_ShouldReturnExpectedResult(bool expectedResult)
+    public async Task UpdateAsync_WhenCalled_ShouldReturnExpectedResult(bool expectedResult)
     {
         // Arrange
-        LogArrange("Preparando contexto e id do cliente de servico para deletar claims");
+        LogArrange("Preparando contexto e MfaSetup para atualizar");
         var executionContext = CreateTestExecutionContext();
-        var serviceClientId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        var mfaSetup = CreateTestMfaSetup(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.DeleteByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpdateAsync(executionContext, mfaSetup, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
-        LogAct("Chamando DeleteByServiceClientIdAsync");
-        var result = await _repository.DeleteByServiceClientIdAsync(executionContext, serviceClientId, CancellationToken.None);
+        LogAct("Chamando UpdateAsync");
+        var result = await _repository.UpdateAsync(executionContext, mfaSetup, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que o resultado retornado e o esperado");
@@ -147,19 +145,71 @@ public class ServiceClientClaimRepositoryTests : TestBase
     }
 
     [Fact]
-    public async Task DeleteByServiceClientIdAsync_WhenExceptionThrown_ShouldLogAndReturnFalse()
+    public async Task UpdateAsync_WhenExceptionThrown_ShouldLogAndReturnFalse()
     {
         // Arrange
         LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
         var executionContext = CreateTestExecutionContext();
-        var serviceClientId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        var mfaSetup = CreateTestMfaSetup(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.DeleteByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.UpdateAsync(executionContext, mfaSetup, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act
-        LogAct("Chamando DeleteByServiceClientIdAsync esperando excecao");
-        var result = await _repository.DeleteByServiceClientIdAsync(executionContext, serviceClientId, CancellationToken.None);
+        LogAct("Chamando UpdateAsync esperando excecao");
+        var result = await _repository.UpdateAsync(executionContext, mfaSetup, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que false foi retornado e o erro foi logado");
+        result.ShouldBeFalse();
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    // DeleteByUserIdAsync Tests
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DeleteByUserIdAsync_WhenCalled_ShouldReturnExpectedResult(bool expectedResult)
+    {
+        // Arrange
+        LogArrange("Preparando contexto e userId para deletar");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        _postgreSqlRepositoryMock
+            .Setup(x => x.DeleteByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResult);
+
+        // Act
+        LogAct("Chamando DeleteByUserIdAsync");
+        var result = await _repository.DeleteByUserIdAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que o resultado retornado e o esperado");
+        result.ShouldBe(expectedResult);
+    }
+
+    [Fact]
+    public async Task DeleteByUserIdAsync_WhenExceptionThrown_ShouldLogAndReturnFalse()
+    {
+        // Arrange
+        LogArrange("Preparando contexto e configurando excecao no repositorio PostgreSql");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.CreateFromExistingInfo(Guid.NewGuid());
+        _postgreSqlRepositoryMock
+            .Setup(x => x.DeleteByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Database error"));
+
+        // Act
+        LogAct("Chamando DeleteByUserIdAsync esperando excecao");
+        var result = await _repository.DeleteByUserIdAsync(executionContext, userId, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que false foi retornado e o erro foi logado");
@@ -204,13 +254,13 @@ public class ServiceClientClaimRepositoryTests : TestBase
     public async Task GetByIdAsync_WhenCalled_ShouldReturnExpectedResult(bool entityFound)
     {
         // Arrange
-        LogArrange("Preparando contexto e id para buscar claim de cliente de servico por id");
+        LogArrange("Preparando contexto e id para buscar MfaSetup por id");
         var executionContext = CreateTestExecutionContext();
         var id = Id.CreateFromExistingInfo(Guid.NewGuid());
-        var serviceClientClaim = entityFound ? CreateTestServiceClientClaim(executionContext) : null;
+        var mfaSetup = entityFound ? CreateTestMfaSetup(executionContext) : null;
         _postgreSqlRepositoryMock
             .Setup(x => x.GetByIdAsync(executionContext, id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(serviceClientClaim);
+            .ReturnsAsync(mfaSetup);
 
         // Act
         LogAct("Chamando GetByIdAsync");
@@ -230,16 +280,16 @@ public class ServiceClientClaimRepositoryTests : TestBase
     public async Task RegisterNewAsync_WhenCalled_ShouldReturnExpectedResult(bool expectedResult)
     {
         // Arrange
-        LogArrange("Preparando contexto e claim de cliente de servico para registrar");
+        LogArrange("Preparando contexto e MfaSetup para registrar");
         var executionContext = CreateTestExecutionContext();
-        var serviceClientClaim = CreateTestServiceClientClaim(executionContext);
+        var mfaSetup = CreateTestMfaSetup(executionContext);
         _postgreSqlRepositoryMock
-            .Setup(x => x.RegisterNewAsync(executionContext, serviceClientClaim, It.IsAny<CancellationToken>()))
+            .Setup(x => x.RegisterNewAsync(executionContext, mfaSetup, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedResult);
 
         // Act
         LogAct("Chamando RegisterNewAsync");
-        var result = await _repository.RegisterNewAsync(executionContext, serviceClientClaim, CancellationToken.None);
+        var result = await _repository.RegisterNewAsync(executionContext, mfaSetup, CancellationToken.None);
 
         // Assert
         LogAssert("Verificando que o resultado retornado e o esperado");
@@ -250,10 +300,10 @@ public class ServiceClientClaimRepositoryTests : TestBase
     public async Task EnumerateAllAsync_WhenCalled_ShouldReturnEmptyAsyncEnumerable()
     {
         // Arrange
-        LogArrange("Preparando paginacao e handler para enumerar todos os claims de cliente de servico");
-        var paginationInfo = Bedrock.BuildingBlocks.Core.Paginations.PaginationInfo.All;
-        var items = new List<ServiceClientClaim>();
-        EnumerateAllItemHandler<ServiceClientClaim> handler = (_, item, _, _) =>
+        LogArrange("Preparando paginacao e handler para enumerar todos os MfaSetups");
+        var paginationInfo = PaginationInfo.All;
+        var items = new List<MfaSetup>();
+        EnumerateAllItemHandler<MfaSetup> handler = (_, item, _, _) =>
         {
             items.Add(item);
             return Task.FromResult(true);
@@ -274,11 +324,11 @@ public class ServiceClientClaimRepositoryTests : TestBase
     public async Task EnumerateModifiedSinceAsync_WhenCalled_ShouldReturnEmptyAsyncEnumerable()
     {
         // Arrange
-        LogArrange("Preparando contexto e handler para enumerar claims de cliente de servico modificados desde data");
+        LogArrange("Preparando contexto e handler para enumerar MfaSetups modificados desde data");
         var executionContext = CreateTestExecutionContext();
         var since = DateTimeOffset.UtcNow.AddDays(-1);
-        var items = new List<ServiceClientClaim>();
-        EnumerateModifiedSinceItemHandler<ServiceClientClaim> handler = (_, item, _, _, _) =>
+        var items = new List<MfaSetup>();
+        EnumerateModifiedSinceItemHandler<MfaSetup> handler = (_, item, _, _, _) =>
         {
             items.Add(item);
             return Task.FromResult(true);
@@ -308,7 +358,7 @@ public class ServiceClientClaimRepositoryTests : TestBase
             timeProvider: TimeProvider.System);
     }
 
-    private static ServiceClientClaim CreateTestServiceClientClaim(ExecutionContext executionContext)
+    private static MfaSetup CreateTestMfaSetup(ExecutionContext executionContext)
     {
         var entityInfo = EntityInfo.CreateFromExistingInfo(
             id: Id.CreateFromExistingInfo(Guid.NewGuid()),
@@ -324,11 +374,12 @@ public class ServiceClientClaimRepositoryTests : TestBase
             lastChangedExecutionOrigin: null,
             lastChangedBusinessOperationCode: null,
             entityVersion: RegistryVersion.CreateFromExistingInfo(1));
-        return ServiceClientClaim.CreateFromExistingInfo(
-            new CreateFromExistingInfoServiceClientClaimInput(
+        return MfaSetup.CreateFromExistingInfo(
+            new CreateFromExistingInfoMfaSetupInput(
                 entityInfo,
                 Id.CreateFromExistingInfo(Guid.NewGuid()),
-                Id.CreateFromExistingInfo(Guid.NewGuid()),
-                ClaimValue.Granted));
+                "encrypted_shared_secret_value",
+                true,
+                DateTimeOffset.UtcNow));
     }
 }
