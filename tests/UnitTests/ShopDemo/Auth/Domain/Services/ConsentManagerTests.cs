@@ -180,6 +180,32 @@ public class ConsentManagerTests : TestBase
     }
 
     [Fact]
+    public async Task RecordConsentAsync_WhenRegisterNewReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with IP address exceeding max length to trigger RegisterNew failure");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var consentTermId = Id.GenerateNewId();
+
+        _consentTermRepositoryMock
+            .Setup(x => x.ExistsAsync(executionContext, consentTermId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _userConsentRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAndConsentTermIdAsync(executionContext, userId, consentTermId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserConsent?)null);
+
+        // Act
+        LogAct("Recording consent with invalid IP address (exceeds max length 45)");
+        var result = await _sut.RecordConsentAsync(executionContext, userId, consentTermId, new string('x', 46), CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned when RegisterNew fails validation");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task RecordConsentAsync_WhenRegistrationFails_ShouldReturnNull()
     {
         // Arrange
@@ -343,6 +369,36 @@ public class ConsentManagerTests : TestBase
         LogAssert("Verifying revoked consent returned");
         result.ShouldNotBeNull();
         result.Status.ShouldBe(UserConsentStatus.Revoked);
+    }
+
+    [Fact]
+    public async Task RevokeConsentAsync_WhenRevokeReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with consent from different tenant (Revoke returns null)");
+        var executionContext = CreateTestExecutionContext();
+        var differentContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var consentTermId = Id.GenerateNewId();
+
+        var existingConsent = UserConsent.RegisterNew(
+            differentContext,
+            new ShopDemo.Auth.Domain.Entities.UserConsents.Inputs.RegisterNewUserConsentInput(userId, consentTermId, "127.0.0.1"));
+
+        _userConsentRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAndConsentTermIdAsync(executionContext, userId, consentTermId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingConsent);
+
+        // Act
+        LogAct("Revoking consent when Revoke returns null due to tenant mismatch");
+        var result = await _sut.RevokeConsentAsync(executionContext, userId, consentTermId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+        _userConsentRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<UserConsent>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

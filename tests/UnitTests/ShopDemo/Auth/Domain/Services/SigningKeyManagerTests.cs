@@ -137,6 +137,41 @@ public class SigningKeyManagerTests : TestBase
         result.ShouldBeNull();
     }
 
+    [Fact]
+    public async Task RotateKeyAsync_WhenCurrentKeyRotateSucceeds_ShouldUpdateOldKey()
+    {
+        // Arrange
+        LogArrange("Setting up with existing active key using same tenant for successful rotation");
+        var executionContext = CreateTestExecutionContext();
+        var currentKey = SigningKey.RegisterNew(executionContext,
+            new RegisterNewSigningKeyInput(
+                Kid.CreateNew("old-kid"), "ES256", "old-pub", "old-priv",
+                executionContext.Timestamp.AddDays(90)))!;
+
+        _signingKeyRepositoryMock
+            .Setup(x => x.GetActiveAsync(executionContext, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currentKey);
+
+        _signingKeyRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<SigningKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _signingKeyRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<SigningKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Rotating key when current key rotate succeeds");
+        var result = await _sut.RotateKeyAsync(executionContext, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying old key was updated via repository");
+        result.ShouldNotBeNull();
+        _signingKeyRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<SigningKey>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     #endregion
 
     #region GetCurrentKeyAsync Tests

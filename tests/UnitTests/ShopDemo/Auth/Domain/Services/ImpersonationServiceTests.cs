@@ -274,6 +274,37 @@ public class ImpersonationServiceTests : TestBase
     }
 
     [Fact]
+    public async Task EndSessionAsync_WhenEndReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with session from different tenant (End returns null)");
+        var executionContext = CreateTestExecutionContext();
+        var differentContext = CreateTestExecutionContext();
+        var operatorUserId = Id.GenerateNewId();
+        var targetUserId = Id.GenerateNewId();
+
+        var session = ImpersonationSession.RegisterNew(differentContext,
+            new ShopDemo.Auth.Domain.Entities.ImpersonationSessions.Inputs.RegisterNewImpersonationSessionInput(
+                operatorUserId, targetUserId, differentContext.Timestamp.AddMinutes(30)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        // Act
+        LogAct("Ending session when End returns null due to tenant mismatch");
+        var result = await _sut.EndSessionAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+        _impersonationSessionRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<ImpersonationSession>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task EndSessionAsync_WhenUpdateFails_ShouldReturnNull()
     {
         // Arrange

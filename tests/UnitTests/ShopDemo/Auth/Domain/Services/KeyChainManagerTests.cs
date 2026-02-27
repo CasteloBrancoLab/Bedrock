@@ -94,6 +94,32 @@ public class KeyChainManagerTests : TestBase
     }
 
     [Fact]
+    public async Task RotateKeyAsync_WhenRegisterNewReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with ServerPublicKeyBase64 exceeding max length to trigger RegisterNew failure");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var clientPublicKey = "dGVzdC1rZXk=";
+
+        _keyChainRepositoryMock
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<KeyChain>());
+
+        _keyAgreementServiceMock
+            .Setup(x => x.NegotiateKey(clientPublicKey))
+            .Returns(new KeyAgreementResult(new string('A', 513), new byte[32]));
+
+        // Act
+        LogAct("Rotating key when NegotiateKey returns PublicKey exceeding max length (512)");
+        var result = await _sut.RotateKeyAsync(executionContext, userId, clientPublicKey, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned when KeyChain.RegisterNew fails validation");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task RotateKeyAsync_WithExistingActiveKey_ShouldDeactivateOldAndCreateNew()
     {
         // Arrange
@@ -163,6 +189,45 @@ public class KeyChainManagerTests : TestBase
         // Assert
         LogAssert("Verifying null returned");
         result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task RotateKeyAsync_WhenDeactivateReturnsNull_ShouldStillCreateNewKey()
+    {
+        // Arrange
+        LogArrange("Setting up with existing key from different tenant (Deactivate returns null)");
+        var executionContext = CreateTestExecutionContext();
+        var differentContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var clientPublicKey = "dGVzdC1rZXk=";
+
+        var existingKey = KeyChain.RegisterNew(differentContext,
+            new RegisterNewKeyChainInput(userId, KeyId.CreateNew("v1"),
+                "c2VydmVyLWtleQ==", Convert.ToBase64String(new byte[32]),
+                differentContext.Timestamp.AddDays(30)));
+
+        _keyChainRepositoryMock
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<KeyChain> { existingKey! });
+
+        _keyAgreementServiceMock
+            .Setup(x => x.NegotiateKey(clientPublicKey))
+            .Returns(new KeyAgreementResult("bmV3LWtleQ==", new byte[32]));
+
+        _keyChainRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Rotating key when Deactivate returns null");
+        var result = await _sut.RotateKeyAsync(executionContext, userId, clientPublicKey, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying new key created and old key not updated");
+        result.ShouldNotBeNull();
+        _keyChainRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     #endregion

@@ -231,5 +231,63 @@ public class TotpServiceTests : TestBase
         result.ShouldBeFalse();
     }
 
+    [Fact]
+    public void ValidateCode_WithRfc6238TestVector_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Setting up RFC 6238 test vector: secret=12345678901234567890, time=59s");
+        byte[] secret = System.Text.Encoding.ASCII.GetBytes("12345678901234567890");
+        DateTimeOffset timestamp = DateTimeOffset.FromUnixTimeSeconds(59);
+        // RFC 6238 SHA-1 8-digit TOTP at T=59 (timestep=1): 94287082 → 6-digit: 287082
+
+        // Act
+        LogAct("Validating known-correct TOTP code from RFC 6238");
+        bool result = _sut.ValidateCode(secret, "287082", timestamp);
+
+        // Assert
+        LogAssert("Verifying RFC 6238 test vector passes validation");
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ValidateCode_WithCodeFromAdjacentWindow_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Setting up code valid for timestep 1, validating at timestep 0 (within window)");
+        byte[] secret = System.Text.Encoding.ASCII.GetBytes("12345678901234567890");
+        // At T=29 (timestep=0), window checks timesteps -1, 0, 1
+        // Code "287082" is valid for timestep 1 → within window
+        DateTimeOffset timestamp = DateTimeOffset.FromUnixTimeSeconds(29);
+
+        // Act
+        LogAct("Validating code from adjacent time window");
+        bool result = _sut.ValidateCode(secret, "287082", timestamp);
+
+        // Assert
+        LogAssert("Verifying code accepted within window");
+        result.ShouldBeTrue();
+    }
+
+    #endregion
+
+    #region GenerateQrCodeUri Tests (Base32 edge cases)
+
+    [Fact]
+    public void GenerateQrCodeUri_WithNonStandardSecretLength_ShouldHandleRemainingBits()
+    {
+        // Arrange
+        LogArrange("Creating 3-byte secret (24 bits, not evenly divisible by 5)");
+        byte[] secret = [0xAB, 0xCD, 0xEF];
+
+        // Act
+        LogAct("Generating QR code URI with non-standard secret");
+        string uri = _sut.GenerateQrCodeUri(secret, "TestApp", "user@test.com");
+
+        // Assert
+        LogAssert("Verifying URI generated with remaining-bits base32 encoding");
+        uri.ShouldStartWith("otpauth://totp/");
+        uri.ShouldContain("secret=");
+    }
+
     #endregion
 }

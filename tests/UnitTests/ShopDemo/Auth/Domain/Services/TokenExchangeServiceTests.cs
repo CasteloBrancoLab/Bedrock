@@ -123,6 +123,28 @@ public class TokenExchangeServiceTests : TestBase
     }
 
     [Fact]
+    public async Task ExchangeTokenAsync_WhenRegisterNewReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with SubjectTokenJti exceeding max length to trigger RegisterNew failure");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        _denyListServiceMock
+            .Setup(x => x.IsUserRevokedAsync(executionContext, userId.Value.ToString(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Exchanging token with SubjectTokenJti exceeding max length (36)");
+        var result = await _sut.ExchangeTokenAsync(
+            executionContext, userId, new string('x', 37), "internal-services", false, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned when TokenExchange.RegisterNew fails validation");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task ExchangeTokenAsync_WhenRegistrationFails_ShouldReturnNull()
     {
         // Arrange

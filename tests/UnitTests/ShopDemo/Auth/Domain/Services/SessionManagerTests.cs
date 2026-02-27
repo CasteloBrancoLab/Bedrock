@@ -182,6 +182,32 @@ public class SessionManagerTests : TestBase
     }
 
     [Fact]
+    public async Task CreateSessionAsync_WhenRegisterNewReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with DeviceInfo exceeding max length to trigger RegisterNew failure");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var refreshTokenId = Id.GenerateNewId();
+
+        _sessionRepositoryMock
+            .Setup(x => x.CountActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        // Act
+        LogAct("Creating session with DeviceInfo exceeding max length (500)");
+        var result = await _sut.CreateSessionAsync(
+            executionContext, userId, refreshTokenId,
+            new string('x', 501), "127.0.0.1", "Mozilla/5.0",
+            executionContext.Timestamp.AddHours(24), 5,
+            SessionLimitStrategy.RejectNew, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned when Session.RegisterNew fails validation");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task CreateSessionAsync_WhenRegistrationFails_ShouldReturnNull()
     {
         // Arrange
@@ -208,6 +234,93 @@ public class SessionManagerTests : TestBase
 
         // Assert
         LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_AtLimitWithRevokeOldest_ShouldFindAndRevokeOldestSession()
+    {
+        // Arrange
+        LogArrange("Setting up with multiple sessions where second is older");
+        var tenantId = Guid.NewGuid();
+        var newerTime = DateTimeOffset.UtcNow;
+        var olderTime = newerTime.AddDays(-1);
+
+        var executionContext = CreateTestExecutionContextWithTenant(tenantId, DateTimeOffset.UtcNow);
+        var newerContext = CreateTestExecutionContextWithTenant(tenantId, newerTime);
+        var olderContext = CreateTestExecutionContextWithTenant(tenantId, olderTime);
+
+        var userId = Id.GenerateNewId();
+        var refreshTokenId = Id.GenerateNewId();
+
+        var newerSession = Session.RegisterNew(newerContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "NewDevice", "127.0.0.1", "Agent1",
+                newerContext.Timestamp.AddHours(24)));
+        var olderSession = Session.RegisterNew(olderContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "OldDevice", "127.0.0.2", "Agent2",
+                olderContext.Timestamp.AddHours(24)));
+
+        _sessionRepositoryMock
+            .Setup(x => x.CountActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Session> { newerSession!, olderSession! });
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _sessionRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Creating session with RevokeOldest and multiple sessions");
+        var result = await _sut.CreateSessionAsync(
+            executionContext, userId, refreshTokenId,
+            "Chrome", "127.0.0.1", "Mozilla/5.0",
+            executionContext.Timestamp.AddHours(24), 5,
+            SessionLimitStrategy.RevokeOldest, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying session was created after finding and revoking oldest");
+        result.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_AtLimitWithRevokeOldest_WhenRevokeReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up at limit with RevokeOldest where oldest session has different tenant");
+        var executionContext = CreateTestExecutionContext();
+        var differentContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var refreshTokenId = Id.GenerateNewId();
+
+        var session = Session.RegisterNew(differentContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                differentContext.Timestamp.AddHours(24)));
+
+        _sessionRepositoryMock
+            .Setup(x => x.CountActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Session> { session! });
+
+        // Act
+        LogAct("Creating session when oldest session revoke returns null");
+        var result = await _sut.CreateSessionAsync(
+            executionContext, userId, refreshTokenId,
+            "Chrome", "127.0.0.1", "Mozilla/5.0",
+            executionContext.Timestamp.AddHours(24), 5,
+            SessionLimitStrategy.RevokeOldest, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned when oldest can't be revoked");
         result.ShouldBeNull();
     }
 
@@ -267,6 +380,35 @@ public class SessionManagerTests : TestBase
     }
 
     [Fact]
+    public async Task RevokeSessionAsync_WhenRevokeReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with session from different tenant (Revoke returns null)");
+        var executionContext = CreateTestExecutionContext();
+        var differentContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var session = Session.RegisterNew(differentContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                differentContext.Timestamp.AddHours(24)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        // Act
+        LogAct("Revoking session when Revoke returns null due to tenant mismatch");
+        var result = await _sut.RevokeSessionAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+        _sessionRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task RevokeSessionAsync_WhenUpdateFails_ShouldReturnNull()
     {
         // Arrange
@@ -317,6 +459,64 @@ public class SessionManagerTests : TestBase
 
         // Assert
         LogAssert("Verifying zero revoked");
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task RevokeAllSessionsAsync_WhenRevokeReturnsNull_ShouldSkip()
+    {
+        // Arrange
+        LogArrange("Setting up with session from different tenant (Revoke returns null)");
+        var executionContext = CreateTestExecutionContext();
+        var differentContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        var session = Session.RegisterNew(differentContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                differentContext.Timestamp.AddHours(24)));
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Session> { session! });
+
+        // Act
+        LogAct("Revoking all sessions when Revoke returns null");
+        var result = await _sut.RevokeAllSessionsAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying zero sessions revoked");
+        result.ShouldBe(0);
+        _sessionRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RevokeAllSessionsAsync_WhenUpdateFails_ShouldNotCount()
+    {
+        // Arrange
+        LogArrange("Setting up with active session where update fails");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        var session = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                executionContext.Timestamp.AddHours(24)));
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Session> { session! });
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Revoking all sessions when update fails");
+        var result = await _sut.RevokeAllSessionsAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying zero counted when update fails");
         result.ShouldBe(0);
     }
 
@@ -407,6 +607,35 @@ public class SessionManagerTests : TestBase
     }
 
     [Fact]
+    public async Task UpdateActivityAsync_WhenUpdateActivityReturnsNull_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with session from different tenant (UpdateActivity returns null)");
+        var executionContext = CreateTestExecutionContext();
+        var differentContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var session = Session.RegisterNew(differentContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                differentContext.Timestamp.AddHours(24)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        // Act
+        LogAct("Updating activity when UpdateActivity returns null");
+        var result = await _sut.UpdateActivityAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+        _sessionRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task UpdateActivityAsync_WhenUpdateFails_ShouldReturnNull()
     {
         // Arrange
@@ -450,6 +679,26 @@ public class SessionManagerTests : TestBase
             businessOperationCode: "TEST_OP",
             minimumMessageType: MessageType.Trace,
             timeProvider: TimeProvider.System);
+    }
+
+    private static ExecutionContext CreateTestExecutionContextWithTenant(Guid tenantId, DateTimeOffset timestamp)
+    {
+        var tenantInfo = TenantInfo.Create(tenantId, "Test Tenant");
+        return ExecutionContext.Create(
+            correlationId: Guid.NewGuid(),
+            tenantInfo: tenantInfo,
+            executionUser: "test.user",
+            executionOrigin: "UnitTest",
+            businessOperationCode: "TEST_OP",
+            minimumMessageType: MessageType.Trace,
+            timeProvider: new FixedTimeProvider(timestamp));
+    }
+
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        private readonly DateTimeOffset _utcNow;
+        public FixedTimeProvider(DateTimeOffset utcNow) => _utcNow = utcNow;
+        public override DateTimeOffset GetUtcNow() => _utcNow;
     }
 
     #endregion
