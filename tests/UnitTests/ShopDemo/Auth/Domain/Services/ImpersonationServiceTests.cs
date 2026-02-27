@@ -217,6 +217,34 @@ public class ImpersonationServiceTests : TestBase
         result.ShouldBeNull();
     }
 
+    [Fact]
+    public async Task ValidateAndCreateAsync_WhenSelfImpersonation_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up self-impersonation scenario where operator equals target");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue> { ["can_impersonate"] = ClaimValue.Granted });
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.GetActiveByTargetUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ImpersonationSession?)null);
+
+        // Act
+        LogAct("Validating self-impersonation (RegisterNew returns null due to operator == target)");
+        var result = await _sut.ValidateAndCreateAsync(executionContext, userId, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned when RegisterNew fails validation");
+        result.ShouldBeNull();
+        _impersonationSessionRepositoryMock.Verify(
+            x => x.RegisterNewAsync(executionContext, It.IsAny<ImpersonationSession>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     #endregion
 
     #region EndSessionAsync Tests
