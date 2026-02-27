@@ -1,13 +1,23 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.Ids;
+using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.ApiKeys;
+using ShopDemo.Auth.Domain.Entities.ApiKeys.Enums;
+using ShopDemo.Auth.Domain.Entities.ApiKeys.Inputs;
 using ShopDemo.Auth.Domain.Entities.Claims;
+using ShopDemo.Auth.Domain.Entities.Claims.Inputs;
 using ShopDemo.Auth.Domain.Entities.RefreshTokens;
+using ShopDemo.Auth.Domain.Entities.RefreshTokens.Enums;
+using ShopDemo.Auth.Domain.Entities.RefreshTokens.Inputs;
 using ShopDemo.Auth.Domain.Entities.ServiceClientClaims;
+using ShopDemo.Auth.Domain.Entities.ServiceClientClaims.Inputs;
 using ShopDemo.Auth.Domain.Entities.ServiceClients;
+using ShopDemo.Auth.Domain.Entities.ServiceClients.Enums;
+using ShopDemo.Auth.Domain.Entities.ServiceClients.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Resolvers.Interfaces;
 using ShopDemo.Auth.Domain.Services;
@@ -174,6 +184,128 @@ public class CascadeRevocationServiceTests : TestBase
             Times.Once);
     }
 
+    [Fact]
+    public async Task RevokeAllUserTokensAsync_WithActiveRefreshTokens_ShouldRevokeTokens()
+    {
+        // Arrange
+        LogArrange("Setting up with active refresh tokens");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        var refreshToken = CreateTestRefreshToken(executionContext, userId, RefreshTokenStatus.Active);
+
+        _refreshTokenRepositoryMock
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RefreshToken> { refreshToken });
+
+        _refreshTokenRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByCreatorUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClient>());
+
+        _denyListServiceMock
+            .Setup(x => x.RevokeUserAsync(executionContext, It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Revoking all tokens for user with active refresh tokens");
+        var result = await _sut.RevokeAllUserTokensAsync(executionContext, userId, "test", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying event with revoked count");
+        result.ShouldNotBeNull();
+        result.Value.RevokedRefreshTokenCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task RevokeAllUserTokensAsync_WithActiveServiceClientsAndApiKeys_ShouldRevokeCascade()
+    {
+        // Arrange
+        LogArrange("Setting up with active service client and API key");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        var serviceClient = CreateTestServiceClient(executionContext, userId, ServiceClientStatus.Active);
+        var serviceClientId = serviceClient.EntityInfo.Id;
+        var apiKey = CreateTestApiKey(executionContext, serviceClientId, ApiKeyStatus.Active);
+
+        _refreshTokenRepositoryMock
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RefreshToken>());
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByCreatorUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClient> { serviceClient });
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<ServiceClient>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _apiKeyRepositoryMock
+            .Setup(x => x.GetByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ApiKey> { apiKey });
+
+        _apiKeyRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<ApiKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _serviceClientClaimRepositoryMock
+            .Setup(x => x.DeleteByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _denyListServiceMock
+            .Setup(x => x.RevokeUserAsync(executionContext, It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Revoking all tokens including service clients and API keys");
+        var result = await _sut.RevokeAllUserTokensAsync(executionContext, userId, "test", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying cascade revocation counts");
+        result.ShouldNotBeNull();
+        result.Value.RevokedServiceClientCount.ShouldBe(1);
+        result.Value.RevokedApiKeyCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task RevokeAllUserTokensAsync_WithRevokedRefreshToken_ShouldSkipAlreadyRevoked()
+    {
+        // Arrange
+        LogArrange("Setting up with already-revoked refresh token");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        var revokedToken = CreateTestRefreshToken(executionContext, userId, RefreshTokenStatus.Revoked);
+
+        _refreshTokenRepositoryMock
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RefreshToken> { revokedToken });
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByCreatorUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClient>());
+
+        _denyListServiceMock
+            .Setup(x => x.RevokeUserAsync(executionContext, It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Revoking tokens when refresh token already revoked");
+        var result = await _sut.RevokeAllUserTokensAsync(executionContext, userId, "test", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying already-revoked tokens are skipped");
+        result.ShouldNotBeNull();
+        result.Value.RevokedRefreshTokenCount.ShouldBe(0);
+        _refreshTokenRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     #endregion
 
     #region RecalculateApiTokenPermissionsAsync Tests
@@ -207,6 +339,131 @@ public class CascadeRevocationServiceTests : TestBase
         result.ShouldBeNull();
     }
 
+    [Fact]
+    public async Task RecalculateApiTokenPermissionsAsync_WithChangedPermissions_ShouldReturnEvent()
+    {
+        // Arrange
+        LogArrange("Setting up with service client that has claim exceeding user permission");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var claimId = Id.GenerateNewId();
+
+        var serviceClient = CreateTestServiceClient(executionContext, userId, ServiceClientStatus.Active);
+        var serviceClientId = serviceClient.EntityInfo.Id;
+
+        var claim = CreateTestClaim(claimId, "admin_access");
+
+        var serviceClientClaim = CreateTestServiceClientClaim(serviceClientId, claimId, ClaimValue.Granted);
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue> { ["admin_access"] = ClaimValue.Denied });
+
+        _claimRepositoryMock
+            .Setup(x => x.GetAllAsync(executionContext, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Claim> { claim });
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByCreatorUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClient> { serviceClient });
+
+        _serviceClientClaimRepositoryMock
+            .Setup(x => x.GetByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClientClaim> { serviceClientClaim });
+
+        _serviceClientClaimRepositoryMock
+            .Setup(x => x.DeleteByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _serviceClientClaimRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<ServiceClientClaim>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Recalculating permissions with changed claims");
+        var result = await _sut.RecalculateApiTokenPermissionsAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying event with changed claims");
+        result.ShouldNotBeNull();
+        result.ChangedClaims.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task RecalculateApiTokenPermissionsAsync_WithNoChanges_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with service client where permissions match");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var claimId = Id.GenerateNewId();
+
+        var serviceClient = CreateTestServiceClient(executionContext, userId, ServiceClientStatus.Active);
+        var serviceClientId = serviceClient.EntityInfo.Id;
+
+        var claim = CreateTestClaim(claimId, "read_access");
+
+        var serviceClientClaim = CreateTestServiceClientClaim(serviceClientId, claimId, ClaimValue.Granted);
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue> { ["read_access"] = ClaimValue.Granted });
+
+        _claimRepositoryMock
+            .Setup(x => x.GetAllAsync(executionContext, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Claim> { claim });
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByCreatorUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClient> { serviceClient });
+
+        _serviceClientClaimRepositoryMock
+            .Setup(x => x.GetByServiceClientIdAsync(executionContext, serviceClientId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClientClaim> { serviceClientClaim });
+
+        // Act
+        LogAct("Recalculating permissions with no changes");
+        var result = await _sut.RecalculateApiTokenPermissionsAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned (no changes)");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task RecalculateApiTokenPermissionsAsync_WithRevokedServiceClient_ShouldSkip()
+    {
+        // Arrange
+        LogArrange("Setting up with revoked service client");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        var revokedClient = CreateTestServiceClient(executionContext, userId, ServiceClientStatus.Revoked);
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue>());
+
+        _claimRepositoryMock
+            .Setup(x => x.GetAllAsync(executionContext, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Claim>());
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByCreatorUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ServiceClient> { revokedClient });
+
+        // Act
+        LogAct("Recalculating permissions with revoked service client");
+        var result = await _sut.RecalculateApiTokenPermissionsAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned (revoked client skipped)");
+        result.ShouldBeNull();
+        _serviceClientClaimRepositoryMock.Verify(
+            x => x.GetByServiceClientIdAsync(executionContext, It.IsAny<Id>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     #endregion
 
     #region Helper Methods
@@ -222,6 +479,95 @@ public class CascadeRevocationServiceTests : TestBase
             businessOperationCode: "TEST_OP",
             minimumMessageType: MessageType.Trace,
             timeProvider: TimeProvider.System);
+    }
+
+    private static EntityInfo CreateTestEntityInfo()
+    {
+        return EntityInfo.CreateFromExistingInfo(
+            id: Id.CreateFromExistingInfo(Guid.NewGuid()),
+            tenantInfo: TenantInfo.Create(Guid.NewGuid(), "Test Tenant"),
+            entityChangeInfo: EntityChangeInfo.CreateFromExistingInfo(
+                createdAt: DateTimeOffset.UtcNow, createdBy: "creator",
+                createdCorrelationId: Guid.NewGuid(), createdExecutionOrigin: "UnitTest",
+                createdBusinessOperationCode: "TEST_OP",
+                lastChangedAt: null, lastChangedBy: null,
+                lastChangedCorrelationId: null, lastChangedExecutionOrigin: null,
+                lastChangedBusinessOperationCode: null),
+            entityVersion: RegistryVersion.CreateFromExistingInfo(DateTimeOffset.UtcNow));
+    }
+
+    private static RefreshToken CreateTestRefreshToken(ExecutionContext executionContext, Id userId, RefreshTokenStatus status)
+    {
+        var token = RefreshToken.RegisterNew(executionContext,
+            new ShopDemo.Auth.Domain.Entities.RefreshTokens.Inputs.RegisterNewRefreshTokenInput(
+                userId,
+                ShopDemo.Auth.Domain.Entities.RefreshTokens.TokenHash.CreateNew(new byte[32]),
+                ShopDemo.Auth.Domain.Entities.RefreshTokens.TokenFamily.CreateNew(),
+                DateTimeOffset.UtcNow.AddDays(7)));
+
+        if (status == RefreshTokenStatus.Revoked && token is not null)
+        {
+            var revoked = token.Revoke(executionContext, new RevokeRefreshTokenInput());
+            return revoked ?? token;
+        }
+
+        return token!;
+    }
+
+    private static ServiceClient CreateTestServiceClient(ExecutionContext executionContext, Id createdByUserId, ServiceClientStatus status)
+    {
+        var client = ServiceClient.RegisterNew(executionContext,
+            new ShopDemo.Auth.Domain.Entities.ServiceClients.Inputs.RegisterNewServiceClientInput(
+                "test-client-" + Guid.NewGuid().ToString("N")[..8],
+                new byte[32], "Test Client", createdByUserId,
+                DateTimeOffset.UtcNow.AddDays(90)));
+
+        if (status == ServiceClientStatus.Revoked && client is not null)
+        {
+            var revoked = client.Revoke(executionContext, new RevokeServiceClientInput());
+            return revoked ?? client;
+        }
+
+        return client!;
+    }
+
+    private static ApiKey CreateTestApiKey(ExecutionContext executionContext, Id serviceClientId, ApiKeyStatus status)
+    {
+        var apiKey = ApiKey.RegisterNew(executionContext,
+            new ShopDemo.Auth.Domain.Entities.ApiKeys.Inputs.RegisterNewApiKeyInput(
+                serviceClientId, "tk_test", "hash-value",
+                DateTimeOffset.UtcNow.AddDays(90)));
+
+        if (status == ApiKeyStatus.Revoked && apiKey is not null)
+        {
+            var revoked = apiKey.Revoke(executionContext, new RevokeApiKeyInput());
+            return revoked ?? apiKey;
+        }
+
+        return apiKey!;
+    }
+
+    private static Claim CreateTestClaim(Id claimId, string name)
+    {
+        var entityInfo = EntityInfo.CreateFromExistingInfo(
+            id: Id.CreateFromExistingInfo(claimId.Value),
+            tenantInfo: TenantInfo.Create(Guid.NewGuid(), "Test Tenant"),
+            entityChangeInfo: EntityChangeInfo.CreateFromExistingInfo(
+                createdAt: DateTimeOffset.UtcNow, createdBy: "creator",
+                createdCorrelationId: Guid.NewGuid(), createdExecutionOrigin: "UnitTest",
+                createdBusinessOperationCode: "TEST_OP",
+                lastChangedAt: null, lastChangedBy: null,
+                lastChangedCorrelationId: null, lastChangedExecutionOrigin: null,
+                lastChangedBusinessOperationCode: null),
+            entityVersion: RegistryVersion.CreateFromExistingInfo(DateTimeOffset.UtcNow));
+
+        return Claim.CreateFromExistingInfo(new CreateFromExistingInfoClaimInput(entityInfo, name, null));
+    }
+
+    private static ServiceClientClaim CreateTestServiceClientClaim(Id serviceClientId, Id claimId, ClaimValue value)
+    {
+        return ServiceClientClaim.CreateFromExistingInfo(new CreateFromExistingInfoServiceClientClaimInput(
+            CreateTestEntityInfo(), serviceClientId, claimId, value));
     }
 
     #endregion

@@ -1,9 +1,15 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
+using Bedrock.BuildingBlocks.Core.Ids;
+using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
+using Bedrock.BuildingBlocks.Security.Passwords;
 using Bedrock.BuildingBlocks.Security.Passwords.Interfaces;
 using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.ServiceClients;
+using ShopDemo.Auth.Domain.Entities.ServiceClients.Enums;
+using ShopDemo.Auth.Domain.Entities.ServiceClients.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Services;
 using ShopDemo.Auth.Domain.Services.Interfaces;
@@ -83,6 +89,105 @@ public class ClientCredentialsServiceTests : TestBase
             Times.Never);
     }
 
+    [Fact]
+    public async Task ValidateCredentialsAsync_WhenClientNotActive_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up repository with revoked client");
+        var executionContext = CreateTestExecutionContext();
+        var serviceClient = CreateTestServiceClient(ServiceClientStatus.Revoked, null);
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByClientIdAsync(executionContext, "test-client", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceClient);
+
+        // Act
+        LogAct("Validating credentials for revoked client");
+        var result = await _sut.ValidateCredentialsAsync(executionContext, "test-client", "secret", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned without password check");
+        result.ShouldBeNull();
+        _passwordHasherMock.Verify(
+            x => x.VerifyPassword(It.IsAny<ExecutionContext>(), It.IsAny<string>(), It.IsAny<byte[]>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ValidateCredentialsAsync_WhenClientExpired_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up repository with expired client");
+        var executionContext = CreateTestExecutionContext();
+        var serviceClient = CreateTestServiceClient(ServiceClientStatus.Active, executionContext.Timestamp.AddDays(-1));
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByClientIdAsync(executionContext, "test-client", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceClient);
+
+        // Act
+        LogAct("Validating credentials for expired client");
+        var result = await _sut.ValidateCredentialsAsync(executionContext, "test-client", "secret", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned without password check");
+        result.ShouldBeNull();
+        _passwordHasherMock.Verify(
+            x => x.VerifyPassword(It.IsAny<ExecutionContext>(), It.IsAny<string>(), It.IsAny<byte[]>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ValidateCredentialsAsync_WhenPasswordInvalid_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up repository with active client and invalid password");
+        var executionContext = CreateTestExecutionContext();
+        var serviceClient = CreateTestServiceClient(ServiceClientStatus.Active, executionContext.Timestamp.AddDays(90));
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByClientIdAsync(executionContext, "test-client", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceClient);
+
+        _passwordHasherMock
+            .Setup(x => x.VerifyPassword(executionContext, "wrong-secret", serviceClient.ClientSecretHash))
+            .Returns(new PasswordVerificationResult(false, false));
+
+        // Act
+        LogAct("Validating credentials with wrong password");
+        var result = await _sut.ValidateCredentialsAsync(executionContext, "test-client", "wrong-secret", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task ValidateCredentialsAsync_WhenValid_ShouldReturnClient()
+    {
+        // Arrange
+        LogArrange("Setting up repository with active client and valid password");
+        var executionContext = CreateTestExecutionContext();
+        var serviceClient = CreateTestServiceClient(ServiceClientStatus.Active, executionContext.Timestamp.AddDays(90));
+
+        _serviceClientRepositoryMock
+            .Setup(x => x.GetByClientIdAsync(executionContext, "test-client", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(serviceClient);
+
+        _passwordHasherMock
+            .Setup(x => x.VerifyPassword(executionContext, "correct-secret", serviceClient.ClientSecretHash))
+            .Returns(new PasswordVerificationResult(true, false));
+
+        // Act
+        LogAct("Validating credentials with correct password");
+        var result = await _sut.ValidateCredentialsAsync(executionContext, "test-client", "correct-secret", CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying client returned");
+        result.ShouldNotBeNull();
+        result.ShouldBeSameAs(serviceClient);
+    }
+
     #endregion
 
     #region Helper Methods
@@ -98,6 +203,25 @@ public class ClientCredentialsServiceTests : TestBase
             businessOperationCode: "TEST_OP",
             minimumMessageType: MessageType.Trace,
             timeProvider: TimeProvider.System);
+    }
+
+    private static ServiceClient CreateTestServiceClient(ServiceClientStatus status, DateTimeOffset? expiresAt)
+    {
+        var entityInfo = EntityInfo.CreateFromExistingInfo(
+            id: Id.CreateFromExistingInfo(Guid.NewGuid()),
+            tenantInfo: TenantInfo.Create(Guid.NewGuid(), "Test Tenant"),
+            entityChangeInfo: EntityChangeInfo.CreateFromExistingInfo(
+                createdAt: DateTimeOffset.UtcNow, createdBy: "creator",
+                createdCorrelationId: Guid.NewGuid(), createdExecutionOrigin: "UnitTest",
+                createdBusinessOperationCode: "TEST_OP",
+                lastChangedAt: null, lastChangedBy: null,
+                lastChangedCorrelationId: null, lastChangedExecutionOrigin: null,
+                lastChangedBusinessOperationCode: null),
+            entityVersion: RegistryVersion.CreateFromExistingInfo(DateTimeOffset.UtcNow));
+
+        return ServiceClient.CreateFromExistingInfo(new CreateFromExistingInfoServiceClientInput(
+            entityInfo, "test-client", new byte[32], "Test Client",
+            status, Id.GenerateNewId(), expiresAt, null));
     }
 
     #endregion

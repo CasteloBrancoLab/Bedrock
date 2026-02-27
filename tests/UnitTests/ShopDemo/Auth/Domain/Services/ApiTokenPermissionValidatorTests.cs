@@ -1,9 +1,12 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.Ids;
+using Bedrock.BuildingBlocks.Core.RegistryVersions;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Domain.Entities.Models;
 using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.Claims;
+using ShopDemo.Auth.Domain.Entities.Claims.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Resolvers.Interfaces;
 using ShopDemo.Auth.Domain.Services;
@@ -116,6 +119,95 @@ public class ApiTokenPermissionValidatorTests : TestBase
         executionContext.HasErrorMessages.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task ValidatePermissionCeilingAsync_WhenCreatorLacksPermission_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up creator without the requested claim");
+        var executionContext = CreateTestExecutionContext();
+        var creatorUserId = Id.GenerateNewId();
+        var claimId = Id.GenerateNewId();
+        var requestedClaims = new Dictionary<Id, ClaimValue> { [claimId] = ClaimValue.Granted };
+
+        var claim = CreateTestClaim(claimId, "admin_access");
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, creatorUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue>());
+
+        _claimRepositoryMock
+            .Setup(x => x.GetAllAsync(executionContext, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Claim> { claim });
+
+        // Act
+        LogAct("Validating when creator lacks the requested claim");
+        var result = await _sut.ValidatePermissionCeilingAsync(executionContext, creatorUserId, requestedClaims, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false with error");
+        result.ShouldBeFalse();
+        executionContext.HasErrorMessages.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidatePermissionCeilingAsync_WhenRequestedExceedsCreatorPermission_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up creator with lower permission than requested");
+        var executionContext = CreateTestExecutionContext();
+        var creatorUserId = Id.GenerateNewId();
+        var claimId = Id.GenerateNewId();
+        var requestedClaims = new Dictionary<Id, ClaimValue> { [claimId] = ClaimValue.Granted };
+
+        var claim = CreateTestClaim(claimId, "admin_access");
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, creatorUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue> { ["admin_access"] = ClaimValue.Denied });
+
+        _claimRepositoryMock
+            .Setup(x => x.GetAllAsync(executionContext, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Claim> { claim });
+
+        // Act
+        LogAct("Validating when requested exceeds creator permission");
+        var result = await _sut.ValidatePermissionCeilingAsync(executionContext, creatorUserId, requestedClaims, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false with error");
+        result.ShouldBeFalse();
+        executionContext.HasErrorMessages.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ValidatePermissionCeilingAsync_WhenValid_ShouldReturnTrue()
+    {
+        // Arrange
+        LogArrange("Setting up creator with sufficient permissions");
+        var executionContext = CreateTestExecutionContext();
+        var creatorUserId = Id.GenerateNewId();
+        var claimId = Id.GenerateNewId();
+        var requestedClaims = new Dictionary<Id, ClaimValue> { [claimId] = ClaimValue.Granted };
+
+        var claim = CreateTestClaim(claimId, "admin_access");
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, creatorUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue> { ["admin_access"] = ClaimValue.Granted });
+
+        _claimRepositoryMock
+            .Setup(x => x.GetAllAsync(executionContext, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Claim> { claim });
+
+        // Act
+        LogAct("Validating with sufficient permissions");
+        var result = await _sut.ValidatePermissionCeilingAsync(executionContext, creatorUserId, requestedClaims, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns true");
+        result.ShouldBeTrue();
+    }
+
     #endregion
 
     #region Helper Methods
@@ -131,6 +223,23 @@ public class ApiTokenPermissionValidatorTests : TestBase
             businessOperationCode: "TEST_OP",
             minimumMessageType: MessageType.Trace,
             timeProvider: TimeProvider.System);
+    }
+
+    private static Claim CreateTestClaim(Id claimId, string name)
+    {
+        var entityInfo = EntityInfo.CreateFromExistingInfo(
+            id: Id.CreateFromExistingInfo(claimId.Value),
+            tenantInfo: TenantInfo.Create(Guid.NewGuid(), "Test Tenant"),
+            entityChangeInfo: EntityChangeInfo.CreateFromExistingInfo(
+                createdAt: DateTimeOffset.UtcNow, createdBy: "creator",
+                createdCorrelationId: Guid.NewGuid(), createdExecutionOrigin: "UnitTest",
+                createdBusinessOperationCode: "TEST_OP",
+                lastChangedAt: null, lastChangedBy: null,
+                lastChangedCorrelationId: null, lastChangedExecutionOrigin: null,
+                lastChangedBusinessOperationCode: null),
+            entityVersion: RegistryVersion.CreateFromExistingInfo(DateTimeOffset.UtcNow));
+
+        return Claim.CreateFromExistingInfo(new CreateFromExistingInfoClaimInput(entityInfo, name, null));
     }
 
     #endregion

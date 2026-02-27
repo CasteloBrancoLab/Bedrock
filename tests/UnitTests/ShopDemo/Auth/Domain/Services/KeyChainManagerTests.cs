@@ -4,6 +4,8 @@ using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.KeyChains;
+using ShopDemo.Auth.Domain.Entities.KeyChains.Enums;
+using ShopDemo.Auth.Domain.Entities.KeyChains.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Services;
 using ShopDemo.Auth.Domain.Services.Interfaces;
@@ -89,6 +91,78 @@ public class KeyChainManagerTests : TestBase
         // Assert
         LogAssert("Verifying new key was created");
         result.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task RotateKeyAsync_WithExistingActiveKey_ShouldDeactivateOldAndCreateNew()
+    {
+        // Arrange
+        LogArrange("Setting up with existing active key");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var clientPublicKey = "dGVzdC1rZXk=";
+
+        var existingKey = KeyChain.RegisterNew(executionContext,
+            new RegisterNewKeyChainInput(userId, KeyId.CreateNew("v1"),
+                "c2VydmVyLWtleQ==", Convert.ToBase64String(new byte[32]),
+                executionContext.Timestamp.AddDays(30)));
+
+        _keyChainRepositoryMock
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<KeyChain> { existingKey! });
+
+        _keyChainRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _keyAgreementServiceMock
+            .Setup(x => x.NegotiateKey(clientPublicKey))
+            .Returns(new KeyAgreementResult("bmV3LWtleQ==", new byte[32]));
+
+        _keyChainRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Rotating key with existing active key");
+        var result = await _sut.RotateKeyAsync(executionContext, userId, clientPublicKey, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying new key created and old key deactivated");
+        result.ShouldNotBeNull();
+        _keyChainRepositoryMock.Verify(
+            x => x.UpdateAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RotateKeyAsync_WhenRegistrationFails_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up where registration fails");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var clientPublicKey = "dGVzdC1rZXk=";
+
+        _keyChainRepositoryMock
+            .Setup(x => x.GetByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<KeyChain>());
+
+        _keyAgreementServiceMock
+            .Setup(x => x.NegotiateKey(clientPublicKey))
+            .Returns(new KeyAgreementResult("c2VydmVyLWtleQ==", new byte[32]));
+
+        _keyChainRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Rotating key when registration fails");
+        var result = await _sut.RotateKeyAsync(executionContext, userId, clientPublicKey, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
     }
 
     #endregion

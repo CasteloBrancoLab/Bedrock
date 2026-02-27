@@ -5,6 +5,7 @@ using Bedrock.BuildingBlocks.Testing;
 using Moq;
 using ShopDemo.Auth.Domain.Entities.Sessions;
 using ShopDemo.Auth.Domain.Entities.Sessions.Enums;
+using ShopDemo.Auth.Domain.Entities.Sessions.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Services;
 using ShopDemo.Auth.Domain.Services.Interfaces;
@@ -138,6 +139,78 @@ public class SessionManagerTests : TestBase
         result.ShouldBeNull();
     }
 
+    [Fact]
+    public async Task CreateSessionAsync_AtLimitWithRevokeOldest_WhenSuccessful_ShouldCreateSession()
+    {
+        // Arrange
+        LogArrange("Setting up at limit with RevokeOldest and existing active session");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var refreshTokenId = Id.GenerateNewId();
+
+        var existingSession = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Old Device", "127.0.0.1", "OldAgent",
+                executionContext.Timestamp.AddHours(24)));
+
+        _sessionRepositoryMock
+            .Setup(x => x.CountActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Session> { existingSession! });
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _sessionRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Creating session with RevokeOldest strategy");
+        var result = await _sut.CreateSessionAsync(
+            executionContext, userId, refreshTokenId,
+            "Chrome", "127.0.0.1", "Mozilla/5.0",
+            executionContext.Timestamp.AddHours(24), 5,
+            SessionLimitStrategy.RevokeOldest, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying session was created after revoking oldest");
+        result.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateSessionAsync_WhenRegistrationFails_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up under limit but registration fails");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var refreshTokenId = Id.GenerateNewId();
+
+        _sessionRepositoryMock
+            .Setup(x => x.CountActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        _sessionRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Creating session when registration fails");
+        var result = await _sut.CreateSessionAsync(
+            executionContext, userId, refreshTokenId,
+            "Chrome", "127.0.0.1", "Mozilla/5.0",
+            executionContext.Timestamp.AddHours(24), 5,
+            SessionLimitStrategy.RejectNew, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+    }
+
     #endregion
 
     #region RevokeSessionAsync Tests
@@ -156,6 +229,65 @@ public class SessionManagerTests : TestBase
 
         // Act
         LogAct("Revoking non-existent session");
+        var result = await _sut.RevokeSessionAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task RevokeSessionAsync_WhenSessionExists_ShouldReturnRevokedSession()
+    {
+        // Arrange
+        LogArrange("Setting up with active session");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var session = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                executionContext.Timestamp.AddHours(24)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Revoking existing session");
+        var result = await _sut.RevokeSessionAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying revoked session returned");
+        result.ShouldNotBeNull();
+        result.Status.ShouldBe(SessionStatus.Revoked);
+    }
+
+    [Fact]
+    public async Task RevokeSessionAsync_WhenUpdateFails_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with active session where update fails");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var session = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                executionContext.Timestamp.AddHours(24)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Revoking session when update fails");
         var result = await _sut.RevokeSessionAsync(executionContext, sessionId, CancellationToken.None);
 
         // Assert
@@ -188,6 +320,38 @@ public class SessionManagerTests : TestBase
         result.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task RevokeAllSessionsAsync_WithActiveSessions_ShouldRevokeAll()
+    {
+        // Arrange
+        LogArrange("Setting up with 2 active sessions");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        var session1 = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device1", "127.0.0.1", "Agent1",
+                executionContext.Timestamp.AddHours(24)));
+        var session2 = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device2", "127.0.0.2", "Agent2",
+                executionContext.Timestamp.AddHours(24)));
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetActiveByUserIdAsync(executionContext, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Session> { session1!, session2! });
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Revoking all sessions");
+        var result = await _sut.RevokeAllSessionsAsync(executionContext, userId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying 2 sessions revoked");
+        result.ShouldBe(2);
+    }
+
     #endregion
 
     #region UpdateActivityAsync Tests
@@ -206,6 +370,64 @@ public class SessionManagerTests : TestBase
 
         // Act
         LogAct("Updating activity for non-existent session");
+        var result = await _sut.UpdateActivityAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateActivityAsync_WhenSessionExists_ShouldReturnUpdatedSession()
+    {
+        // Arrange
+        LogArrange("Setting up with active session");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var session = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                executionContext.Timestamp.AddHours(24)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Updating activity for existing session");
+        var result = await _sut.UpdateActivityAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying updated session returned");
+        result.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateActivityAsync_WhenUpdateFails_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with active session where update fails");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+        var session = Session.RegisterNew(executionContext,
+            new RegisterNewSessionInput(userId, Id.GenerateNewId(), "Device", "127.0.0.1", "Agent",
+                executionContext.Timestamp.AddHours(24)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _sessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        _sessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<Session>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Updating activity when update fails");
         var result = await _sut.UpdateActivityAsync(executionContext, sessionId, CancellationToken.None);
 
         // Assert

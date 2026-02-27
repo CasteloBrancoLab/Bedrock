@@ -181,6 +181,23 @@ public class PasswordPolicyServiceTests : TestBase
         result.ShouldBeFalse();
     }
 
+    [Fact]
+    public async Task RecordPasswordChangeAsync_WhenEntityCreationFails_ShouldReturnFalse()
+    {
+        // Arrange
+        LogArrange("Setting up with null passwordHash to trigger entity creation failure");
+        var executionContext = CreateTestExecutionContext();
+        var userId = Id.GenerateNewId();
+
+        // Act
+        LogAct("Recording password change with null hash");
+        var result = await _sut.RecordPasswordChangeAsync(executionContext, userId, null!, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying returns false when PasswordHistory.RegisterNew returns null");
+        result.ShouldBeFalse();
+    }
+
     #endregion
 
     #region Helper Methods

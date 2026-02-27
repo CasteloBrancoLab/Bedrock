@@ -183,6 +183,40 @@ public class ImpersonationServiceTests : TestBase
         result.ShouldNotBeNull();
     }
 
+    [Fact]
+    public async Task ValidateAndCreateAsync_WhenRegistrationFails_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up valid impersonation where registration fails");
+        var executionContext = CreateTestExecutionContext();
+        var operatorUserId = Id.GenerateNewId();
+        var targetUserId = Id.GenerateNewId();
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, operatorUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue> { ["can_impersonate"] = ClaimValue.Granted });
+
+        _claimResolverMock
+            .Setup(x => x.ResolveUserClaimsAsync(executionContext, targetUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, ClaimValue>());
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.GetActiveByTargetUserIdAsync(executionContext, operatorUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ImpersonationSession?)null);
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<ImpersonationSession>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Validating and creating impersonation session with registration failure");
+        var result = await _sut.ValidateAndCreateAsync(executionContext, operatorUserId, targetUserId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+    }
+
     #endregion
 
     #region EndSessionAsync Tests
@@ -201,6 +235,68 @@ public class ImpersonationServiceTests : TestBase
 
         // Act
         LogAct("Ending non-existent session");
+        var result = await _sut.EndSessionAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying null returned");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task EndSessionAsync_WhenSessionExists_ShouldReturnEndedSession()
+    {
+        // Arrange
+        LogArrange("Setting up with active impersonation session");
+        var executionContext = CreateTestExecutionContext();
+        var operatorUserId = Id.GenerateNewId();
+        var targetUserId = Id.GenerateNewId();
+
+        var session = ImpersonationSession.RegisterNew(executionContext,
+            new ShopDemo.Auth.Domain.Entities.ImpersonationSessions.Inputs.RegisterNewImpersonationSessionInput(
+                operatorUserId, targetUserId, executionContext.Timestamp.AddMinutes(30)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<ImpersonationSession>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        LogAct("Ending active impersonation session");
+        var result = await _sut.EndSessionAsync(executionContext, sessionId, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verifying ended session returned");
+        result.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task EndSessionAsync_WhenUpdateFails_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Setting up with active session where update fails");
+        var executionContext = CreateTestExecutionContext();
+        var operatorUserId = Id.GenerateNewId();
+        var targetUserId = Id.GenerateNewId();
+
+        var session = ImpersonationSession.RegisterNew(executionContext,
+            new ShopDemo.Auth.Domain.Entities.ImpersonationSessions.Inputs.RegisterNewImpersonationSessionInput(
+                operatorUserId, targetUserId, executionContext.Timestamp.AddMinutes(30)));
+        var sessionId = session!.EntityInfo.Id;
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.GetByIdAsync(executionContext, sessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        _impersonationSessionRepositoryMock
+            .Setup(x => x.UpdateAsync(executionContext, It.IsAny<ImpersonationSession>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        LogAct("Ending session when update fails");
         var result = await _sut.EndSessionAsync(executionContext, sessionId, CancellationToken.None);
 
         // Assert
