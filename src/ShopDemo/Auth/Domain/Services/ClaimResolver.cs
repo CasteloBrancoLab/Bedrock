@@ -4,9 +4,9 @@ using ShopDemo.Auth.Domain.Entities.RoleClaims;
 using ShopDemo.Auth.Domain.Entities.RoleHierarchies;
 using ShopDemo.Auth.Domain.Entities.UserRoles;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
-using ShopDemo.Auth.Domain.Resolvers.Interfaces;
+using ShopDemo.Auth.Domain.Services.Interfaces;
 
-namespace ShopDemo.Auth.Domain.Resolvers;
+namespace ShopDemo.Auth.Domain.Services;
 
 public sealed class ClaimResolver : IClaimResolver
 {

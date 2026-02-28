@@ -1,7 +1,6 @@
 using Bedrock.BuildingBlocks.Core.Ids;
 using ShopDemo.Auth.Domain.Entities.Claims;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
-using ShopDemo.Auth.Domain.Resolvers.Interfaces;
 using ShopDemo.Auth.Domain.Services.Interfaces;
 
 namespace ShopDemo.Auth.Domain.Services;

@@ -36,14 +36,15 @@ PR deve conter `Closes #<issue>` para auto-close.
 
 ## Fases de Desenvolvimento (Skills)
 
-O desenvolvimento segue **7 fases sequenciais**, cada uma com sua skill:
+O desenvolvimento segue **8 fases sequenciais**, cada uma com sua skill:
 
 ```
-/code → /arch → /test → /mutate → /integration → /pipeline → /pr
+/plan → /code → /arch → /test → /mutate → /integration → /pipeline → /pr
 ```
 
 | Fase | Skill | Script | O que faz |
 |------|-------|--------|-----------|
+| 0. Planejamento | `/plan` | `gh` CLI | Analisar issue, plano de implementacao, branch |
 | 1. Implementacao | `/code` | `build-check.sh` | Codigo-fonte + build |
 | 2. Arquitetura | `/arch` | `arch-check.sh` | Validacao de regras arquiteturais |
 | 3. Testes | `/test` | `test-check.sh` | Testes unitarios + cobertura |

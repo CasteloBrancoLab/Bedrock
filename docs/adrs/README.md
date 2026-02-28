@@ -17,6 +17,7 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 | **IN** | [Infrastructure](./infrastructure/README.md) | Infraestrutura, cross-cutting concerns | 17 ADRs |
 | **RL** | [Relational](./relational/README.md) | Mapeamento objeto-relacional, SQL generation, data models | 4 ADRs |
 | **CF** | [Configuration](./configuration/README.md) | Pipeline de handlers, configuracao tipada, caching e escopo | 6 ADRs |
+| **MS** | [Messages](./messages/README.md) | Envelope, serialização, nomenclatura e estrutura de Commands, Events e Queries | 10 ADRs |
 | **PG** | [PostgreSQL](./postgresql/README.md) | Padroes especificos do PostgreSQL e Npgsql | 2 ADRs |
 | **AP** | API | APIs REST, GraphQL, contratos | Em breve |
 
@@ -182,6 +183,19 @@ Links para implementações de referência no repositório.
 - [CF-005: Escopo de Handler Define Quais Chaves Sao Processadas](./configuration/CF-005-escopo-handler-tres-niveis.md)
 - [CF-006: Acesso a Configuracao Deve Ser Tipado via Expression Trees](./configuration/CF-006-acesso-tipado-expression-trees.md)
 - [Ver todas as ADRs de Configuration](./configuration/)
+
+### Messages (MS)
+- [MS-001: Envelope Encapsulado em MessageMetadata](./messages/MS-001-envelope-encapsulado-em-messagemetadata.md)
+- [MS-002: SchemaName Auto-Computado via GetType().FullName](./messages/MS-002-schemaname-auto-computado.md)
+- [MS-003: MessageMetadata Sealed Record Sem Herança](./messages/MS-003-messagemetadata-sealed-record.md)
+- [MS-004: Deserialização em Dois Estágios via MessageEnvelope](./messages/MS-004-deserializacao-dois-estagios-messageenvelope.md)
+- [MS-005: Abstract Record Para Hierarquia de Mensagens](./messages/MS-005-abstract-record-hierarquia-mensagens.md)
+- [MS-006: Nomenclatura de Commands, Events e Queries](./messages/MS-006-nomenclatura-commands-events-queries.md)
+- [MS-007: Concretos Herdam da Base Tipada](./messages/MS-007-concretos-herdam-base-tipada.md)
+- [MS-008: Message Models com Primitivos — Sem Tipos de Domínio](./messages/MS-008-message-models-primitivos-sem-tipos-dominio.md)
+- [MS-009: Snapshot Completo do Aggregate Root nos Models](./messages/MS-009-snapshot-completo-aggregate-root.md)
+- [MS-010: Eventos Self-Contained: Input + OldState + NewState](./messages/MS-010-eventos-self-contained-input-oldstate-newstate.md)
+- [Ver todas as ADRs de Messages](./messages/)
 
 ### PostgreSQL (PG)
 - [PG-001: MapBinaryImporter Deve Escrever Todas as Colunas](./postgresql/PG-001-binary-importer-todas-colunas.md)

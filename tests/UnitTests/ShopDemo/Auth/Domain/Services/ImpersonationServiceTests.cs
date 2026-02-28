@@ -6,7 +6,6 @@ using Moq;
 using ShopDemo.Auth.Domain.Entities.Claims;
 using ShopDemo.Auth.Domain.Entities.ImpersonationSessions;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
-using ShopDemo.Auth.Domain.Resolvers.Interfaces;
 using ShopDemo.Auth.Domain.Services;
 using ShopDemo.Auth.Domain.Services.Interfaces;
 using Shouldly;

@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Core.Ids;
 using ShopDemo.Auth.Domain.Entities.Claims;
 
-namespace ShopDemo.Auth.Domain.Resolvers.Interfaces;
+namespace ShopDemo.Auth.Domain.Services.Interfaces;
 
 public interface IClaimResolver
 {

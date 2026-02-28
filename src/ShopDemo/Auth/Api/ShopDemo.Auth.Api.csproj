@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Application\ShopDemo.Auth.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
   </ItemGroup>

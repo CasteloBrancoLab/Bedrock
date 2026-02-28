@@ -14,13 +14,13 @@ using ShopDemo.Auth.Domain.Entities.RoleHierarchies.Inputs;
 using ShopDemo.Auth.Domain.Entities.UserRoles;
 using ShopDemo.Auth.Domain.Entities.UserRoles.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
-using ShopDemo.Auth.Domain.Resolvers;
-using ShopDemo.Auth.Domain.Resolvers.Interfaces;
+using ShopDemo.Auth.Domain.Services;
+using ShopDemo.Auth.Domain.Services.Interfaces;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Domain.Resolvers;
+namespace ShopDemo.UnitTests.Auth.Domain.Services;
 
 public class ClaimResolverTests : TestBase
 {

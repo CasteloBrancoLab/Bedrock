@@ -14,7 +14,6 @@ using ShopDemo.Auth.Domain.Entities.ServiceClients.Inputs;
 using ShopDemo.Auth.Domain.Events;
 using ShopDemo.Auth.Domain.Events.Models;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
-using ShopDemo.Auth.Domain.Resolvers.Interfaces;
 using ShopDemo.Auth.Domain.Services.Interfaces;
 
 namespace ShopDemo.Auth.Domain.Services;
