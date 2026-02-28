@@ -190,6 +190,7 @@ de camadas abaixo:
 | Application | `{BC}.Application` | Casos de uso, orquestracao, application services |
 | Infra.Data | `{BC}.Infra.Data` | Implementacao abstrata de repositorios (`RepositoryBase`), adaptadores |
 | Infra.Data.{Tech} | `{BC}.Infra.Data.PostgreSql` | Implementacao especifica de tecnologia (connections, data models, unit of work) |
+| Infra.CrossCutting.Messages | `{BC}.Infra.CrossCutting.Messages` | Message models (readonly record structs), events, commands e queries do BC |
 | Infra.CrossCutting.Configuration | `{BC}.Infra.CrossCutting.Configuration` | Modelos de configuracao, acesso a configs externas (appsettings, env vars, secrets) |
 | Infra.CrossCutting.Bootstrapper | `{BC}.Infra.CrossCutting.Bootstrapper` | IoC, DI, composicao de dependencias |
 
@@ -197,6 +198,17 @@ de camadas abaixo:
 referenciar `Infra.CrossCutting.Configuration`. Ele centraliza os
 modelos de configuracao (options/settings classes) e o acesso a fontes
 externas, evitando que cada camada defina seus proprios modelos de config.
+
+**Regra de acesso a Messages**: `Infra.CrossCutting.Messages` depende
+apenas de `Bedrock.BuildingBlocks.Messages`. Contem os message models
+(readonly record structs com primitivos), events, commands e queries
+publicados pelo BC. Nao referencia Domain.Entities nem outros projetos
+do BC — mensagens sao contratos de fronteira isolados do dominio.
+O Domain referencia Messages porque o domain service cria eventos e os
+envia via outbox pattern. A Application referencia Messages porque
+commita a transaction (incluindo outbox) e pode publicar/consumir
+commands e events para broadcast entre nodes do BC. A API referencia
+Messages porque seus workers/consumers recebem as messages.
 
 **Estrutura de diretorios (exemplo para `ShopDemo.Auth`):**
 
@@ -212,6 +224,8 @@ src/ShopDemo/Auth/
     ShopDemo.Auth.Infra.Data.csproj
   Infra.Data.PostgreSql/
     ShopDemo.Auth.Infra.Data.PostgreSql.csproj
+  Infra.CrossCutting.Messages/
+    ShopDemo.Auth.Infra.CrossCutting.Messages.csproj
   Infra.CrossCutting.Configuration/
     ShopDemo.Auth.Infra.CrossCutting.Configuration.csproj
   Infra.CrossCutting.Bootstrapper/           # futuro
@@ -233,6 +247,12 @@ graph TD
     Boot --> App
     Boot --> InfraData
     Boot --> InfraDataPg
+
+    Msgs[Infra.CrossCutting.Messages]
+    Domain --> Msgs
+    App --> Msgs
+    API --> Msgs
+    Boot --> Msgs
 
     Config[Infra.CrossCutting.Configuration]
     Domain --> Config
@@ -332,9 +352,12 @@ Dependency Rule é respeitada.
 |----------------|-------------------|
 | Bedrock.BuildingBlocks.Data | Framework base para camada `Infra.Data` (RepositoryBase, DataModelBase) |
 | Bedrock.BuildingBlocks.Persistence.PostgreSql | Framework base para camada `Infra.Data.PostgreSql` (connections, unit of work) |
+| Bedrock.BuildingBlocks.Messages | Framework base para camada `Infra.CrossCutting.Messages` (MessageBase, EventBase, CommandBase, QueryBase, MessageMetadata) |
 
 ## Referencias no Codigo
 
 - Template de referencia: `src/Templates/Infra.Data.PostgreSql/`
+- Template de mensagens: `src/Templates/Infra.CrossCutting.Messages/`
 - Implementacao de exemplo: `src/ShopDemo/Auth/Infra.Data.PostgreSql/`
+- Mensagens de exemplo: `src/ShopDemo/Auth/Infra.CrossCutting.Messages/`
 - Camada abstrata de exemplo: `src/ShopDemo/Auth/Infra.Data/`
