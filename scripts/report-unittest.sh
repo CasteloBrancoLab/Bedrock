@@ -2,12 +2,8 @@
 # Gera relatório HTML a partir dos resultados de testes de unidade e cobertura
 # Usa o projeto UnitTestReportGenerator em tools/
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-cd "$ROOT_DIR"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
 COVERAGE_DIR="artifacts/coverage/raw"
 REPORT_DIR="artifacts/unittest-report"

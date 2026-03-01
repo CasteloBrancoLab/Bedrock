@@ -12,7 +12,7 @@ Voce esta na fase PIPELINE. Validacao final antes de abrir PR.
 ## Delegacao de Modelo
 
 Use a Task tool com `model: "haiku"` para tarefas mecanicas:
-- Rodar `./scripts/pipeline-check.sh`
+- Rodar `./scripts/pipeline.sh --quiet`
 - Ler e parsear `artifacts/pending/SUMMARY.txt` e pending files de todas as categorias
 - Reportar de volta o resumo das pendencias
 
@@ -20,7 +20,7 @@ Opus (voce) foca em: **corrigir codigo com base nas pendencias reportadas**.
 
 ## Fluxo
 
-1. Delegar a haiku: rodar `./scripts/pipeline-check.sh` e ler pendings
+1. Delegar a haiku: rodar `./scripts/pipeline.sh --quiet` e ler pendings
 2. Se houver pendencias:
    - Identificar a categoria (build, arquitetura, teste, mutacao, integracao, cobertura)
    - Corrigir

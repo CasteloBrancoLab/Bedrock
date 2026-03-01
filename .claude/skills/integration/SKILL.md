@@ -1,6 +1,6 @@
 ---
 name: integration
-description: "Fase 5: Testes de integracao com Docker/Testcontainers. Roda integration-check e corrige falhas."
+description: "Fase 5: Testes de integracao com Docker/Testcontainers. Roda integration e corrige falhas."
 argument-hint: "[projeto.csproj]"
 disable-model-invocation: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Task
@@ -19,7 +19,7 @@ Se fornecido um caminho de projeto, rode testes apenas para ele.
 ## Delegacao de Modelo
 
 Use a Task tool com `model: "haiku"` para tarefas mecanicas:
-- Rodar `./scripts/integration-check.sh` (ou com argumento de projeto)
+- Rodar `./scripts/integration.sh` (ou com argumento de projeto)
 - Ler e parsear `artifacts/pending/SUMMARY.txt` e `artifacts/pending/integration_*.txt`
 - Reportar de volta o resumo das pendencias
 
@@ -27,7 +27,7 @@ Opus (voce) foca em: **corrigir testes e codigo de integracao**.
 
 ## Fluxo
 
-1. Delegar a haiku: rodar `./scripts/integration-check.sh` e ler pendings
+1. Delegar a haiku: rodar `./scripts/integration.sh` e ler pendings
 2. Se houver falhas:
    - Corrigir testes ou codigo de integracao
    - Voltar ao passo 1

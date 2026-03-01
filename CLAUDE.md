@@ -45,12 +45,12 @@ O desenvolvimento segue **8 fases sequenciais**, cada uma com sua skill:
 | Fase | Skill | Script | O que faz |
 |------|-------|--------|-----------|
 | 0. Planejamento | `/plan` | `gh` CLI | Analisar issue, plano de implementacao, branch |
-| 1. Implementacao | `/code` | `build-check.sh` | Codigo-fonte + build |
-| 2. Arquitetura | `/arch` | `arch-check.sh` | Validacao de regras arquiteturais |
-| 3. Testes | `/test` | `test-check.sh` | Testes unitarios + cobertura |
-| 4. Mutacao | `/mutate` | `mutate-check.sh` | Testes de mutacao (100%) |
-| 5. Integracao | `/integration` | `integration-check.sh` | Testes de integracao (Docker) |
-| 6. Pipeline | `/pipeline` | `pipeline-check.sh` | Validacao final completa |
+| 1. Implementacao | `/code` | `build.sh` | Codigo-fonte + build |
+| 2. Arquitetura | `/arch` | `arch.sh` | Validacao de regras arquiteturais |
+| 3. Testes | `/test` | `test.sh` | Testes unitarios + cobertura |
+| 4. Mutacao | `/mutate` | `mutate.sh` | Testes de mutacao (100%) |
+| 5. Integracao | `/integration` | `integration.sh` | Testes de integracao (Docker) |
+| 6. Pipeline | `/pipeline` | `pipeline.sh --quiet` | Validacao final completa |
 | 7. Pull Request | `/pr` | `gh` CLI | Criar PR, acompanhar CI, merge |
 
 ### Principio: Scripts fazem o trabalho pesado
@@ -112,5 +112,5 @@ artifacts/
 ## Notas
 
 - Cobertura e delegada ao SonarCloud (local Coverlet tem falsos positivos)
-- SonarCloud analisa apenas `main` (plano Community); `sonar-check.sh` e pontual
+- SonarCloud analisa apenas `main` (plano Community); `sonar.sh` e pontual
 - ADRs em `docs/adrs/` definem decisoes arquiteturais — respeite-os

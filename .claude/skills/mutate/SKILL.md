@@ -1,6 +1,6 @@
 ---
 name: mutate
-description: "Fase 4: Testes de mutacao. Roda mutate-check e mata mutantes sobreviventes."
+description: "Fase 4: Testes de mutacao. Roda mutate e mata mutantes sobreviventes."
 argument-hint: "[mutation-test-dir]"
 disable-model-invocation: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Task
@@ -19,7 +19,7 @@ Se fornecido um diretorio de MutationTests, rode apenas para ele.
 ## Delegacao de Modelo
 
 Use a Task tool com `model: "haiku"` para tarefas mecanicas:
-- Rodar `./scripts/mutate-check.sh` (ou com argumento de diretorio)
+- Rodar `./scripts/mutate.sh` (ou com argumento de diretorio)
 - Ler e parsear `artifacts/pending/SUMMARY.txt` e `artifacts/pending/mutant_*.txt`
 - Reportar de volta o resumo das pendencias
 
@@ -27,7 +27,7 @@ Opus (voce) foca em: **escrever e melhorar testes para matar mutantes**.
 
 ## Fluxo
 
-1. Delegar a haiku: rodar `./scripts/mutate-check.sh` e ler pendings
+1. Delegar a haiku: rodar `./scripts/mutate.sh` e ler pendings
 2. Se houver mutantes sobreviventes:
    - Analisar o mutador e a linha afetada
    - Adicionar/melhorar testes para matar o mutante

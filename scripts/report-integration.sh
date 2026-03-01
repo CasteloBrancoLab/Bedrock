@@ -2,12 +2,8 @@
 # Gera relatório HTML a partir de arquivos TRX de testes de integração
 # Usa o projeto IntegrationReportGenerator em tools/
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-cd "$ROOT_DIR"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
 REPORT_DIR="artifacts/integration-report"
 TRX_DIR="artifacts/test-results"

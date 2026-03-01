@@ -2,12 +2,8 @@
 # Gera relatorio HTML a partir dos resultados de benchmarks
 # Usa o projeto BenchmarkReportGenerator em tools/
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-cd "$ROOT_DIR"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
 BENCHMARK_DIR="artifacts/benchmark"
 PENDING_DIR="artifacts/pending"

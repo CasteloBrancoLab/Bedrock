@@ -1,6 +1,6 @@
 ---
 name: arch
-description: "Fase 2: Validacao de regras arquiteturais. Roda arch-check e corrige violacoes."
+description: "Fase 2: Validacao de regras arquiteturais. Roda arch e corrige violacoes."
 disable-model-invocation: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Task
 ---
@@ -12,7 +12,7 @@ Voce esta na fase ARCH. Valide que o codigo segue as regras arquiteturais.
 ## Delegacao de Modelo
 
 Use a Task tool com `model: "haiku"` para tarefas mecanicas:
-- Rodar `./scripts/arch-check.sh`
+- Rodar `./scripts/arch.sh`
 - Ler e parsear `artifacts/pending/SUMMARY.txt` e `artifacts/pending/architecture_*.txt`
 - Reportar de volta o resumo das pendencias
 
@@ -20,7 +20,7 @@ Opus (voce) foca em: **corrigir codigo-fonte para cumprir regras arquiteturais**
 
 ## Fluxo
 
-1. Delegar a haiku: rodar `./scripts/arch-check.sh` e ler pendings
+1. Delegar a haiku: rodar `./scripts/arch.sh` e ler pendings
 2. Se houver violacoes:
    - Corrigir o codigo-fonte para cumprir a regra
    - Voltar ao passo 1

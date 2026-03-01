@@ -2,12 +2,8 @@
 # Gera relatório HTML a partir dos JSONs de testes de arquitetura
 # Usa o projeto ArchitectureReportGenerator em tools/
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-cd "$ROOT_DIR"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
 JSON_DIR="artifacts/architecture"
 REPORT_DIR="artifacts/architecture-report"

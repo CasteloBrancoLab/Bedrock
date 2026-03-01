@@ -1,67 +1,112 @@
 #!/bin/bash
-# Executa testes unitários com cobertura em formato Cobertura (XML)
-# Prefere dotnet-coverage (igual ao CI) para detectar gaps em lambdas geradas pelo compilador.
-# Fallback para Coverlet caso dotnet-coverage não esteja instalado.
+# test.sh - Runs unit tests and extracts failures + coverage gaps to artifacts/pending/
+# Usage: ./scripts/test.sh [project.csproj]
+#   No args: runs all unit test projects under tests/UnitTests/
+#   With arg: runs only the specified test project
+# Output: artifacts/pending/test_<project>_<NNN>.txt (per failure)
+#         artifacts/pending/coverage_<project>_<NNN>.txt (per uncovered file)
+#         artifacts/pending/SUMMARY.txt
+# Cross-OS: Windows (Git Bash/WSL), macOS, Linux
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-cd "$ROOT_DIR"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
 echo "=== TEST ==="
 
-mkdir -p artifacts/coverage/raw
-mkdir -p artifacts/test-results
+mkdir -p artifacts/test-results artifacts/coverage/raw
+clean_pending "test"
+clean_pending "coverage"
 
-# Detect coverage collector: dotnet-coverage matches CI behavior exactly.
-# Coverlet propagates [ExcludeFromCodeCoverage] to compiler-generated lambdas,
-# but dotnet-coverage does NOT — so using dotnet-coverage locally catches the same
-# coverage gaps that SonarCloud will report.
-USE_DOTNET_COVERAGE=false
-if command -v dotnet-coverage &>/dev/null; then
-    USE_DOTNET_COVERAGE=true
-    echo "Using dotnet-coverage (matches CI behavior)"
+# Clean old coverage results
+rm -rf artifacts/test-results/*
+rm -f artifacts/coverage/raw/*.cobertura.xml
+
+# Determine projects to test
+if [ -n "${1:-}" ]; then
+    PROJECTS="$1"
 else
-    echo "Warning: dotnet-coverage not found, falling back to Coverlet"
-    echo "  Install with: dotnet tool install --global dotnet-coverage"
-    echo "  Note: Coverlet may mask coverage gaps that CI/SonarCloud will detect"
+    PROJECTS=$(find tests/UnitTests -name "*.csproj" 2>/dev/null)
 fi
 
-COVERLET_EXCLUDE="[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.TestBase,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.ServiceCollectionFixture,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.Attributes.*,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.Benchmarks.*,[Bedrock.BuildingBlocks.Testing]Bedrock.BuildingBlocks.Testing.Integration.*,[Bedrock.Templates.*]*,[Bedrock.Samples.*]*"
+if [ -z "$PROJECTS" ]; then
+    echo "No test projects found"
+    "$SCRIPT_DIR/summarize.sh" 2>/dev/null || true
+    exit 0
+fi
 
-# Find and run all test projects under tests/UnitTests
-for project in $(find tests/UnitTests -name "*.csproj"); do
-    # Build unique name from path: tests/UnitTests/BuildingBlocks/Core/*.csproj -> BuildingBlocks.Core
-    # This avoids collisions (e.g., BuildingBlocks/Domain.Entities vs ShopDemo/Auth/Domain.Entities)
-    name=$(echo "$project" | sed 's|tests/UnitTests/||' | sed 's|/[^/]*\.csproj$||' | sed 's|/|.|g')
-    echo "Running tests for: $name"
+OVERALL_FAILED=0
 
-    if [ "$USE_DOTNET_COVERAGE" = true ]; then
-        # dotnet-coverage collect: same collector as CI pipeline (ci.yml)
-        # This catches [ExcludeFromCodeCoverage] gaps in compiler-generated lambdas
-        dotnet-coverage collect \
-            "dotnet test --no-build $project --logger trx;LogFileName=results.trx --results-directory artifacts/coverage/raw/$name" \
-            -f cobertura \
-            -o "artifacts/coverage/raw/$name.cobertura.xml"
-    else
-        # Coverlet fallback: may not detect all coverage gaps
-        dotnet test "$project" \
-            --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory "artifacts/coverage/raw/$name" \
-            --logger "trx;LogFileName=results.trx" \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura \
-               DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="$COVERLET_EXCLUDE"
+for project in $PROJECTS; do
+    short_name=$(derive_short_name "$project" "tests/UnitTests")
+    echo "  Testing: $short_name"
 
-        # Copy coverage file to a known location
-        coverage_file=$(find "artifacts/coverage/raw/$name" -name "coverage.cobertura.xml" 2>/dev/null | head -1)
-        if [ -n "$coverage_file" ]; then
-            cp "$coverage_file" "artifacts/coverage/raw/$name.cobertura.xml"
-        fi
+    LOG_FILE=$(mktemp)
+    RESULTS_DIR="artifacts/test-results/$short_name"
+    mkdir -p "$RESULTS_DIR"
+
+    # Run tests with coverage collection (Coverlet)
+    if ! dotnet test "$project" --verbosity normal \
+        --collect:"XPlat Code Coverage" \
+        --results-directory "$RESULTS_DIR" \
+        > "$LOG_FILE" 2>&1; then
+        OVERALL_FAILED=1
+        parse_test_failures "$LOG_FILE" "$short_name" "test"
     fi
+
+    rm -f "$LOG_FILE"
+
+    # Copy cobertura XML to artifacts/coverage/raw/
+    for cob in $(find "$RESULTS_DIR" -name "coverage.cobertura.xml" 2>/dev/null); do
+        cp "$cob" "artifacts/coverage/raw/${short_name}.cobertura.xml"
+    done
 done
 
-echo "Done: Tests completed"
-echo "Coverage reports available in artifacts/coverage/raw/"
+FAILURE_COUNT=$(count_pending "test_*.txt")
+
+# ========================================
+# COVERAGE GAP EXTRACTION
+# ========================================
+echo "Extracting coverage gaps..."
+
+EXCL_REGEX=$(build_exclusion_regex)
+COVERAGE_FILE_INDEX=0
+
+for cobertura in artifacts/coverage/raw/*.cobertura.xml; do
+    if [ ! -f "$cobertura" ]; then
+        continue
+    fi
+
+    project_name=$(basename "$cobertura" .cobertura.xml)
+
+    parse_coverage_gaps "$cobertura" "$project_name" "$EXCL_REGEX" | while IFS='|' read -r pkg filePath lineRate total coveredCount uncoveredLines; do
+        if [ -z "$filePath" ]; then continue; fi
+        COVERAGE_FILE_INDEX=$((COVERAGE_FILE_INDEX + 1))
+        idx=$(printf "%03d" "$COVERAGE_FILE_INDEX")
+
+        cat > "artifacts/pending/coverage_${project_name}_${idx}.txt" << COVEOF
+PROJECT: $pkg
+FILE: $filePath
+LINE_RATE: ${lineRate}%
+TOTAL_LINES: $total
+COVERED_LINES: $coveredCount
+UNCOVERED_LINES: $uncoveredLines
+COVEOF
+    done
+done
+
+COVERAGE_PENDING=$(count_pending "coverage_*.txt")
+echo "Coverage gaps: $COVERAGE_PENDING files with uncovered lines"
+
+"$SCRIPT_DIR/summarize.sh" 2>/dev/null || true
+
+if [ "$OVERALL_FAILED" -eq 1 ]; then
+    echo "TESTS: FAILED ($FAILURE_COUNT failures, $COVERAGE_PENDING coverage gaps)"
+    exit 1
+fi
+
+if [ "$COVERAGE_PENDING" -gt 0 ]; then
+    echo "TESTS: PASSED ($COVERAGE_PENDING coverage gaps)"
+else
+    echo "TESTS: SUCCESS"
+fi
+exit 0

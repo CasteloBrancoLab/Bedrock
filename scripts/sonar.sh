@@ -1,50 +1,48 @@
 #!/bin/bash
-# sonar-check.sh - Busca issues abertas do SonarCloud e gera sonar_*.txt em artifacts/pending
-set -e
+# sonar.sh - Fetches open SonarCloud issues and generates sonar_*.txt in artifacts/pending/
+# Usage: ./scripts/sonar.sh
+# Output: artifacts/pending/sonar_*.txt (per issue)
+#         artifacts/pending/SUMMARY.txt
+# Cross-OS: Windows (Git Bash/WSL), macOS, Linux
 
-ARTIFACTS_DIR="artifacts"
-PENDING_DIR="$ARTIFACTS_DIR/pending"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
-# Configuração SonarCloud
+# SonarCloud configuration
 SONAR_PROJECT="CasteloBrancoLab_Bedrock"
 SONAR_API_URL="https://sonarcloud.io/api/issues/search"
 
 echo "=== SONARCLOUD CHECK ==="
 
-mkdir -p "$PENDING_DIR"
-
 SONAR_PENDING=0
-TEMP_JSON="$ARTIFACTS_DIR/.sonar_response.json"
+TEMP_JSON="artifacts/.sonar_response.json"
 
-# Carrega SONAR_TOKEN do .env se existir
+# Load SONAR_TOKEN from .env if available
 if [ -f ".env" ]; then
     # shellcheck disable=SC1091
     source .env 2>/dev/null || true
 fi
 
-# Verifica se SONAR_TOKEN está disponível
+# Check if SONAR_TOKEN is set
 if [ -z "${SONAR_TOKEN:-}" ]; then
     echo "Warning: SONAR_TOKEN not set. Skipping SonarCloud issues fetch."
     echo "To enable SonarCloud integration, create a .env file with SONAR_TOKEN=<your-token>"
     SONAR_PENDING=0
 else
-    # Busca todas as issues abertas do SonarCloud (paginado)
+    # Fetch all open SonarCloud issues (paginated)
     page=1
     page_size=100
     total=0
     issue_index=0
 
     while true; do
-        # Busca issues e salva em arquivo temporário (com autenticação)
         curl -s -u "${SONAR_TOKEN}:" "${SONAR_API_URL}?componentKeys=${SONAR_PROJECT}&resolved=false&ps=${page_size}&p=${page}" > "$TEMP_JSON" 2>/dev/null || echo "{}" > "$TEMP_JSON"
 
-        # Verifica se a resposta é válida
         if ! grep -q '"issues"' "$TEMP_JSON"; then
             echo "Warning: Could not fetch SonarCloud issues (page $page)"
             break
         fi
 
-        # Extrai total de issues na primeira página
         if [ $page -eq 1 ]; then
             total=$(grep -o '"total"[[:space:]]*:[[:space:]]*[0-9]*' "$TEMP_JSON" | head -1 | grep -o '[0-9]*$')
             total=${total:-0}
@@ -52,8 +50,6 @@ else
             echo "Total SonarCloud issues: $total"
         fi
 
-        # Processa cada issue da página usando bash puro
-        # Flatten JSON: coloca cada issue em uma linha separada
         prev_index=$issue_index
 
         while IFS= read -r issue_line; do
@@ -87,7 +83,7 @@ else
             issue_index=$((issue_index + 1))
             idx=$(printf "%03d" "$issue_index")
 
-            cat > "$PENDING_DIR/sonar_${prefix}_${idx}.txt" << EOF
+            cat > "artifacts/pending/sonar_${prefix}_${idx}.txt" << EOF
 TYPE: $type
 SEVERITY: $severity
 FILE: $component
@@ -98,12 +94,10 @@ MESSAGE: $message
 EOF
         done < <(tr '\n' ' ' < "$TEMP_JSON" | sed 's/{"key"/\n{"key"/g' | grep '{"key"')
 
-        # Se não processou novas issues, sai do loop
         if [ "$issue_index" -eq "$prev_index" ]; then
             break
         fi
 
-        # Verifica se há mais páginas
         if [ "$issue_index" -ge "$total" ]; then
             break
         fi
@@ -111,13 +105,12 @@ EOF
         page=$((page + 1))
     done
 
-    # Limpa arquivo temporário
     rm -f "$TEMP_JSON"
 
-    SONAR_PENDING=$(find "$PENDING_DIR" -name "sonar_*.txt" 2>/dev/null | wc -l)
-    SONAR_PENDING=${SONAR_PENDING//[^0-9]/}
-
+    SONAR_PENDING=$(count_pending "sonar_*.txt")
     echo "Found $SONAR_PENDING SonarCloud issues"
 fi
+
+"$SCRIPT_DIR/summarize.sh" 2>/dev/null || true
 
 echo "Done: SonarCloud check completed"
