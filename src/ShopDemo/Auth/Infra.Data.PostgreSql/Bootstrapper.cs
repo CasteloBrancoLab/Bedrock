@@ -1,6 +1,7 @@
 using Bedrock.BuildingBlocks.Messages;
 using Bedrock.BuildingBlocks.Outbox.Interfaces;
 using Bedrock.BuildingBlocks.Outbox.Messages;
+using Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork.Interfaces;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
 using Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,6 +65,7 @@ public static class Bootstrapper
 
         // Unit of Work (scoped — mantém transacao por request)
         services.TryAddScoped<IAuthPostgreSqlUnitOfWork, AuthPostgreSqlUnitOfWork>();
+        services.TryAddScoped<IUnitOfWork>(sp => sp.GetRequiredService<IAuthPostgreSqlUnitOfWork>());
 
         // DataModel Repositories (scoped — dependem do UoW)
         services.TryAddScoped<IUserDataModelRepository, UserDataModelRepository>();

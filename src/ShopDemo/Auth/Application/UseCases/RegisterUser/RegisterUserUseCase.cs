@@ -2,6 +2,7 @@ using Bedrock.BuildingBlocks.Application.UseCases;
 using Bedrock.BuildingBlocks.Application.UseCases.Models;
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Messages;
+using Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork.Interfaces;
 using Microsoft.Extensions.Logging;
 using ShopDemo.Auth.Application.UseCases.RegisterUser.Interfaces;
 using ShopDemo.Auth.Application.UseCases.RegisterUser.Models;
@@ -17,23 +18,29 @@ public sealed class RegisterUserUseCase
 {
     private const string RegistrationFailedMessageCode = "RegisterUserUseCase.RegistrationFailed";
 
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthenticationService _authenticationService;
     private readonly IAuthOutboxWriter _outboxWriter;
     private readonly TimeProvider _timeProvider;
 
     public RegisterUserUseCase(
         ILogger<RegisterUserUseCase> logger,
+        IUnitOfWork unitOfWork,
         IAuthenticationService authenticationService,
         IAuthOutboxWriter outboxWriter,
         TimeProvider timeProvider
     ) : base(logger)
     {
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
         _outboxWriter = outboxWriter ?? throw new ArgumentNullException(nameof(outboxWriter));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
-    protected override void ConfigureExecutionInternal(UseCaseExecutionOptions options) { }
+    protected override void ConfigureExecutionInternal(UseCaseExecutionOptions options)
+    {
+        options.UnitOfWork = _unitOfWork;
+    }
 
     protected override async Task<RegisterUserOutput?> ExecuteInternalAsync(
         ExecutionContext executionContext,
