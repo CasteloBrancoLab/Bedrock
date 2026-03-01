@@ -1,12 +1,19 @@
+using Bedrock.BuildingBlocks.Messages;
+using Bedrock.BuildingBlocks.Outbox.Interfaces;
+using Bedrock.BuildingBlocks.Outbox.Messages;
 using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
+using Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using ShopDemo.Auth.Infra.CrossCutting.Messages.Outbox.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Connections;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories;
 using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Mappers;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Outbox;
+using ShopDemo.Auth.Infra.Data.PostgreSql.Outbox.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.UnitOfWork;
@@ -88,6 +95,19 @@ public static class Bootstrapper
         services.TryAddScoped<IPasswordHistoryDataModelRepository, PasswordHistoryDataModelRepository>();
         services.TryAddScoped<IIdempotencyRecordDataModelRepository, IdempotencyRecordDataModelRepository>();
         services.TryAddScoped<ITokenExchangeDataModelRepository, TokenExchangeDataModelRepository>();
+
+        // Outbox — persistencia (scoped — marker interface do BC, partilha UoW/transacao)
+        services.TryAddScoped<IAuthOutboxRepository, AuthOutboxRepository>();
+
+        // Outbox — serializacao (singleton — stateless apos inicializacao)
+        services.TryAddSingleton<IStringSerializer, AuthOutboxJsonSerializer>();
+        services.TryAddSingleton<IOutboxSerializer<MessageBase>, MessageOutboxSerializer>();
+
+        // Outbox — writer (scoped — marker interface do BC, compoe MessageOutboxWriter)
+        services.TryAddScoped<IAuthOutboxWriter, AuthOutboxWriter>();
+
+        // TimeProvider (singleton — TryAdd nao sobrescreve se host ja registou)
+        services.TryAddSingleton(TimeProvider.System);
 
         // PostgreSql Repositories (scoped — dependem do DataModel Repository)
         services.TryAddScoped<IUserPostgreSqlRepository, UserPostgreSqlRepository>();

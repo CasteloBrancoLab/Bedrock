@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Messages\Bedrock.BuildingBlocks.Messages.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Outbox\Bedrock.BuildingBlocks.Outbox.csproj" />
   </ItemGroup>
 
 </Project>

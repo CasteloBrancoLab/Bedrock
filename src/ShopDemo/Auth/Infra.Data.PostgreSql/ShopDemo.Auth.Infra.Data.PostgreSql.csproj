@@ -11,6 +11,10 @@
     <ProjectReference Include="..\Infra.CrossCutting.Configuration\ShopDemo.Auth.Infra.CrossCutting.Configuration.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Persistence.PostgreSql\Bedrock.BuildingBlocks.Persistence.PostgreSql.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Outbox.PostgreSql\Bedrock.BuildingBlocks.Outbox.PostgreSql.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Outbox.Messages\Bedrock.BuildingBlocks.Outbox.Messages.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Serialization.Json\Bedrock.BuildingBlocks.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Infra.CrossCutting.Messages\ShopDemo.Auth.Infra.CrossCutting.Messages.csproj" />
   </ItemGroup>
 
 </Project>
