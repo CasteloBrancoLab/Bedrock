@@ -1,17 +1,17 @@
 using Bedrock.BuildingBlocks.Core.Ids;
-using ShopDemo.Auth.Domain.Events;
+using ShopDemo.Auth.Domain.Services.Outputs;
 
 namespace ShopDemo.Auth.Domain.Services.Interfaces;
 
 public interface ICascadeRevocationService
 {
-    Task<UserDeactivatedEvent?> RevokeAllUserTokensAsync(
+    Task<UserDeactivationOutput?> RevokeAllUserTokensAsync(
         ExecutionContext executionContext,
         Id userId,
         string? reason,
         CancellationToken cancellationToken);
 
-    Task<UserPermissionsChangedEvent?> RecalculateApiTokenPermissionsAsync(
+    Task<PermissionsRecalculationOutput?> RecalculateApiTokenPermissionsAsync(
         ExecutionContext executionContext,
         Id userId,
         CancellationToken cancellationToken);

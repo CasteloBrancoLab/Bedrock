@@ -4,6 +4,7 @@ using ShopDemo.Auth.Domain.Entities.KeyChains.Enums;
 using ShopDemo.Auth.Domain.Entities.KeyChains.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Services.Interfaces;
+using ShopDemo.Auth.Domain.Services.Outputs;
 
 namespace ShopDemo.Auth.Domain.Services;
 
@@ -52,7 +53,7 @@ public sealed class KeyChainManager : IKeyChainManager
             }
         }
 
-        KeyAgreementResult agreementResult = _keyAgreementService.NegotiateKey(clientPublicKeyBase64);
+        KeyAgreementOutput agreementResult = _keyAgreementService.NegotiateKey(clientPublicKeyBase64);
 
         int nextVersion = existingKeys.Count + 1;
         KeyId newKeyId = KeyId.CreateNew($"v{nextVersion}");

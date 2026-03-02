@@ -1,11 +1,12 @@
 using System.Security.Cryptography;
 using ShopDemo.Auth.Domain.Services.Interfaces;
+using ShopDemo.Auth.Domain.Services.Outputs;
 
 namespace ShopDemo.Auth.Domain.Services;
 
 public sealed class KeyAgreementService : IKeyAgreementService
 {
-    public KeyAgreementResult NegotiateKey(string clientPublicKeyBase64)
+    public KeyAgreementOutput NegotiateKey(string clientPublicKeyBase64)
     {
         byte[] clientPublicKeyBytes = Convert.FromBase64String(clientPublicKeyBase64);
 
@@ -21,6 +22,6 @@ public sealed class KeyAgreementService : IKeyAgreementService
         byte[] serverPublicKeyBytes = serverEcdh.ExportSubjectPublicKeyInfo();
         string serverPublicKeyBase64 = Convert.ToBase64String(serverPublicKeyBytes);
 
-        return new KeyAgreementResult(serverPublicKeyBase64, sharedSecret);
+        return new KeyAgreementOutput(serverPublicKeyBase64, sharedSecret);
     }
 }

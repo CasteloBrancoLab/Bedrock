@@ -16,6 +16,9 @@ Decisões arquiteturais sobre o sistema de mensagens (Commands, Events, Queries)
 | [MS-008](./MS-008-message-models-primitivos-sem-tipos-dominio.md) | Message Models com Primitivos — Sem Tipos de Domínio | Aceita |
 | [MS-009](./MS-009-snapshot-completo-aggregate-root.md) | Snapshot Completo do Aggregate Root nos Models | Aceita |
 | [MS-010](./MS-010-eventos-self-contained-input-oldstate-newstate.md) | Eventos Self-Contained: Input + OldState + NewState | Aceita |
+| [MS-011](./MS-011-eventos-integracao-via-outbox.md) | Eventos de Integração Exclusivamente via Outbox | Aceita |
+| [MS-012](./MS-012-nomenclatura-input-output.md) | Nomenclatura Input/Output para Models e Retornos | Aceita |
+| [MS-013](./MS-013-criacao-eventos-via-factory.md) | Criação de Eventos Exclusivamente via Factory | Aceita |
 
 ## Navegação
 

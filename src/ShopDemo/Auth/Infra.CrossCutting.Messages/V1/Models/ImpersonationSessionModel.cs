@@ -3,14 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 namespace ShopDemo.Auth.Infra.CrossCutting.Messages.V1.Models;
 
 [ExcludeFromCodeCoverage(Justification = "Readonly record struct — Coverlet nao instrumenta construtor posicional gerado pelo compilador")]
-public readonly record struct UserModel(
+public readonly record struct ImpersonationSessionModel(
     Guid Id,
     Guid TenantCode,
-    string Username,
-    string Email,
+    Guid OperatorUserId,
+    Guid TargetUserId,
+    DateTimeOffset ExpiresAt,
     string Status,
+    DateTimeOffset? EndedAt,
     DateTimeOffset CreatedAt,
-    string CreatedBy,
-    DateTimeOffset? LastChangedAt,
-    string? LastChangedBy
+    string CreatedBy
 );
