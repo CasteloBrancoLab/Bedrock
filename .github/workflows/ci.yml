@@ -11,6 +11,10 @@ on:
         description: 'Run performance benchmarks'
         type: boolean
         default: false
+      run_mutation:
+        description: 'Run mutation tests'
+        type: boolean
+        default: false
       run_integration:
         description: 'Run integration tests'
         type: boolean
@@ -201,6 +205,7 @@ jobs:
   mutation:
     name: Mutation Tests
     needs: unit-test
+    if: ${{ inputs.run_mutation == true }}
     runs-on: ubuntu-latest
 
     steps:
@@ -277,7 +282,7 @@ jobs:
 
   integration:
     name: Integration Tests
-    needs: mutation
+    needs: unit-test
     if: ${{ inputs.run_integration == true }}
     runs-on: ubuntu-latest
 
@@ -329,7 +334,7 @@ jobs:
 
   benchmarks:
     name: Benchmarks
-    needs: mutation
+    needs: unit-test
     if: ${{ inputs.run_benchmarks == true }}
     runs-on: ubuntu-latest
 
@@ -388,7 +393,7 @@ jobs:
 
   reports:
     name: Generate Reports
-    needs: [mutation, integration, benchmarks]
+    needs: [unit-test, mutation, integration, benchmarks]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
 
@@ -427,6 +432,7 @@ jobs:
 
       - name: Download Mutation Results
         uses: actions/download-artifact@v4
+        if: ${{ needs.mutation.result == 'success' || needs.mutation.result == 'failure' }}
         with:
           name: mutation-results
           path: artifacts/mutation/
@@ -514,6 +520,7 @@ jobs:
   check:
     name: Pipeline Check
     needs: [architecture, unit-test, mutation, integration, benchmarks, reports]
+    # All needs listed so outputs are accessible; skipped jobs don't block
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
 
@@ -537,9 +544,10 @@ jobs:
 
           [ "$ARCH" = "1" ] && FAILED=1
           [ "$UNIT" = "1" ] && FAILED=1
-          [ "$MUT" = "1" ] && FAILED=1
-          [ "$INT_RESULT" = "success" ] || [ "$INT_RESULT" = "failure" ] && [ "$INT" = "1" ] && FAILED=1
-          [ "$BENCH_RESULT" = "success" ] || [ "$BENCH_RESULT" = "failure" ] && [ "$BENCH" = "1" ] && FAILED=1
+          MUT_RESULT="${{ needs.mutation.result }}"
+          { [ "$MUT_RESULT" = "success" ] || [ "$MUT_RESULT" = "failure" ]; } && [ "$MUT" = "1" ] && FAILED=1
+          { [ "$INT_RESULT" = "success" ] || [ "$INT_RESULT" = "failure" ]; } && [ "$INT" = "1" ] && FAILED=1
+          { [ "$BENCH_RESULT" = "success" ] || [ "$BENCH_RESULT" = "failure" ]; } && [ "$BENCH" = "1" ] && FAILED=1
 
           # Helper
           status_icon() {
@@ -560,7 +568,7 @@ jobs:
 
           ARCH_S=$(job_status "ran" "$ARCH")
           UNIT_S=$(job_status "ran" "$UNIT")
-          MUT_S=$(job_status "ran" "$MUT")
+          [ "$MUT_RESULT" = "skipped" ] && MUT_S="skip" || MUT_S=$(job_status "ran" "$MUT")
           [ "$INT_RESULT" = "skipped" ] && INT_S="skip" || INT_S=$(job_status "ran" "$INT")
           [ "$BENCH_RESULT" = "skipped" ] && BENCH_S="skip" || BENCH_S=$(job_status "ran" "$BENCH")
           [ "$REPORTS_RESULT" = "failure" ] && REP_S="warn" || REP_S="pass"
@@ -583,7 +591,11 @@ jobs:
           echo "| :building_construction: Build | $(status_icon pass) Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| :classical_building: Architecture Tests | $(status_icon $ARCH_S) $([ "$ARCH_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
           echo "| :test_tube: Unit Tests & SonarCloud | $(status_icon $UNIT_S) $([ "$UNIT_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
-          echo "| :dna: Mutation Tests | $(status_icon $MUT_S) $([ "$MUT_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
+          if [ "$MUT_S" = "skip" ]; then
+            echo "| :dna: Mutation Tests | $(status_icon skip) Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| :dna: Mutation Tests | $(status_icon $MUT_S) $([ "$MUT_S" = "pass" ] && echo "Passed" || echo "**Failed**") |" >> $GITHUB_STEP_SUMMARY
+          fi
 
           if [ "$INT_S" = "skip" ]; then
             echo "| :electric_plug: Integration Tests | $(status_icon skip) Skipped |" >> $GITHUB_STEP_SUMMARY
@@ -621,7 +633,9 @@ jobs:
           echo "|--------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| :classical_building: Architecture | \`architecture-report\` |" >> $GITHUB_STEP_SUMMARY
           echo "| :test_tube: Unit Tests & Coverage | \`unittest-report\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| :dna: Mutation (Stryker) | \`mutation-reports\` |" >> $GITHUB_STEP_SUMMARY
+          if [ "$MUT_RESULT" != "skipped" ]; then
+            echo "| :dna: Mutation (Stryker) | \`mutation-reports\` |" >> $GITHUB_STEP_SUMMARY
+          fi
 
           if [ "$INT_RESULT" != "skipped" ]; then
             echo "| :electric_plug: Integration | \`integration-report\` |" >> $GITHUB_STEP_SUMMARY
