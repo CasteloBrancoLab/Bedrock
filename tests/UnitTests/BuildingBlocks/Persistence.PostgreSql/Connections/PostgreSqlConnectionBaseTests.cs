@@ -48,18 +48,31 @@ public class PostgreSqlConnectionBaseTests : TestBase
     }
 
     [Fact]
-    public void GetConnectionObject_WhenNotConnected_ShouldReturnNull()
+    public void GetConnectionObject_WhenNotConnected_ShouldAutoOpen()
     {
         // Arrange
-        LogArrange("Creating new connection instance");
-        using TestablePostgreSqlConnection connection = new("invalid_connection_string");
+        LogArrange("Creating connection with invalid string");
+        using TestablePostgreSqlConnection connection = new("Host=invalid;Database=invalid");
+
+        // Act & Assert
+        LogAct("Getting connection object (auto-open should attempt connection)");
+        Should.Throw<Exception>(() => connection.GetConnectionObject());
+    }
+
+    [Fact]
+    public async Task GetConnectionObject_WhenDisposed_ShouldReturnNull()
+    {
+        // Arrange
+        LogArrange("Creating and disposing connection");
+        TestablePostgreSqlConnection connection = new("invalid_connection_string");
+        await connection.DisposeAsync();
 
         // Act
-        LogAct("Getting connection object");
+        LogAct("Getting connection object after dispose");
         var connectionObject = connection.GetConnectionObject();
 
         // Assert
-        LogAssert("Verifying connection object is null");
+        LogAssert("Verifying connection object is null after dispose");
         connectionObject.ShouldBeNull();
     }
 

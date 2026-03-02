@@ -110,11 +110,62 @@ public abstract class PostgreSqlConnectionBase
     }
     // Stryker restore all
 
-    // Stryker disable once Block : Mutante equivalente - remover bloco retorna default (null) que e o esperado inicialmente
+    /// <summary>
+    /// Returns the underlying NpgsqlConnection, auto-opening it if not already open.
+    /// Returns null if the connection has been disposed.
+    /// Uses synchronous NpgsqlConnection.Open() for compatibility with sync callers.
+    /// </summary>
+    // Stryker disable all : Auto-open requer conexao PostgreSQL real - testes de integracao necessarios
+    [ExcludeFromCodeCoverage(Justification = "Auto-open requer conexao PostgreSQL real - testes de integracao necessarios")]
     public NpgsqlConnection? GetConnectionObject()
     {
+        if (_disposedValue)
+            return null;
+
+        if (_npgsqlConnection is null || _npgsqlConnection.State != System.Data.ConnectionState.Open)
+        {
+            EnsureConnectionOpen();
+        }
+
         return _npgsqlConnection;
     }
+    // Stryker restore all
+
+    // Private Methods
+
+    /// <summary>
+    /// Opens the connection synchronously if it is not already open.
+    /// Thread-safe via double-check locking pattern.
+    /// </summary>
+    // Stryker disable all : Requer conexao PostgreSQL real para Open - testes de integracao necessarios
+    [ExcludeFromCodeCoverage(Justification = "Requer conexao PostgreSQL real para Open - testes de integracao necessarios")]
+    private void EnsureConnectionOpen()
+    {
+        lock (_lock)
+        {
+            if (_npgsqlConnection is not null && _npgsqlConnection.State == System.Data.ConnectionState.Open)
+                return;
+
+            PostgreSqlConnectionOptions options = new();
+            ConfigureInternal(options);
+
+            var newConnection = new NpgsqlConnection(options.ConnectionString);
+
+            try
+            {
+                newConnection.Open();
+
+                NpgsqlConnection? oldConnection = Interlocked.Exchange(ref _npgsqlConnection, newConnection);
+                oldConnection?.Dispose();
+            }
+            catch
+            {
+                newConnection.Dispose();
+                throw;
+            }
+        }
+    }
+    // Stryker restore all
 
     // Protected Methods
     protected abstract void ConfigureInternal(PostgreSqlConnectionOptions options);
