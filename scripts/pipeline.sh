@@ -1,7 +1,8 @@
 #!/bin/bash
-# pipeline.sh - Full local pipeline: clean → build → arch → test → mutate → integration
-# Usage: ./scripts/pipeline.sh [--quiet]
-#   --quiet: suppresses verbose output, shows only SUMMARY.txt at the end
+# pipeline.sh - Full local pipeline: clean → build → arch → test → [mutate] → integration
+# Usage: ./scripts/pipeline.sh [--quiet] [--mutate]
+#   --quiet:  suppresses verbose output, shows only SUMMARY.txt at the end
+#   --mutate: include mutation tests (skipped by default)
 # Output: artifacts/summary.json
 #         artifacts/pending/SUMMARY.txt
 # Cross-OS: Windows (Git Bash/WSL), macOS, Linux
@@ -10,9 +11,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_init
 
 QUIET=false
-if [ "${1:-}" = "--quiet" ]; then
-    QUIET=true
-fi
+RUN_MUTATE=false
+for arg in "$@"; do
+    case "$arg" in
+        --quiet)  QUIET=true ;;
+        --mutate) RUN_MUTATE=true ;;
+    esac
+done
 
 # Redirect output when --quiet
 if [ "$QUIET" = true ]; then
@@ -23,18 +28,25 @@ fi
 
 START_TIME=$(timer_start)
 
+# Dynamic step count
+if [ "$RUN_MUTATE" = true ]; then
+    TOTAL_STEPS=6
+else
+    TOTAL_STEPS=5
+fi
+
 echo "========================================"
 echo "  BEDROCK LOCAL PIPELINE"
 echo "========================================"
 echo ""
 
 # === CLEAN ===
-echo ">>> Step 1/6: Clean"
+echo ">>> Step 1/$TOTAL_STEPS: Clean"
 "$SCRIPT_DIR/clean.sh"
 echo ""
 
 # === BUILD ===
-echo ">>> Step 2/6: Build"
+echo ">>> Step 2/$TOTAL_STEPS: Build"
 BUILD_START=$(timer_start)
 BUILD_FAILED=0
 "$SCRIPT_DIR/build.sh" || BUILD_FAILED=1
@@ -71,7 +83,7 @@ EOF
 fi
 
 # === ARCH ===
-echo ">>> Step 3/6: Architecture Tests"
+echo ">>> Step 3/$TOTAL_STEPS: Architecture Tests"
 ARCH_START=$(timer_start)
 ARCH_FAILED=0
 "$SCRIPT_DIR/arch.sh" || ARCH_FAILED=1
@@ -118,22 +130,31 @@ EOF
 fi
 
 # === TEST ===
-echo ">>> Step 4/6: Test"
+echo ">>> Step 4/$TOTAL_STEPS: Test"
 TEST_START=$(timer_start)
 "$SCRIPT_DIR/test.sh"
 TEST_DURATION=$(timer_elapsed "$TEST_START")
 echo ""
 
-# === MUTATE ===
-echo ">>> Step 5/6: Mutate"
-MUTATE_START=$(timer_start)
+# === MUTATE (optional) ===
 MUTATION_FAILED=0
-"$SCRIPT_DIR/mutate.sh" || MUTATION_FAILED=1
-MUTATE_DURATION=$(timer_elapsed "$MUTATE_START")
-echo ""
+MUTATE_DURATION=0
+MUTATION_SKIPPED=true
+if [ "$RUN_MUTATE" = true ]; then
+    MUTATION_SKIPPED=false
+    echo ">>> Step 5/$TOTAL_STEPS: Mutate"
+    MUTATE_START=$(timer_start)
+    "$SCRIPT_DIR/mutate.sh" || MUTATION_FAILED=1
+    MUTATE_DURATION=$(timer_elapsed "$MUTATE_START")
+    echo ""
+else
+    echo ">>> Mutate: SKIPPED (use --mutate to enable)"
+    echo ""
+fi
 
 # === INTEGRATION ===
-echo ">>> Step 6/6: Integration Tests"
+INTEGRATION_STEP=$((TOTAL_STEPS))
+echo ">>> Step $INTEGRATION_STEP/$TOTAL_STEPS: Integration Tests"
 INTEGRATION_START=$(timer_start)
 INTEGRATION_FAILED=0
 "$SCRIPT_DIR/integration.sh" || INTEGRATION_FAILED=1
@@ -176,6 +197,7 @@ cat > artifacts/summary.json << SUMMARY_EOF
   "coverage": $COVERAGE_JSON,
   "mutation": {
     "success": $([ $MUTATION_FAILED -eq 0 ] && echo "true" || echo "false"),
+    "skipped": $MUTATION_SKIPPED,
     "duration_ms": $MUTATE_DURATION
   },
   "integration": {
@@ -195,7 +217,9 @@ echo "Summary:  artifacts/summary.json"
 echo "Architecture: artifacts/architecture-report/index.html"
 echo "Unit Tests:   artifacts/unittest-report/index.html"
 echo "Coverage: artifacts/coverage/"
-echo "Mutation: artifacts/mutation/"
+if [ "$RUN_MUTATE" = true ]; then
+    echo "Mutation: artifacts/mutation/"
+fi
 if [ -f "artifacts/integration-report/index.html" ]; then
     echo "Integration:  artifacts/integration-report/index.html"
 fi
