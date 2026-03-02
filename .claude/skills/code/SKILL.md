@@ -1,6 +1,6 @@
 ---
 name: code
-description: "Fase 1: Implementacao de codigo-fonte. Roda build-check e corrige erros."
+description: "Fase 1: Implementacao de codigo-fonte. Roda build e corrige erros."
 argument-hint: "[issue-ou-requisito]"
 disable-model-invocation: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Task
@@ -17,7 +17,7 @@ $ARGUMENTS
 ## Delegacao de Modelo
 
 Use a Task tool com `model: "haiku"` para tarefas mecanicas:
-- Rodar `./scripts/build-check.sh`
+- Rodar `./scripts/build.sh`
 - Ler e parsear `artifacts/pending/SUMMARY.txt` e `artifacts/pending/build_errors.txt`
 - Reportar de volta o resumo das pendencias
 
@@ -27,7 +27,7 @@ Opus (voce) foca em: **implementar e corrigir codigo-fonte**.
 
 1. Ler a issue/requisito (se fornecido nos argumentos)
 2. Implementar codigo-fonte (sem testes)
-3. Delegar a haiku: rodar `./scripts/build-check.sh` e ler pendings
+3. Delegar a haiku: rodar `./scripts/build.sh` e ler pendings
 4. Se houver erros de build:
    - Corrigir o codigo
    - Voltar ao passo 3

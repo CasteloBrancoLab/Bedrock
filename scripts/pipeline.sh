@@ -1,15 +1,27 @@
 #!/bin/bash
-# Executa a pipeline completa: clean → build → architecture → test → mutate → integration
-# Gera artifacts/summary.json com resultados consolidados
+# pipeline.sh - Full local pipeline: clean → build → arch → test → mutate → integration
+# Usage: ./scripts/pipeline.sh [--quiet]
+#   --quiet: suppresses verbose output, shows only SUMMARY.txt at the end
+# Output: artifacts/summary.json
+#         artifacts/pending/SUMMARY.txt
+# Cross-OS: Windows (Git Bash/WSL), macOS, Linux
 
-set -e
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+QUIET=false
+if [ "${1:-}" = "--quiet" ]; then
+    QUIET=true
+fi
 
-cd "$ROOT_DIR"
+# Redirect output when --quiet
+if [ "$QUIET" = true ]; then
+    LOG_FILE=$(mktemp)
+    exec 3>&1 4>&2
+    exec > "$LOG_FILE" 2>&1
+fi
 
-START_TIME=$(date +%s%3N)
+START_TIME=$(timer_start)
 
 echo "========================================"
 echo "  BEDROCK LOCAL PIPELINE"
@@ -19,67 +31,71 @@ echo ""
 # === CLEAN ===
 echo ">>> Step 1/6: Clean"
 "$SCRIPT_DIR/clean.sh"
-"$SCRIPT_DIR/clean-artifacts.sh"
 echo ""
 
 # === BUILD ===
 echo ">>> Step 2/6: Build"
-BUILD_START=$(date +%s%3N)
-"$SCRIPT_DIR/build.sh"
-BUILD_END=$(date +%s%3N)
-BUILD_DURATION=$((BUILD_END - BUILD_START))
+BUILD_START=$(timer_start)
+BUILD_FAILED=0
+"$SCRIPT_DIR/build.sh" || BUILD_FAILED=1
+BUILD_DURATION=$(timer_elapsed "$BUILD_START")
 echo ""
 
-# === ARCH ===
-echo ">>> Step 3/6: Architecture Tests"
-ARCH_START=$(date +%s%3N)
-ARCH_FAILED=0
-"$SCRIPT_DIR/architecture.sh" || ARCH_FAILED=1
-ARCH_END=$(date +%s%3N)
-ARCH_DURATION=$((ARCH_END - ARCH_START))
-echo ""
-
-if [ $ARCH_FAILED -eq 1 ]; then
-    echo ">>> Steps 4-6 SKIPPED (architecture tests failed)"
+if [ "$BUILD_FAILED" -eq 1 ]; then
+    echo ">>> Steps 3-6 SKIPPED (build failed)"
     echo ""
 
-    END_TIME=$(date +%s%3N)
-    TOTAL_DURATION=$((END_TIME - START_TIME))
-
-    # Generate summary
-    echo ">>> Generating summary..."
+    TOTAL_DURATION=$(timer_elapsed "$START_TIME")
     mkdir -p artifacts
 
-    cat > artifacts/summary.json << ARCH_FAIL_EOF
+    cat > artifacts/summary.json << EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "duration_ms": $TOTAL_DURATION,
-  "build": {
-    "success": true,
-    "duration_ms": $BUILD_DURATION
-  },
-  "architecture": {
-    "success": false,
-    "duration_ms": $ARCH_DURATION
-  },
-  "tests": {
-    "success": false,
-    "skipped": true,
-    "duration_ms": 0
-  },
-  "mutation": {
-    "success": false,
-    "skipped": true,
-    "duration_ms": 0
-  },
-  "integration": {
-    "success": false,
-    "skipped": true,
-    "projects_count": 0,
-    "duration_ms": 0
-  }
+  "build": { "success": false, "duration_ms": $BUILD_DURATION },
+  "architecture": { "success": false, "skipped": true, "duration_ms": 0 },
+  "tests": { "success": false, "skipped": true, "duration_ms": 0 },
+  "mutation": { "success": false, "skipped": true, "duration_ms": 0 },
+  "integration": { "success": false, "skipped": true, "duration_ms": 0 }
 }
-ARCH_FAIL_EOF
+EOF
+
+    if [ "$QUIET" = true ]; then
+        exec 1>&3 2>&4
+        echo "PIPELINE: FAILED"
+        echo ""
+        cat artifacts/pending/SUMMARY.txt 2>/dev/null || echo "Check artifacts/summary.json for details."
+        rm -f "$LOG_FILE"
+    fi
+    exit 1
+fi
+
+# === ARCH ===
+echo ">>> Step 3/6: Architecture Tests"
+ARCH_START=$(timer_start)
+ARCH_FAILED=0
+"$SCRIPT_DIR/arch.sh" || ARCH_FAILED=1
+ARCH_DURATION=$(timer_elapsed "$ARCH_START")
+echo ""
+
+if [ "$ARCH_FAILED" -eq 1 ]; then
+    echo ">>> Steps 4-6 SKIPPED (architecture tests failed)"
+    echo ""
+
+    TOTAL_DURATION=$(timer_elapsed "$START_TIME")
+    mkdir -p artifacts
+
+    cat > artifacts/summary.json << EOF
+{
+  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "duration_ms": $TOTAL_DURATION,
+  "build": { "success": true, "duration_ms": $BUILD_DURATION },
+  "architecture": { "success": false, "duration_ms": $ARCH_DURATION },
+  "tests": { "success": false, "skipped": true, "duration_ms": 0 },
+  "mutation": { "success": false, "skipped": true, "duration_ms": 0 },
+  "integration": { "success": false, "skipped": true, "duration_ms": 0 }
+}
+EOF
 
     echo ""
     echo "========================================"
@@ -88,85 +104,53 @@ ARCH_FAIL_EOF
     echo ""
     echo "Duration: ${TOTAL_DURATION}ms"
     echo "Summary:  artifacts/summary.json"
-    if [ -f "artifacts/architecture-report/index.html" ]; then
-        echo "Architecture Report: artifacts/architecture-report/index.html"
-    fi
-    echo ""
-    echo ">>> Extracting pending items..."
-    "$SCRIPT_DIR/summarize.sh"
-    "$SCRIPT_DIR/generate-pending-summary.sh"
     echo ""
     echo "STATUS: FAILED (architecture tests failed)"
-    echo ""
-    echo "Next steps:"
-    echo "  1. Read artifacts/pending/SUMMARY.txt for overview"
-    echo "  2. Check individual files in artifacts/pending/architecture_*.txt for details"
-    echo "  3. Fix architecture violations"
-    echo "  4. Run pipeline again"
+
+    if [ "$QUIET" = true ]; then
+        exec 1>&3 2>&4
+        echo "PIPELINE: FAILED"
+        echo ""
+        cat artifacts/pending/SUMMARY.txt 2>/dev/null || echo "Check artifacts/summary.json for details."
+        rm -f "$LOG_FILE"
+    fi
     exit 1
 fi
 
 # === TEST ===
 echo ">>> Step 4/6: Test"
-TEST_START=$(date +%s%3N)
+TEST_START=$(timer_start)
 "$SCRIPT_DIR/test.sh"
-TEST_END=$(date +%s%3N)
-TEST_DURATION=$((TEST_END - TEST_START))
+TEST_DURATION=$(timer_elapsed "$TEST_START")
 echo ""
 
 # === MUTATE ===
 echo ">>> Step 5/6: Mutate"
-MUTATE_START=$(date +%s%3N)
+MUTATE_START=$(timer_start)
 MUTATION_FAILED=0
 "$SCRIPT_DIR/mutate.sh" || MUTATION_FAILED=1
-MUTATE_END=$(date +%s%3N)
-MUTATE_DURATION=$((MUTATE_END - MUTATE_START))
+MUTATE_DURATION=$(timer_elapsed "$MUTATE_START")
 echo ""
 
-# === INTEGRATION TESTS ===
-INTEGRATION_FAILED=0
-INTEGRATION_DURATION=0
-INTEGRATION_PROJECTS_COUNT=0
-
+# === INTEGRATION ===
 echo ">>> Step 6/6: Integration Tests"
-INTEGRATION_START=$(date +%s%3N)
-
-# Find all integration test projects dynamically
-INTEGRATION_PROJECTS=$(find tests/IntegrationTests -name "*.csproj" 2>/dev/null)
-
-if [ -n "$INTEGRATION_PROJECTS" ]; then
-    for project in $INTEGRATION_PROJECTS; do
-        INTEGRATION_PROJECTS_COUNT=$((INTEGRATION_PROJECTS_COUNT + 1))
-        name=$(basename "$(dirname "$project")")
-        echo "Running integration tests for: $name"
-
-        if ! dotnet test "$project" --no-build --logger "trx;LogFileName=integration-$name.trx" --results-directory "artifacts/test-results"; then
-            INTEGRATION_FAILED=1
-            echo "FAILED: Integration tests failed for $name"
-        fi
-    done
-else
-    echo "No integration test projects found in tests/IntegrationTests"
-fi
-
-INTEGRATION_END=$(date +%s%3N)
-INTEGRATION_DURATION=$((INTEGRATION_END - INTEGRATION_START))
+INTEGRATION_START=$(timer_start)
+INTEGRATION_FAILED=0
+"$SCRIPT_DIR/integration.sh" || INTEGRATION_FAILED=1
+INTEGRATION_DURATION=$(timer_elapsed "$INTEGRATION_START")
 echo ""
 
 # === GENERATE REPORTS ===
-# Reports are generated after all steps so all artifacts (coverage, mutation, integration) are available
 echo ">>> Generating Reports..."
 echo "  Unit Test Report..."
-"$SCRIPT_DIR/generate-unittest-report.sh" || echo "Warning: Unit test report generation failed"
-
+"$SCRIPT_DIR/report-unittest.sh" || echo "Warning: Unit test report generation failed"
 echo "  Integration Test Report..."
-"$SCRIPT_DIR/generate-integration-report.sh" || echo "Warning: Integration report generation failed"
+"$SCRIPT_DIR/report-integration.sh" || echo "Warning: Integration report generation failed"
 echo ""
 
-END_TIME=$(date +%s%3N)
-TOTAL_DURATION=$((END_TIME - START_TIME))
+TOTAL_DURATION=$(timer_elapsed "$START_TIME")
 
-# === GENERATE SUMMARY ===
+# === GENERATE SUMMARY JSON ===
 echo ">>> Generating summary..."
 mkdir -p artifacts
 
@@ -174,7 +158,6 @@ mkdir -p artifacts
 COVERAGE_JSON="[]"
 for coverage_file in $(find artifacts/coverage/raw -name "*.cobertura.xml" 2>/dev/null); do
     if [ -f "$coverage_file" ]; then
-        # Extract line-rate from coverage file
         LINE_RATE=$(grep -o 'line-rate="[^"]*"' "$coverage_file" | head -1 | sed 's/line-rate="//;s/"//')
         BRANCH_RATE=$(grep -o 'branch-rate="[^"]*"' "$coverage_file" | head -1 | sed 's/branch-rate="//;s/"//')
         if [ -n "$LINE_RATE" ]; then
@@ -183,31 +166,13 @@ for coverage_file in $(find artifacts/coverage/raw -name "*.cobertura.xml" 2>/de
     fi
 done
 
-# Parse mutation results from JSON files
-MUTATION_JSON="[]"
-for mutation_file in $(find artifacts/mutation -name "*.json" 2>/dev/null | head -1); do
-    if [ -f "$mutation_file" ]; then
-        MUTATION_JSON=$(cat "$mutation_file")
-    fi
-done
-
-# Generate summary.json
 cat > artifacts/summary.json << SUMMARY_EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "duration_ms": $TOTAL_DURATION,
-  "build": {
-    "success": true,
-    "duration_ms": $BUILD_DURATION
-  },
-  "architecture": {
-    "success": true,
-    "duration_ms": $ARCH_DURATION
-  },
-  "tests": {
-    "success": true,
-    "duration_ms": $TEST_DURATION
-  },
+  "build": { "success": true, "duration_ms": $BUILD_DURATION },
+  "architecture": { "success": true, "duration_ms": $ARCH_DURATION },
+  "tests": { "success": true, "duration_ms": $TEST_DURATION },
   "coverage": $COVERAGE_JSON,
   "mutation": {
     "success": $([ $MUTATION_FAILED -eq 0 ] && echo "true" || echo "false"),
@@ -215,7 +180,6 @@ cat > artifacts/summary.json << SUMMARY_EOF
   },
   "integration": {
     "success": $([ $INTEGRATION_FAILED -eq 0 ] && echo "true" || echo "false"),
-    "projects_count": $INTEGRATION_PROJECTS_COUNT,
     "duration_ms": $INTEGRATION_DURATION
   }
 }
@@ -233,23 +197,12 @@ echo "Unit Tests:   artifacts/unittest-report/index.html"
 echo "Coverage: artifacts/coverage/"
 echo "Mutation: artifacts/mutation/"
 if [ -f "artifacts/integration-report/index.html" ]; then
-    echo "Report:   artifacts/integration-report/index.html"
+    echo "Integration:  artifacts/integration-report/index.html"
 fi
 echo ""
 
-# === EXTRACT ALL PENDING ITEMS (always runs) ===
-echo ">>> Extracting pending items..."
-echo "  Local data (mutants, coverage, architecture)..."
-"$SCRIPT_DIR/summarize.sh"
-echo ""
-echo "  Generating consolidated summary..."
-"$SCRIPT_DIR/generate-pending-summary.sh"
-echo ""
-
 # === UNIVERSAL GATE ===
-# Gate checks: architecture violations, surviving mutants, coverage gaps, and SonarCloud issues
-PENDING_COUNT=$(find artifacts/pending -name "*.txt" ! -name "SUMMARY.txt" 2>/dev/null | wc -l)
-PENDING_COUNT=${PENDING_COUNT//[^0-9]/}
+PENDING_COUNT=$(count_pending)
 
 if [ "$PENDING_COUNT" -gt 0 ]; then
     echo "STATUS: FAILED ($PENDING_COUNT pending items)"
@@ -259,7 +212,23 @@ if [ "$PENDING_COUNT" -gt 0 ]; then
     echo "  2. Check individual files in artifacts/pending/ for details"
     echo "  3. Fix all pending items"
     echo "  4. Run pipeline again"
+
+    if [ "$QUIET" = true ]; then
+        exec 1>&3 2>&4
+        echo "PIPELINE: FAILED"
+        echo ""
+        cat artifacts/pending/SUMMARY.txt 2>/dev/null || echo "Check artifacts/summary.json for details."
+        rm -f "$LOG_FILE"
+    fi
     exit 1
 else
     echo "STATUS: SUCCESS"
+
+    if [ "$QUIET" = true ]; then
+        exec 1>&3 2>&4
+        echo "PIPELINE: SUCCESS"
+        echo ""
+        cat artifacts/pending/SUMMARY.txt 2>/dev/null || echo "No pending items."
+        rm -f "$LOG_FILE"
+    fi
 fi

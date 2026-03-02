@@ -450,21 +450,21 @@ jobs:
 
       - name: Generate Architecture Report
         run: |
-          ./scripts/generate-architecture-report.sh || true
+          ./scripts/report-architecture.sh || true
 
       - name: Generate Unit Test Report
         run: |
-          ./scripts/generate-unittest-report.sh || true
+          ./scripts/report-unittest.sh || true
 
       - name: Generate Integration Report
         if: ${{ needs.integration.result == 'success' || needs.integration.result == 'failure' }}
         run: |
-          ./scripts/generate-integration-report.sh || true
+          ./scripts/report-integration.sh || true
 
       - name: Generate Benchmark Report
         if: ${{ needs.benchmarks.result == 'success' || needs.benchmarks.result == 'failure' }}
         run: |
-          ./scripts/generate-benchmark-report.sh || true
+          ./scripts/report-benchmark.sh || true
 
       - name: Upload Architecture Report
         uses: actions/upload-artifact@v4

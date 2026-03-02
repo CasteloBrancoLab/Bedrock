@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\ShopDemo.Auth.Domain.csproj" />
+    <ProjectReference Include="..\Infra.CrossCutting.Messages\ShopDemo.Auth.Infra.CrossCutting.Messages.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Application\Bedrock.BuildingBlocks.Application.csproj" />
   </ItemGroup>
 

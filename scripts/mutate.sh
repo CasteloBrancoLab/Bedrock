@@ -1,59 +1,78 @@
 #!/bin/bash
-# Executa testes de mutação com Stryker, gerando JSON
+# mutate.sh - Runs mutation tests and extracts surviving mutants to artifacts/pending/
+# Usage: ./scripts/mutate.sh [mutation-test-dir]
+#   No args: runs all mutation test projects under tests/MutationTests/
+#   With arg: runs only the specified mutation test directory
+# Output: artifacts/pending/mutant_<project>_<NNN>.txt (per survivor)
+#         artifacts/pending/SUMMARY.txt
+# Cross-OS: Windows (Git Bash/WSL), macOS, Linux
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-cd "$ROOT_DIR"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
 echo "=== MUTATE ==="
 
 mkdir -p artifacts/mutation
+clean_pending "mutant"
+
+# Determine configs to run
+if [ -n "${1:-}" ]; then
+    CONFIGS=$(find "$1" -name "stryker-config.json" 2>/dev/null)
+else
+    CONFIGS=$(find tests/MutationTests -name "stryker-config.json" 2>/dev/null)
+fi
+
+if [ -z "$CONFIGS" ]; then
+    echo "No mutation test configs found"
+    "$SCRIPT_DIR/summarize.sh" 2>/dev/null || true
+    exit 0
+fi
 
 FAILED=0
 
-for config in $(find tests/MutationTests -name "stryker-config.json"); do
+for config in $CONFIGS; do
     dir=$(dirname "$config")
     name=$(basename "$dir")
-    echo "Running mutation tests for: $name"
+    echo "  Mutating: $name"
 
-    # Verificar se o projeto src tem código antes de rodar Stryker
-    src_project=$(grep -o '"project":.*"' "$ROOT_DIR/$config" | head -1 | sed 's/"project":[[:space:]]*"//;s/"$//')
-    if [ -n "$src_project" ]; then
-        src_csproj=$(find "$ROOT_DIR" -name "$src_project" -not -path "*/bin/*" -not -path "*/obj/*" | head -1)
-        if [ -n "$src_csproj" ]; then
-            src_dir=$(dirname "$src_csproj")
-            cs_count=$(find "$src_dir" -name "*.cs" ! -name "GlobalUsings.cs" -not -path "*/obj/*" -not -path "*/bin/*" 2>/dev/null | wc -l)
-            if [ "$cs_count" -eq 0 ]; then
-                echo "  $name: SKIPPED (no source files to mutate)"
-                continue
-            fi
-        fi
+    # Check if source project has .cs files to mutate
+    if ! has_source_files "$ROOT_DIR/$config"; then
+        echo "    SKIPPED (no source files)"
+        continue
     fi
 
     cd "$dir"
 
-    # Usar reporter JSON em vez de HTML para consumo pelo code agent
     if dotnet stryker \
         -O "$ROOT_DIR/artifacts/mutation/$name" \
         --reporter json \
-        --reporter progress; then
-        echo "  $name: PASSED"
+        --reporter progress > /dev/null 2>&1; then
+        echo "    PASSED"
     else
-        echo "  $name: FAILED (threshold not met)"
+        echo "    FAILED"
         FAILED=1
     fi
 
     cd "$ROOT_DIR"
 done
 
-echo ""
-echo "Done: Mutation tests completed"
-echo "Reports available in artifacts/mutation/"
+# Extract surviving mutants from Stryker JSON reports
+for report in artifacts/mutation/*/reports/mutation-report.json; do
+    if [ ! -f "$report" ]; then
+        continue
+    fi
+    project=$(basename "$(dirname "$(dirname "$report")")")
+    parse_surviving_mutants "$report" "$project"
+done
 
-if [ $FAILED -eq 1 ]; then
-    echo "WARNING: One or more mutation test projects failed threshold requirements"
+MUTANT_COUNT=$(count_pending "mutant_*.txt")
+
+"$SCRIPT_DIR/summarize.sh" 2>/dev/null || true
+
+if [ "$FAILED" -eq 1 ] || [ "$MUTANT_COUNT" -gt 0 ]; then
+    echo "MUTATION: FAILED ($MUTANT_COUNT surviving mutants)"
     exit 1
 fi
+
+echo "MUTATION: SUCCESS (100%)"
+exit 0

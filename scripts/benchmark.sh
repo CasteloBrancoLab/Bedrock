@@ -4,12 +4,8 @@
 #   Sem argumentos: executa todos os benchmarks
 #   --filter '*Insert*' : executa benchmarks que correspondem ao padrao
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-cd "$ROOT_DIR"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+lib_init
 
 ARTIFACTS_DIR="artifacts"
 PENDING_DIR="$ARTIFACTS_DIR/pending"
@@ -104,4 +100,4 @@ echo "  Resumo: $PENDING_DIR/SUMMARY.txt"
 # Gerar relatório HTML
 echo ""
 echo ">>> Gerando relatório de benchmarks..."
-"$SCRIPT_DIR/generate-benchmark-report.sh"
+"$SCRIPT_DIR/report-benchmark.sh"

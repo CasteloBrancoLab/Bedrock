@@ -18,6 +18,7 @@ Estas ADRs servem como guia para **code agents** (Claude Code, GitHub Copilot, O
 | **RL** | [Relational](./relational/README.md) | Mapeamento objeto-relacional, SQL generation, data models | 4 ADRs |
 | **CF** | [Configuration](./configuration/README.md) | Pipeline de handlers, configuracao tipada, caching e escopo | 6 ADRs |
 | **MS** | [Messages](./messages/README.md) | Envelope, serialização, nomenclatura e estrutura de Commands, Events e Queries | 10 ADRs |
+| **OB** | [Outbox](./outbox/README.md) | Transactional Outbox — persistencia, concorrencia, serializacao, processamento | 13 ADRs |
 | **PG** | [PostgreSQL](./postgresql/README.md) | Padroes especificos do PostgreSQL e Npgsql | 2 ADRs |
 | **AP** | API | APIs REST, GraphQL, contratos | Em breve |
 
@@ -196,6 +197,14 @@ Links para implementações de referência no repositório.
 - [MS-009: Snapshot Completo do Aggregate Root nos Models](./messages/MS-009-snapshot-completo-aggregate-root.md)
 - [MS-010: Eventos Self-Contained: Input + OldState + NewState](./messages/MS-010-eventos-self-contained-input-oldstate-newstate.md)
 - [Ver todas as ADRs de Messages](./messages/)
+
+### Outbox (OB)
+- [OB-001: OutboxEntry como Record de Infraestrutura](./outbox/OB-001-outboxentry-record-infraestrutura.md)
+- [OB-002: Payload Format-Agnostico com byte[] e ContentType](./outbox/OB-002-payload-bytes-agnostico-formato.md)
+- [OB-003: Lease Pattern com FOR UPDATE SKIP LOCKED](./outbox/OB-003-lease-pattern-for-update-skip-locked.md)
+- [OB-005: Dead-Lettering Automatico por MaxRetries](./outbox/OB-005-dead-lettering-automatico-maxretries.md)
+- [OB-011: Marker Interfaces para Outbox por BC](./outbox/OB-011-marker-interfaces-outbox-por-bc.md)
+- [Ver todas as ADRs de Outbox](./outbox/)
 
 ### PostgreSQL (PG)
 - [PG-001: MapBinaryImporter Deve Escrever Todas as Colunas](./postgresql/PG-001-binary-importer-todas-colunas.md)

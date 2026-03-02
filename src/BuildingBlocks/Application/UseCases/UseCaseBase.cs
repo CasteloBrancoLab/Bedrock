@@ -152,6 +152,7 @@ public abstract class UseCaseBase<TInput, TOutput>
         bool success = await ExecutionOptions.UnitOfWork!.ExecuteAsync(
             executionContext,
             input,
+            // CS002 disable once : captures local capturedResult and instance method
             async (ctx, inp, ct) =>
             {
                 capturedResult = await ExecuteInternalAsync(ctx, inp, ct);
