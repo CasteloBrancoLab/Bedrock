@@ -60,7 +60,7 @@ public class DeactivateUserUseCase
 
 ### Nossa Abordagem
 
-A criação de eventos é centralizada em factories no namespace `*.Application.Factories`. O Use Case faz **UMA** chamada à factory; factories chamam entre si lateralmente:
+A criação de eventos é centralizada em factories no namespace `*.Application.Factories.Messages`. O Use Case faz **UMA** chamada à factory; factories chamam entre si lateralmente:
 
 ```csharp
 // Use Case — UMA chamada à factory
@@ -70,7 +70,7 @@ public class DeactivateUserUseCase
     {
         // ... lógica de negócio ...
 
-        var evt = AuthEventFactory.CreateUserDeactivated(
+        var evt = UserDeactivatedEventFactory.Create(
             executionContext, timeProvider,
             input, oldUser, user, deactivationOutput);
 
@@ -78,10 +78,10 @@ public class DeactivateUserUseCase
     }
 }
 
-// Factory — coordena a construção
-public static class AuthEventFactory
+// Factory — uma por tipo de evento (SRP, ver CS-004)
+public static class UserDeactivatedEventFactory
 {
-    public static UserDeactivatedEvent CreateUserDeactivated(
+    public static UserDeactivatedEvent Create(
         ExecutionContext executionContext,
         TimeProvider timeProvider,
         DeactivateUserInputModel input,
@@ -136,7 +136,7 @@ public class SomeUseCase
 
 - **Indireção**: Use Case não vê como o evento é construído
   - Isso é desejável — o Use Case não deve conhecer os detalhes de construção. A factory encapsula essa complexidade
-- **Mais arquivos**: Uma factory por bounded context
+- **Mais arquivos**: Uma factory por tipo de evento (ver CS-004)
   - O custo de um arquivo é insignificante comparado à duplicação que elimina
 - **Rigidez**: Toda criação de evento deve passar pela factory
   - A regra MS-013 automatiza essa validação — não depende de code review manual
@@ -181,6 +181,6 @@ No Clean Architecture, Use Cases contêm regras de aplicação (orquestração).
 
 ## Referências no Código
 
-- [AuthEventFactory.cs](../../../src/ShopDemo/Auth/Application/Factories/AuthEventFactory.cs) - factory central de eventos
-- [AuthMessageMetadataFactory.cs](../../../src/ShopDemo/Auth/Application/Factories/AuthMessageMetadataFactory.cs) - factory de Metadata (chamada lateralmente)
-- [UserModelFactory.cs](../../../src/ShopDemo/Auth/Application/Factories/UserModelFactory.cs) - factory de Model (chamada lateralmente)
+- [UserRegisteredEventFactory.cs](../../../src/ShopDemo/Auth/Application/Factories/Messages/Events/UserRegisteredEventFactory.cs) - factory de evento (uma por tipo, CS-004)
+- [AuthMessageMetadataFactory.cs](../../../src/ShopDemo/Auth/Application/Factories/Messages/AuthMessageMetadataFactory.cs) - factory de Metadata (chamada lateralmente)
+- [UserModelFactory.cs](../../../src/ShopDemo/Auth/Application/Factories/Messages/Models/UserModelFactory.cs) - factory de Model (chamada lateralmente)

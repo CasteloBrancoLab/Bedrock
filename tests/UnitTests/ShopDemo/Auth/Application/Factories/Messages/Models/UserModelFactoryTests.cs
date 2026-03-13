@@ -2,14 +2,14 @@ using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Testing;
-using ShopDemo.Auth.Application.Factories;
+using ShopDemo.Auth.Application.Factories.Messages.Models;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Application.Factories;
+namespace ShopDemo.UnitTests.Auth.Application.Factories.Messages.Models;
 
 public class UserModelFactoryTests : TestBase
 {

@@ -123,10 +123,13 @@ public class AuthApplicationFixture : ServiceCollectionFixture
     }
 
     public AuthenticateUserUseCase CreateAuthenticateUserUseCase(
-        AuthenticationService authenticationService)
+        IAuthPostgreSqlUnitOfWork unitOfWork,
+        AuthenticationService authenticationService,
+        IAuthOutboxWriter outboxWriter)
     {
         var logger = GetService<ILoggerFactory>().CreateLogger<AuthenticateUserUseCase>();
-        return new AuthenticateUserUseCase(logger, authenticationService);
+        return new AuthenticateUserUseCase(
+            logger, unitOfWork, authenticationService, outboxWriter, TimeProvider.System);
     }
 
     public async Task<List<OutboxEntry>> GetOutboxEntriesDirectlyAsync(Guid tenantCode)

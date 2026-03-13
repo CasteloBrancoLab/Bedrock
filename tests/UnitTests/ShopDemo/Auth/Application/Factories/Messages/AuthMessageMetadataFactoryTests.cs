@@ -1,12 +1,12 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Testing;
-using ShopDemo.Auth.Application.Factories;
+using ShopDemo.Auth.Application.Factories.Messages;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Application.Factories;
+namespace ShopDemo.UnitTests.Auth.Application.Factories.Messages;
 
 public class AuthMessageMetadataFactoryTests : TestBase
 {

@@ -1,7 +1,7 @@
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Infra.CrossCutting.Messages.V1.Models;
 
-namespace ShopDemo.Auth.Application.Factories;
+namespace ShopDemo.Auth.Application.Factories.Messages.Models;
 
 public static class UserModelFactory
 {

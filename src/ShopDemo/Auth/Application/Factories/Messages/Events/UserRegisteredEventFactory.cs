@@ -1,12 +1,13 @@
+using ShopDemo.Auth.Application.Factories.Messages.Models;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Infra.CrossCutting.Messages.V1.Events;
 using ShopDemo.Auth.Infra.CrossCutting.Messages.V1.Models;
 
-namespace ShopDemo.Auth.Application.Factories;
+namespace ShopDemo.Auth.Application.Factories.Messages.Events;
 
-public static class AuthEventFactory
+public static class UserRegisteredEventFactory
 {
-    public static UserRegisteredEvent CreateUserRegistered(
+    public static UserRegisteredEvent Create(
         ExecutionContext executionContext,
         TimeProvider timeProvider,
         string email,

@@ -1,7 +1,7 @@
 using Bedrock.BuildingBlocks.Core.Ids;
 using Bedrock.BuildingBlocks.Messages;
 
-namespace ShopDemo.Auth.Application.Factories;
+namespace ShopDemo.Auth.Application.Factories.Messages;
 
 public static class AuthMessageMetadataFactory
 {

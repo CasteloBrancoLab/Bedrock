@@ -2,7 +2,7 @@ using Bedrock.BuildingBlocks.Core.EmailAddresses;
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
 using Bedrock.BuildingBlocks.Testing;
-using ShopDemo.Auth.Application.Factories;
+using ShopDemo.Auth.Application.Factories.Messages.Events;
 using ShopDemo.Auth.Domain.Entities.Users;
 using ShopDemo.Auth.Domain.Entities.Users.Inputs;
 using ShopDemo.Auth.Infra.CrossCutting.Messages.V1.Events;
@@ -10,14 +10,14 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ShopDemo.UnitTests.Auth.Application.Factories;
+namespace ShopDemo.UnitTests.Auth.Application.Factories.Messages.Events;
 
-public class AuthEventFactoryTests : TestBase
+public class UserAuthenticatedEventFactoryTests : TestBase
 {
-    public AuthEventFactoryTests(ITestOutputHelper outputHelper) : base(outputHelper) { }
+    public UserAuthenticatedEventFactoryTests(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
     [Fact]
-    public void CreateUserRegistered_ShouldReturnEventWithCorrectMetadata()
+    public void Create_ShouldReturnEventWithCorrectMetadata()
     {
         // Arrange
         LogArrange("Creating execution context, user and time provider");
@@ -26,14 +26,14 @@ public class AuthEventFactoryTests : TestBase
         var email = "test@example.com";
 
         // Act
-        LogAct("Creating UserRegisteredEvent via factory");
-        var evt = AuthEventFactory.CreateUserRegistered(
+        LogAct("Creating UserAuthenticatedEvent via factory");
+        var evt = UserAuthenticatedEventFactory.Create(
             executionContext, TimeProvider.System, email, user);
 
         // Assert
         LogAssert("Verifying event metadata matches execution context");
         evt.ShouldNotBeNull();
-        evt.ShouldBeOfType<UserRegisteredEvent>();
+        evt.ShouldBeOfType<UserAuthenticatedEvent>();
         evt.Metadata.CorrelationId.ShouldBe(executionContext.CorrelationId);
         evt.Metadata.TenantCode.ShouldBe(executionContext.TenantInfo.Code);
         evt.Metadata.ExecutionUser.ShouldBe(executionContext.ExecutionUser);
@@ -41,7 +41,7 @@ public class AuthEventFactoryTests : TestBase
     }
 
     [Fact]
-    public void CreateUserRegistered_ShouldReturnEventWithCorrectInput()
+    public void Create_ShouldReturnEventWithCorrectInput()
     {
         // Arrange
         LogArrange("Creating execution context and user");
@@ -50,8 +50,8 @@ public class AuthEventFactoryTests : TestBase
         var email = "test@example.com";
 
         // Act
-        LogAct("Creating UserRegisteredEvent via factory");
-        var evt = AuthEventFactory.CreateUserRegistered(
+        LogAct("Creating UserAuthenticatedEvent via factory");
+        var evt = UserAuthenticatedEventFactory.Create(
             executionContext, TimeProvider.System, email, user);
 
         // Assert
@@ -60,7 +60,7 @@ public class AuthEventFactoryTests : TestBase
     }
 
     [Fact]
-    public void CreateUserRegistered_ShouldReturnEventWithCorrectNewState()
+    public void Create_ShouldReturnEventWithCorrectUserState()
     {
         // Arrange
         LogArrange("Creating execution context and user");
@@ -69,15 +69,15 @@ public class AuthEventFactoryTests : TestBase
         var email = "test@example.com";
 
         // Act
-        LogAct("Creating UserRegisteredEvent via factory");
-        var evt = AuthEventFactory.CreateUserRegistered(
+        LogAct("Creating UserAuthenticatedEvent via factory");
+        var evt = UserAuthenticatedEventFactory.Create(
             executionContext, TimeProvider.System, email, user);
 
         // Assert
-        LogAssert("Verifying event NewState matches user entity");
-        evt.NewState.Id.ShouldBe(user.EntityInfo.Id.Value);
-        evt.NewState.Username.ShouldBe(user.Username);
-        evt.NewState.Email.ShouldBe(user.Email.Value ?? string.Empty);
+        LogAssert("Verifying event UserState matches user entity");
+        evt.UserState.Id.ShouldBe(user.EntityInfo.Id.Value);
+        evt.UserState.Username.ShouldBe(user.Username);
+        evt.UserState.Email.ShouldBe(user.Email.Value ?? string.Empty);
     }
 
     private static ExecutionContext CreateTestExecutionContext()

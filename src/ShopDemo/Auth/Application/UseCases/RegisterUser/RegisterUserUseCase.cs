@@ -2,7 +2,7 @@ using Bedrock.BuildingBlocks.Application.UseCases;
 using Bedrock.BuildingBlocks.Application.UseCases.Models;
 using Bedrock.BuildingBlocks.Persistence.Abstractions.UnitOfWork.Interfaces;
 using Microsoft.Extensions.Logging;
-using ShopDemo.Auth.Application.Factories;
+using ShopDemo.Auth.Application.Factories.Messages.Events;
 using ShopDemo.Auth.Application.UseCases.RegisterUser.Interfaces;
 using ShopDemo.Auth.Application.UseCases.RegisterUser.Models;
 using ShopDemo.Auth.Domain.Services.Interfaces;
@@ -36,7 +36,7 @@ public sealed class RegisterUserUseCase
 
     protected override void ConfigureExecutionInternal(UseCaseExecutionOptions options)
     {
-        options.UnitOfWork = _unitOfWork;
+        options.WithTransaction(_unitOfWork);
     }
 
     protected override async Task<RegisterUserOutput?> ExecuteInternalAsync(
@@ -59,7 +59,7 @@ public sealed class RegisterUserUseCase
             return null;
         }
 
-        var @event = AuthEventFactory.CreateUserRegistered(
+        var @event = UserRegisteredEventFactory.Create(
             executionContext, _timeProvider, input.Email, user);
 
         await _outboxWriter.EnqueueAsync(@event, cancellationToken);
