@@ -1,5 +1,6 @@
 using Bedrock.BuildingBlocks.Web.Hosting;
 using Bedrock.BuildingBlocks.Web.WebApi;
+using Bedrock.BuildingBlocks.Web.WebApi.ApiDocumentation;
 using Bedrock.BuildingBlocks.Web.WebApi.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ public static class Bootstrapper
         );
 
         services.AddBedrockControllers();
+        services.AddBedrockApiDocumentation();
 
         return services;
     }

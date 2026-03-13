@@ -1,5 +1,6 @@
 using Bedrock.BuildingBlocks.Web.Hosting;
 using Bedrock.BuildingBlocks.Web.Security;
+using Bedrock.BuildingBlocks.Web.WebApi.ApiDocumentation;
 using Bedrock.BuildingBlocks.Web.WebApi.HealthChecks;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using ShopDemo.Auth.Api;
@@ -24,7 +25,7 @@ public class Program
         var app = builder.Build();
 
         app.UseBedrockSecurityHeaders();
-        app.UseHttpsRedirection();
+        app.UseBedrockApiDocumentation();
         app.UseAuthorization();
         app.MapControllers();
         app.MapBedrockHealthChecks();
