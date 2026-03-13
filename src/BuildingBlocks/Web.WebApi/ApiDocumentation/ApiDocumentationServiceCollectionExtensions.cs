@@ -23,6 +23,7 @@ public static class ApiDocumentationServiceCollectionExtensions
 
         services.AddSwaggerGen(swagger =>
         {
+            swagger.OperationFilter<BedrockHeadersOperationFilter>();
             swagger.AddScalarFilters();
             options?.ConfigureSwaggerGen?.Invoke(swagger);
         });
