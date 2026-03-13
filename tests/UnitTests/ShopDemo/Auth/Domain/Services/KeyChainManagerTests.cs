@@ -9,6 +9,7 @@ using ShopDemo.Auth.Domain.Entities.KeyChains.Inputs;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
 using ShopDemo.Auth.Domain.Services;
 using ShopDemo.Auth.Domain.Services.Interfaces;
+using ShopDemo.Auth.Domain.Services.Outputs;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -78,7 +79,7 @@ public class KeyChainManagerTests : TestBase
 
         _keyAgreementServiceMock
             .Setup(x => x.NegotiateKey(clientPublicKey))
-            .Returns(new KeyAgreementResult("c2VydmVyLWtleQ==", new byte[32]));
+            .Returns(new KeyAgreementOutput("c2VydmVyLWtleQ==", new byte[32]));
 
         _keyChainRepositoryMock
             .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))
@@ -108,7 +109,7 @@ public class KeyChainManagerTests : TestBase
 
         _keyAgreementServiceMock
             .Setup(x => x.NegotiateKey(clientPublicKey))
-            .Returns(new KeyAgreementResult(new string('A', 513), new byte[32]));
+            .Returns(new KeyAgreementOutput(new string('A', 513), new byte[32]));
 
         // Act
         LogAct("Rotating key when NegotiateKey returns PublicKey exceeding max length (512)");
@@ -143,7 +144,7 @@ public class KeyChainManagerTests : TestBase
 
         _keyAgreementServiceMock
             .Setup(x => x.NegotiateKey(clientPublicKey))
-            .Returns(new KeyAgreementResult("bmV3LWtleQ==", new byte[32]));
+            .Returns(new KeyAgreementOutput("bmV3LWtleQ==", new byte[32]));
 
         _keyChainRepositoryMock
             .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))
@@ -176,7 +177,7 @@ public class KeyChainManagerTests : TestBase
 
         _keyAgreementServiceMock
             .Setup(x => x.NegotiateKey(clientPublicKey))
-            .Returns(new KeyAgreementResult("c2VydmVyLWtleQ==", new byte[32]));
+            .Returns(new KeyAgreementOutput("c2VydmVyLWtleQ==", new byte[32]));
 
         _keyChainRepositoryMock
             .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))
@@ -212,7 +213,7 @@ public class KeyChainManagerTests : TestBase
 
         _keyAgreementServiceMock
             .Setup(x => x.NegotiateKey(clientPublicKey))
-            .Returns(new KeyAgreementResult("bmV3LWtleQ==", new byte[32]));
+            .Returns(new KeyAgreementOutput("bmV3LWtleQ==", new byte[32]));
 
         _keyChainRepositoryMock
             .Setup(x => x.RegisterNewAsync(executionContext, It.IsAny<KeyChain>(), It.IsAny<CancellationToken>()))

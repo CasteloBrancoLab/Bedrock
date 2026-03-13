@@ -153,6 +153,11 @@ public abstract class PostgreSqlUnitOfWorkBase
             return true;
         }
 
+        if (!_postgreSqlConnection.IsOpen())
+        {
+            await _postgreSqlConnection.TryOpenConnectionAsync(executionContext, cancellationToken).ConfigureAwait(false);
+        }
+
         _currentTransaction = await _postgreSqlConnection.GetConnectionObject()!.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         return true;

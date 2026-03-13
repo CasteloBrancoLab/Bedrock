@@ -6,7 +6,11 @@ namespace ShopDemo.Auth.Infra.CrossCutting.Messages.V1.Models;
 public readonly record struct UserModel(
     Guid Id,
     Guid TenantCode,
+    string Username,
     string Email,
+    string Status,
     DateTimeOffset CreatedAt,
-    string CreatedBy
+    string CreatedBy,
+    DateTimeOffset? LastChangedAt,
+    string? LastChangedBy
 );

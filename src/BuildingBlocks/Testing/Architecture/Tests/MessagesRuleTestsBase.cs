@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 namespace Bedrock.BuildingBlocks.Testing.Architecture.Tests;
 
 /// <summary>
-/// Classe base com os 10 [Fact] de regras Messages (MS001-MS008).
+/// Classe base com os [Fact] de regras Messages (MS001-MS012a).
 /// Projetos de ArchitectureTests que analisam mensagens herdam esta classe.
 /// </summary>
 public abstract class MessagesRuleTestsBase<TFixture> : RuleTestBase<TFixture>
@@ -72,5 +72,17 @@ public abstract class MessagesRuleTestsBase<TFixture> : RuleTestBase<TFixture>
     public void MS008_Parametros_devem_usar_apenas_primitivos_e_record_structs()
     {
         AssertNoViolations(new MS008_PrimitivesOnlyRule());
+    }
+
+    [Fact]
+    public void MS011_Tipos_nao_devem_declarar_membros_event_delegate()
+    {
+        AssertNoViolations(new MS011_NoDotNetEventsRule());
+    }
+
+    [Fact]
+    public void MS012a_Record_structs_em_Messages_nao_devem_usar_sufixo_ResultModel()
+    {
+        AssertNoViolations(new MS012a_OutputModelNamingRule());
     }
 }

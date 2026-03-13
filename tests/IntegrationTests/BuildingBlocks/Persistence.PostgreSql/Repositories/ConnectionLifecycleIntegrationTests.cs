@@ -86,7 +86,6 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
         LogAssert("Verificando que a conexão está fechada");
         result.ShouldBeTrue();
         connection.IsOpen().ShouldBeFalse();
-        connection.GetConnectionObject().ShouldBeNull();
         LogInfo("Connection closed successfully");
     }
 
@@ -131,21 +130,23 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
     }
 
     [Fact]
-    public void GetConnectionObject_Should_ReturnNull_BeforeOpen()
+    public void GetConnectionObject_Should_AutoOpen_WhenNotExplicitlyOpened()
     {
         // Arrange
         UseEnvironment(_fixture.Environments["repository"]);
-        LogArrange("Criando conexão sem abrir");
+        LogArrange("Criando conexão sem abrir explicitamente");
         using var connection = _fixture.CreateAppUserConnection();
 
         // Act
-        LogAct("Obtendo objeto de conexão");
+        LogAct("Obtendo objeto de conexão (deve auto-abrir)");
         var result = connection.GetConnectionObject();
 
         // Assert
-        LogAssert("Verificando que GetConnectionObject retorna null");
-        result.ShouldBeNull();
-        LogInfo("GetConnectionObject correctly returns null before opening");
+        LogAssert("Verificando que GetConnectionObject retorna conexão aberta automaticamente");
+        result.ShouldNotBeNull();
+        result.State.ShouldBe(System.Data.ConnectionState.Open);
+        connection.IsOpen().ShouldBeTrue();
+        LogInfo("GetConnectionObject correctly auto-opened connection");
     }
 
     [Fact]
@@ -187,7 +188,6 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
         // Assert
         LogAssert("Verificando que a conexão está fechada após dispose");
         connection.IsOpen().ShouldBeFalse();
-        connection.GetConnectionObject().ShouldBeNull();
         LogInfo("DisposeAsync closed connection correctly");
     }
 
@@ -233,6 +233,73 @@ public class ConnectionLifecycleIntegrationTests : IntegrationTestBase
         LogAssert("Verificando que a query foi executada com sucesso");
         result.ShouldBe(2);
         LogInfo("Query executed successfully through open connection");
+    }
+
+    [Fact]
+    public async Task GetConnectionObject_Should_AutoReopen_AfterClose()
+    {
+        // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
+        LogArrange("Criando, abrindo e fechando conexão");
+        var executionContext = _fixture.CreateExecutionContext();
+        await using var connection = _fixture.CreateAppUserConnection();
+        await connection.TryOpenConnectionAsync(executionContext, CancellationToken.None);
+        await connection.TryCloseConnectionAsync(executionContext, CancellationToken.None);
+        connection.IsOpen().ShouldBeFalse();
+
+        // Act
+        LogAct("Obtendo objeto de conexão após fechar (deve reabrir automaticamente)");
+        var result = connection.GetConnectionObject();
+
+        // Assert
+        LogAssert("Verificando que GetConnectionObject reabriu a conexão automaticamente");
+        result.ShouldNotBeNull();
+        result.State.ShouldBe(System.Data.ConnectionState.Open);
+        connection.IsOpen().ShouldBeTrue();
+        LogInfo("GetConnectionObject correctly auto-reopened connection after close");
+    }
+
+    [Fact]
+    public void GetConnectionObject_AutoOpen_Should_ExecuteQueries()
+    {
+        // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
+        LogArrange("Criando conexão sem abrir explicitamente");
+        using var connection = _fixture.CreateAppUserConnection();
+
+        // Act
+        LogAct("Executando query com conexão auto-aberta");
+        using var npgsqlConnection = connection.GetConnectionObject();
+        using var command = npgsqlConnection!.CreateCommand();
+        command.CommandText = "SELECT 1 + 1";
+        var result = command.ExecuteScalar();
+
+        // Assert
+        LogAssert("Verificando que a query foi executada com sucesso");
+        result.ShouldBe(2);
+        LogInfo("Query executed successfully through auto-opened connection");
+    }
+
+    [Fact]
+    public async Task BeginTransaction_Should_AutoOpenConnection()
+    {
+        // Arrange
+        UseEnvironment(_fixture.Environments["repository"]);
+        LogArrange("Criando UnitOfWork sem abrir conexão explicitamente");
+        var executionContext = _fixture.CreateExecutionContext();
+        await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
+
+        // Act
+        LogAct("Iniciando transação (deve auto-abrir conexão)");
+        var result = await unitOfWork.BeginTransactionAsync(executionContext, CancellationToken.None);
+
+        // Assert
+        LogAssert("Verificando que transação foi iniciada e conexão está aberta");
+        result.ShouldBeTrue();
+        unitOfWork.GetCurrentTransaction().ShouldNotBeNull();
+        unitOfWork.GetCurrentConnection().ShouldNotBeNull();
+        unitOfWork.GetCurrentConnection()!.State.ShouldBe(System.Data.ConnectionState.Open);
+        LogInfo("BeginTransaction correctly auto-opened connection");
     }
 
     [Fact]

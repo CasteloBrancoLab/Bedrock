@@ -15,5 +15,11 @@ public sealed class UseCaseExecutionOptions
     /// Gets or sets the unit of work to wrap the use case execution in a transaction.
     /// When null, the use case executes without transactional behavior.
     /// </summary>
-    public IUnitOfWork? UnitOfWork { get; set; }
+    public IUnitOfWork? UnitOfWork { get; private set; }
+
+    public UseCaseExecutionOptions WithTransaction(IUnitOfWork unitOfWork)
+    {
+        UnitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        return this;
+    }
 }

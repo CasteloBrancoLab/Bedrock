@@ -1,6 +1,8 @@
+using ShopDemo.Auth.Domain.Services.Outputs;
+
 namespace ShopDemo.Auth.Domain.Services.Interfaces;
 
 public interface IKeyAgreementService
 {
-    KeyAgreementResult NegotiateKey(string clientPublicKeyBase64);
+    KeyAgreementOutput NegotiateKey(string clientPublicKeyBase64);
 }

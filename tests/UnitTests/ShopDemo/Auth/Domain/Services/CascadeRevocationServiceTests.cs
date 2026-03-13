@@ -716,7 +716,7 @@ public class CascadeRevocationServiceTests : TestBase
         // Assert
         LogAssert("Verifying event with changed claims");
         result.ShouldNotBeNull();
-        result.ChangedClaims.Count.ShouldBe(1);
+        result.ChangedClaimsCount.ShouldBe(1);
     }
 
     [Fact]
@@ -805,7 +805,7 @@ public class CascadeRevocationServiceTests : TestBase
         // Assert
         LogAssert("Verifying claim downgraded to Denied (claimId not found in map)");
         result.ShouldNotBeNull();
-        result.ChangedClaims.Count.ShouldBe(1);
+        result.ChangedClaimsCount.ShouldBe(1);
     }
 
     [Fact]
@@ -854,7 +854,7 @@ public class CascadeRevocationServiceTests : TestBase
         // Assert
         LogAssert("Verifying claim downgraded to Denied (user lacks claim)");
         result.ShouldNotBeNull();
-        result.ChangedClaims.Count.ShouldBe(1);
+        result.ChangedClaimsCount.ShouldBe(1);
     }
 
     [Fact]

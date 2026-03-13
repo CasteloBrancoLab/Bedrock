@@ -11,9 +11,8 @@ using ShopDemo.Auth.Domain.Entities.ServiceClientClaims.Inputs;
 using ShopDemo.Auth.Domain.Entities.ServiceClients;
 using ShopDemo.Auth.Domain.Entities.ServiceClients.Enums;
 using ShopDemo.Auth.Domain.Entities.ServiceClients.Inputs;
-using ShopDemo.Auth.Domain.Events;
-using ShopDemo.Auth.Domain.Events.Models;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
+using ShopDemo.Auth.Domain.Services.Outputs;
 using ShopDemo.Auth.Domain.Services.Interfaces;
 
 namespace ShopDemo.Auth.Domain.Services;
@@ -56,7 +55,7 @@ public sealed class CascadeRevocationService : ICascadeRevocationService
         _claimRepository = claimRepository;
     }
 
-    public async Task<UserDeactivatedEvent?> RevokeAllUserTokensAsync(
+    public async Task<UserDeactivationOutput?> RevokeAllUserTokensAsync(
         ExecutionContext executionContext,
         Id userId,
         string? reason,
@@ -75,15 +74,13 @@ public sealed class CascadeRevocationService : ICascadeRevocationService
             reason,
             cancellationToken);
 
-        return new UserDeactivatedEvent(
-            userId,
-            reason,
+        return new UserDeactivationOutput(
             revokedRefreshTokenCount,
             revokedServiceClientCount,
             revokedApiKeyCount);
     }
 
-    public async Task<UserPermissionsChangedEvent?> RecalculateApiTokenPermissionsAsync(
+    public async Task<PermissionsRecalculationOutput?> RecalculateApiTokenPermissionsAsync(
         ExecutionContext executionContext,
         Id userId,
         CancellationToken cancellationToken)
@@ -101,23 +98,23 @@ public sealed class CascadeRevocationService : ICascadeRevocationService
         IReadOnlyList<ServiceClient> serviceClients = await _serviceClientRepository.GetByCreatorUserIdAsync(
             executionContext, userId, cancellationToken);
 
-        var allChangedClaims = new List<ChangedClaimInfo>();
+        int totalChangedClaims = 0;
 
         foreach (ServiceClient serviceClient in serviceClients)
         {
             if (serviceClient.Status != ServiceClientStatus.Active)
                 continue;
 
-            IReadOnlyList<ChangedClaimInfo> changedClaims = await RecalculateServiceClientClaimsAsync(
+            int changedCount = await RecalculateServiceClientClaimsAsync(
                 executionContext, serviceClient, userClaims, claimIdToName, cancellationToken);
 
-            allChangedClaims.AddRange(changedClaims);
+            totalChangedClaims += changedCount;
         }
 
-        if (allChangedClaims.Count == 0)
+        if (totalChangedClaims == 0)
             return null;
 
-        return new UserPermissionsChangedEvent(userId, allChangedClaims);
+        return new PermissionsRecalculationOutput(totalChangedClaims);
     }
 
     private async Task<int> RevokeRefreshTokensAsync(
@@ -216,7 +213,7 @@ public sealed class CascadeRevocationService : ICascadeRevocationService
         return revokedCount;
     }
 
-    private async Task<IReadOnlyList<ChangedClaimInfo>> RecalculateServiceClientClaimsAsync(
+    private async Task<int> RecalculateServiceClientClaimsAsync(
         ExecutionContext executionContext,
         ServiceClient serviceClient,
         IReadOnlyDictionary<string, ClaimValue> userClaims,
@@ -228,8 +225,7 @@ public sealed class CascadeRevocationService : ICascadeRevocationService
         IReadOnlyList<ServiceClientClaim> existingClaims = await _serviceClientClaimRepository.GetByServiceClientIdAsync(
             executionContext, serviceClientId, cancellationToken);
 
-        var changedClaims = new List<ChangedClaimInfo>();
-        var needsUpdate = false;
+        int changedCount = 0;
 
         foreach (ServiceClientClaim existingClaim in existingClaims)
         {
@@ -237,14 +233,11 @@ public sealed class CascadeRevocationService : ICascadeRevocationService
             ClaimValue newValue = CalculateCeilingValue(existingClaim.ClaimId, oldValue, userClaims, claimIdToName);
 
             if (oldValue.Value != newValue.Value)
-            {
-                changedClaims.Add(new ChangedClaimInfo(existingClaim.ClaimId, oldValue, newValue));
-                needsUpdate = true;
-            }
+                changedCount++;
         }
 
-        if (!needsUpdate)
-            return changedClaims;
+        if (changedCount == 0)
+            return 0;
 
         await _serviceClientClaimRepository.DeleteByServiceClientIdAsync(
             executionContext, serviceClientId, cancellationToken);
@@ -266,7 +259,7 @@ public sealed class CascadeRevocationService : ICascadeRevocationService
             }
         }
 
-        return changedClaims;
+        return changedCount;
     }
 
     private static ClaimValue CalculateCeilingValue(

@@ -1,12 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
-using Bedrock.BuildingBlocks.Core.Ids;
 
-namespace ShopDemo.Auth.Domain.Events;
+namespace ShopDemo.Auth.Infra.CrossCutting.Messages.V1.Models;
 
 [ExcludeFromCodeCoverage(Justification = "Readonly record struct — Coverlet nao instrumenta construtor posicional gerado pelo compilador")]
-public readonly record struct UserDeactivatedEvent(
-    Id UserId,
-    string? Reason,
+public readonly record struct DeactivationOutputModel(
     int RevokedRefreshTokenCount,
     int RevokedServiceClientCount,
     int RevokedApiKeyCount
