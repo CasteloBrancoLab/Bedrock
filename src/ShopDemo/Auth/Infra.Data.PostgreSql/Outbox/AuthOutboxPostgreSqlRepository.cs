@@ -7,11 +7,11 @@ namespace ShopDemo.Auth.Infra.Data.PostgreSql.Outbox;
 
 // Stryker disable all : Requer conexao PostgreSQL real - coberto por testes de integracao
 [ExcludeFromCodeCoverage(Justification = "Requer conexao PostgreSQL real - coberto por testes de integracao")]
-public sealed class AuthOutboxRepository
+public sealed class AuthOutboxPostgreSqlRepository
     : OutboxPostgreSqlRepositoryBase,
-    IAuthOutboxRepository
+    IAuthOutboxPostgreSqlRepository
 {
-    public AuthOutboxRepository(IAuthPostgreSqlUnitOfWork unitOfWork)
+    public AuthOutboxPostgreSqlRepository(IAuthPostgreSqlUnitOfWork unitOfWork)
         : base(unitOfWork) { }
 
     protected override void ConfigureInternal(OutboxPostgreSqlOptions options)

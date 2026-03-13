@@ -1,6 +1,9 @@
+using Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ShopDemo.Auth.Domain.Repositories.Interfaces;
+using ShopDemo.Auth.Infra.CrossCutting.Messages.Outbox.Interfaces;
+using ShopDemo.Auth.Infra.Data.Outbox;
 using ShopDemo.Auth.Infra.Data.Repositories;
 
 namespace ShopDemo.Auth.Infra.Data;
@@ -43,6 +46,13 @@ public static class Bootstrapper
         services.TryAddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
         services.TryAddScoped<IIdempotencyRecordRepository, IdempotencyRecordRepository>();
         services.TryAddScoped<ITokenExchangeRepository, TokenExchangeRepository>();
+
+        // Outbox — facades (scoped — delegam para PostgreSql)
+        services.TryAddScoped<IAuthOutboxRepository, AuthOutboxRepository>();
+        services.TryAddScoped<IAuthOutboxWriter, AuthOutboxWriter>();
+
+        // Outbox — serializacao (singleton — stateless apos inicializacao)
+        services.TryAddSingleton<IStringSerializer, AuthOutboxJsonSerializer>();
 
         return services;
     }

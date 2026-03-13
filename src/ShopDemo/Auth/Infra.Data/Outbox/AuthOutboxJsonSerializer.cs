@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Bedrock.BuildingBlocks.Serialization.Json;
 using Bedrock.BuildingBlocks.Serialization.Json.Models;
 
-namespace ShopDemo.Auth.Infra.Data.PostgreSql.Outbox;
+namespace ShopDemo.Auth.Infra.Data.Outbox;
 
 /// <summary>
 /// JSON serializer concreto para o Auth bounded context.

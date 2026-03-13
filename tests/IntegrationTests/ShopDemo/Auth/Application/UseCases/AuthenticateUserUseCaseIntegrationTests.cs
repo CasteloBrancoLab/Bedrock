@@ -46,7 +46,7 @@ public class AuthenticateUserUseCaseIntegrationTests : IntegrationTestBase
         await using var authUow = _fixture.CreateAppUserUnitOfWork();
         var authRepo = _fixture.CreateUserRepository(authUow);
         var authService = _fixture.CreateAuthenticationService(authRepo);
-        var outboxRepo = _fixture.CreateAuthOutboxRepository(authUow);
+        var outboxRepo = _fixture.CreateAuthOutboxPostgreSqlRepository(authUow);
         var outboxWriter = _fixture.CreateAuthOutboxWriter(outboxRepo);
         var useCase = _fixture.CreateAuthenticateUserUseCase(authUow, authService, outboxWriter);
         var input = new AuthenticateUserInput(email, password);
@@ -84,7 +84,7 @@ public class AuthenticateUserUseCaseIntegrationTests : IntegrationTestBase
         await using var authUow = _fixture.CreateAppUserUnitOfWork();
         var authRepo = _fixture.CreateUserRepository(authUow);
         var authService = _fixture.CreateAuthenticationService(authRepo);
-        var outboxRepo = _fixture.CreateAuthOutboxRepository(authUow);
+        var outboxRepo = _fixture.CreateAuthOutboxPostgreSqlRepository(authUow);
         var outboxWriter = _fixture.CreateAuthOutboxWriter(outboxRepo);
         var useCase = _fixture.CreateAuthenticateUserUseCase(authUow, authService, outboxWriter);
         var input = new AuthenticateUserInput(email, "WrongPassword1!x");
@@ -111,7 +111,7 @@ public class AuthenticateUserUseCaseIntegrationTests : IntegrationTestBase
         await using var authUow = _fixture.CreateAppUserUnitOfWork();
         var authRepo = _fixture.CreateUserRepository(authUow);
         var authService = _fixture.CreateAuthenticationService(authRepo);
-        var outboxRepo = _fixture.CreateAuthOutboxRepository(authUow);
+        var outboxRepo = _fixture.CreateAuthOutboxPostgreSqlRepository(authUow);
         var outboxWriter = _fixture.CreateAuthOutboxWriter(outboxRepo);
         var useCase = _fixture.CreateAuthenticateUserUseCase(authUow, authService, outboxWriter);
         var input = new AuthenticateUserInput(email, "AnyPassword1!xxx");

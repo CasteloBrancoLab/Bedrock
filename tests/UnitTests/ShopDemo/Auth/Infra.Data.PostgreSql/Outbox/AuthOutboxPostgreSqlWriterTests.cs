@@ -11,27 +11,27 @@ using Xunit.Abstractions;
 
 namespace ShopDemo.UnitTests.Auth.Infra.Data.PostgreSql.Outbox;
 
-public class AuthOutboxWriterTests : TestBase
+public class AuthOutboxPostgreSqlWriterTests : TestBase
 {
-    private readonly Mock<IAuthOutboxRepository> _repositoryMock;
+    private readonly Mock<IAuthOutboxPostgreSqlRepository> _repositoryMock;
     private readonly Mock<IOutboxSerializer<MessageBase>> _serializerMock;
-    private readonly AuthOutboxWriter _sut;
+    private readonly AuthOutboxPostgreSqlWriter _sut;
 
-    public AuthOutboxWriterTests(ITestOutputHelper output) : base(output)
+    public AuthOutboxPostgreSqlWriterTests(ITestOutputHelper output) : base(output)
     {
-        _repositoryMock = new Mock<IAuthOutboxRepository>();
+        _repositoryMock = new Mock<IAuthOutboxPostgreSqlRepository>();
         _serializerMock = new Mock<IOutboxSerializer<MessageBase>>();
 
         _serializerMock.Setup(x => x.ContentType).Returns("application/json");
         _serializerMock.Setup(x => x.Serialize(It.IsAny<MessageBase>())).Returns([0x01, 0x02]);
 
-        _sut = new AuthOutboxWriter(_repositoryMock.Object, _serializerMock.Object, TimeProvider.System);
+        _sut = new AuthOutboxPostgreSqlWriter(_repositoryMock.Object, _serializerMock.Object, TimeProvider.System);
     }
 
     [Fact]
     public void Constructor_ShouldCreateInstance()
     {
-        LogAssert("Verifying AuthOutboxWriter was created");
+        LogAssert("Verifying AuthOutboxPostgreSqlWriter was created");
         _sut.ShouldNotBeNull();
     }
 

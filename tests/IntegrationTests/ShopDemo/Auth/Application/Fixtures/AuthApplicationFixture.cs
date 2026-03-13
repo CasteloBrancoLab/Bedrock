@@ -23,6 +23,7 @@ using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
 using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories;
 using ShopDemo.Auth.Infra.Data.PostgreSql.DataModelsRepositories.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Mappers;
+using ShopDemo.Auth.Infra.Data.Outbox;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Outbox;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Outbox.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Repositories;
@@ -100,16 +101,17 @@ public class AuthApplicationFixture : ServiceCollectionFixture
         return new AuthenticationService(passwordHasher, userRepository);
     }
 
-    public AuthOutboxRepository CreateAuthOutboxRepository(IAuthPostgreSqlUnitOfWork unitOfWork)
+    public AuthOutboxPostgreSqlRepository CreateAuthOutboxPostgreSqlRepository(IAuthPostgreSqlUnitOfWork unitOfWork)
     {
-        return new AuthOutboxRepository(unitOfWork);
+        return new AuthOutboxPostgreSqlRepository(unitOfWork);
     }
 
-    public AuthOutboxWriter CreateAuthOutboxWriter(IAuthOutboxRepository outboxRepository)
+    public AuthOutboxWriter CreateAuthOutboxWriter(IAuthOutboxPostgreSqlRepository outboxRepository)
     {
         var serializer = GetService<IStringSerializer>();
         var messageSerializer = new MessageOutboxSerializer(serializer);
-        return new AuthOutboxWriter(outboxRepository, messageSerializer, TimeProvider.System);
+        var postgreSqlWriter = new AuthOutboxPostgreSqlWriter(outboxRepository, messageSerializer, TimeProvider.System);
+        return new AuthOutboxWriter(postgreSqlWriter);
     }
 
     public RegisterUserUseCase CreateRegisterUserUseCase(

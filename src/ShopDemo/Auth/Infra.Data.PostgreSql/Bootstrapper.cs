@@ -6,7 +6,6 @@ using Bedrock.BuildingBlocks.Persistence.PostgreSql.Mappers.Interfaces;
 using Bedrock.BuildingBlocks.Serialization.Abstractions.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using ShopDemo.Auth.Infra.CrossCutting.Messages.Outbox.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Connections;
 using ShopDemo.Auth.Infra.Data.PostgreSql.Connections.Interfaces;
 using ShopDemo.Auth.Infra.Data.PostgreSql.DataModels;
@@ -98,15 +97,14 @@ public static class Bootstrapper
         services.TryAddScoped<IIdempotencyRecordDataModelRepository, IdempotencyRecordDataModelRepository>();
         services.TryAddScoped<ITokenExchangeDataModelRepository, TokenExchangeDataModelRepository>();
 
-        // Outbox — persistencia (scoped — marker interface do BC, partilha UoW/transacao)
-        services.TryAddScoped<IAuthOutboxRepository, AuthOutboxRepository>();
+        // Outbox — persistencia PostgreSql (scoped — partilha UoW/transacao)
+        services.TryAddScoped<IAuthOutboxPostgreSqlRepository, AuthOutboxPostgreSqlRepository>();
 
         // Outbox — serializacao (singleton — stateless apos inicializacao)
-        services.TryAddSingleton<IStringSerializer, AuthOutboxJsonSerializer>();
         services.TryAddSingleton<IOutboxSerializer<MessageBase>, MessageOutboxSerializer>();
 
-        // Outbox — writer (scoped — marker interface do BC, compoe MessageOutboxWriter)
-        services.TryAddScoped<IAuthOutboxWriter, AuthOutboxWriter>();
+        // Outbox — writer PostgreSql (scoped — compoe MessageOutboxWriter)
+        services.TryAddScoped<IAuthOutboxPostgreSqlWriter, AuthOutboxPostgreSqlWriter>();
 
         // TimeProvider (singleton — TryAdd nao sobrescreve se host ja registou)
         services.TryAddSingleton(TimeProvider.System);

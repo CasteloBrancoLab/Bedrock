@@ -41,7 +41,7 @@ public class RegisterUserUseCaseIntegrationTests : IntegrationTestBase
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
         var userRepo = _fixture.CreateUserRepository(unitOfWork);
         var authService = _fixture.CreateAuthenticationService(userRepo);
-        var outboxRepo = _fixture.CreateAuthOutboxRepository(unitOfWork);
+        var outboxRepo = _fixture.CreateAuthOutboxPostgreSqlRepository(unitOfWork);
         var outboxWriter = _fixture.CreateAuthOutboxWriter(outboxRepo);
         var useCase = _fixture.CreateRegisterUserUseCase(unitOfWork, authService, outboxWriter);
 
@@ -79,7 +79,7 @@ public class RegisterUserUseCaseIntegrationTests : IntegrationTestBase
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
         var userRepo = _fixture.CreateUserRepository(unitOfWork);
         var authService = _fixture.CreateAuthenticationService(userRepo);
-        var outboxRepo = _fixture.CreateAuthOutboxRepository(unitOfWork);
+        var outboxRepo = _fixture.CreateAuthOutboxPostgreSqlRepository(unitOfWork);
         var outboxWriter = _fixture.CreateAuthOutboxWriter(outboxRepo);
         var useCase = _fixture.CreateRegisterUserUseCase(unitOfWork, authService, outboxWriter);
 
@@ -113,7 +113,7 @@ public class RegisterUserUseCaseIntegrationTests : IntegrationTestBase
         await using var unitOfWork = _fixture.CreateAppUserUnitOfWork();
         var userRepo = _fixture.CreateUserRepository(unitOfWork);
         var authService = _fixture.CreateAuthenticationService(userRepo);
-        var outboxRepo = _fixture.CreateAuthOutboxRepository(unitOfWork);
+        var outboxRepo = _fixture.CreateAuthOutboxPostgreSqlRepository(unitOfWork);
         var outboxWriter = _fixture.CreateAuthOutboxWriter(outboxRepo);
         var useCase = _fixture.CreateRegisterUserUseCase(unitOfWork, authService, outboxWriter);
 
@@ -147,7 +147,7 @@ public class RegisterUserUseCaseIntegrationTests : IntegrationTestBase
         await using var uow1 = _fixture.CreateAppUserUnitOfWork();
         var repo1 = _fixture.CreateUserRepository(uow1);
         var svc1 = _fixture.CreateAuthenticationService(repo1);
-        var outboxRepo1 = _fixture.CreateAuthOutboxRepository(uow1);
+        var outboxRepo1 = _fixture.CreateAuthOutboxPostgreSqlRepository(uow1);
         var writer1 = _fixture.CreateAuthOutboxWriter(outboxRepo1);
         var uc1 = _fixture.CreateRegisterUserUseCase(uow1, svc1, writer1);
 
@@ -160,7 +160,7 @@ public class RegisterUserUseCaseIntegrationTests : IntegrationTestBase
         await using var uow2 = _fixture.CreateAppUserUnitOfWork();
         var repo2 = _fixture.CreateUserRepository(uow2);
         var svc2 = _fixture.CreateAuthenticationService(repo2);
-        var outboxRepo2 = _fixture.CreateAuthOutboxRepository(uow2);
+        var outboxRepo2 = _fixture.CreateAuthOutboxPostgreSqlRepository(uow2);
         var writer2 = _fixture.CreateAuthOutboxWriter(outboxRepo2);
         var uc2 = _fixture.CreateRegisterUserUseCase(uow2, svc2, writer2);
 
