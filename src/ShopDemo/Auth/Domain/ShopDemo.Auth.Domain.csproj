@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Domain.Entities\ShopDemo.Auth.Domain.Entities.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Domain\Bedrock.BuildingBlocks.Domain.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Security\Bedrock.BuildingBlocks.Security.csproj" />
