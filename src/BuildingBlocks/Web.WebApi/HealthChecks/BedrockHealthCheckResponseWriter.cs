@@ -1,6 +1,6 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Bedrock.BuildingBlocks.Web.WebApi.HealthChecks.Models;
+using Bedrock.BuildingBlocks.Web.WebApi.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -12,22 +12,17 @@ namespace Bedrock.BuildingBlocks.Web.WebApi.HealthChecks;
 //
 // Exemplo de resposta:
 // {
-//   "status": "Healthy",
+//   "status": "healthy",
 //   "description": null,
 //   "timestamp": "2026-03-13T17:00:00.000Z",
 //   "resources": [
-//     { "name": "PostgreSQL", "status": "Unhealthy", "description": "Connection timeout" },
-//     { "name": "Redis", "status": "Healthy", "description": null }
+//     { "name": "PostgreSQL", "status": "unhealthy", "timestamp": "2026-03-13T16:55:00Z", "description": "Connection timeout" },
+//     { "name": "Redis", "status": "healthy", "timestamp": "2026-03-13T16:59:30Z", "description": null }
 //   ]
 // }
 internal static class BedrockHealthCheckResponseWriter
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
-        WriteIndented = false
-    };
+    private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
     public static Task WriteAsync(HttpContext httpContext, HealthReport report)
     {
@@ -49,6 +44,13 @@ internal static class BedrockHealthCheckResponseWriter
         );
 
         return httpContext.Response.WriteAsJsonAsync(response, JsonOptions);
+    }
+
+    private static JsonSerializerOptions CreateJsonOptions()
+    {
+        var options = new JsonSerializerOptions { WriteIndented = false };
+        BedrockJsonDefaults.Configure(options);
+        return options;
     }
 
     private sealed record HealthCheckResponse(

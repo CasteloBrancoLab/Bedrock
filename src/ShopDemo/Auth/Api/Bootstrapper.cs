@@ -1,5 +1,6 @@
 using Bedrock.BuildingBlocks.Web.Hosting;
 using Bedrock.BuildingBlocks.Web.WebApi;
+using Bedrock.BuildingBlocks.Web.WebApi.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using ShopDemo.Auth.Api.HealthChecks;
@@ -18,9 +19,7 @@ public static class Bootstrapper
             .AddLivenessCheck<LivenessHealthCheck>("/health/live")
         );
 
-        services
-            .AddControllers()
-            .AddApplicationPart(typeof(Bootstrapper).Assembly);
+        services.AddBedrockControllers();
 
         return services;
     }
