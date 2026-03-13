@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Bedrock.BuildingBlocks.Web.ExecutionContexts;
 using Bedrock.BuildingBlocks.Web.WebApi.Controllers;
 using Bedrock.BuildingBlocks.Web.WebApi.Models;
@@ -8,9 +9,10 @@ using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Models;
 using ShopDemo.Auth.Application.UseCases.RegisterUser.Interfaces;
 using ShopDemo.Auth.Application.UseCases.RegisterUser.Models;
 
-namespace ShopDemo.Auth.Api.Controllers;
+namespace ShopDemo.Auth.Api.Controllers.V1;
 
-[Route("auth")]
+[ApiVersion(1)]
+[Route("api/v{version:apiVersion}/auth")]
 public sealed class AuthController : BedrockApiControllerBase
 {
     private const string GenericErrorCode = "InvalidRequest";

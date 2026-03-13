@@ -4,14 +4,17 @@ namespace Bedrock.BuildingBlocks.Web.Security;
 
 // Adiciona headers de seguranca padrao em todas as respostas HTTP.
 // Esses headers sao recomendacoes da OWASP para prevenir classes comuns
-// de ataques em aplicacoes web.
+// de ataques em aplicacoes web. O callback opcional permite sobrescrever
+// ou adicionar headers apos os defaults (ex: CSP customizado).
 public sealed class SecurityHeadersMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly Action<IHeaderDictionary>? _configure;
 
-    public SecurityHeadersMiddleware(RequestDelegate next)
+    public SecurityHeadersMiddleware(RequestDelegate next, Action<IHeaderDictionary>? configure = null)
     {
         _next = next;
+        _configure = configure;
     }
 
     public Task InvokeAsync(HttpContext context)
@@ -39,6 +42,8 @@ public sealed class SecurityHeadersMiddleware
         // de conteudo ao proprio dominio. APIs nao servem HTML, mas o header
         // protege contra respostas interpretadas indevidamente pelo browser.
         headers["Content-Security-Policy"] = "default-src 'self'";
+
+        _configure?.Invoke(headers);
 
         return _next(context);
     }

@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Web\Bedrock.BuildingBlocks.Web.csproj" />
   </ItemGroup>
 

@@ -4,7 +4,7 @@ using Bedrock.BuildingBlocks.Web.WebApi.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using ShopDemo.Auth.Api.Controllers;
+using ShopDemo.Auth.Api.Controllers.V1;
 using ShopDemo.Auth.Api.Models;
 using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Interfaces;
 using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Models;
