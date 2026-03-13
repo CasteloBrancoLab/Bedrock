@@ -1,4 +1,5 @@
 using Bedrock.BuildingBlocks.Testing;
+using Bedrock.BuildingBlocks.Web.WebApi.Models;
 using ShopDemo.Auth.Api.Models;
 using Shouldly;
 using Xunit;

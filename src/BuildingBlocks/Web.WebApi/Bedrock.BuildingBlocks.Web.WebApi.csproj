@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Assembly Information">
+    <Version>1.0.0-alpha.1</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0-alpha.1</InformationalVersion>
+    <Company>MarceloCastelo.IO</Company>
+    <Product>Bedrock</Product>
+    <Description>Web API building blocks for Bedrock, providing base API controller and standard response models.</Description>
+    <Copyright>Copyright © 2023-2026 Marcelo Castelo Branco</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Web\Bedrock.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,5 +1,6 @@
-using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
-using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Web.ExecutionContexts;
+using Bedrock.BuildingBlocks.Web.WebApi.Controllers;
+using Bedrock.BuildingBlocks.Web.WebApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using ShopDemo.Auth.Api.Models;
 using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Interfaces;
@@ -9,9 +10,8 @@ using ShopDemo.Auth.Application.UseCases.RegisterUser.Models;
 
 namespace ShopDemo.Auth.Api.Controllers;
 
-[ApiController]
 [Route("auth")]
-public sealed class AuthController : ControllerBase
+public sealed class AuthController : BedrockApiControllerBase
 {
     private const string GenericErrorCode = "InvalidRequest";
     private const string GenericErrorMessage = "The request could not be processed.";
@@ -20,9 +20,10 @@ public sealed class AuthController : ControllerBase
     private readonly IAuthenticateUserUseCase _authenticateUserUseCase;
 
     public AuthController(
+        IExecutionContextFactory executionContextFactory,
         IRegisterUserUseCase registerUserUseCase,
         IAuthenticateUserUseCase authenticateUserUseCase
-    )
+    ) : base(executionContextFactory)
     {
         _registerUserUseCase = registerUserUseCase ?? throw new ArgumentNullException(nameof(registerUserUseCase));
         _authenticateUserUseCase = authenticateUserUseCase ?? throw new ArgumentNullException(nameof(authenticateUserUseCase));
@@ -60,31 +61,5 @@ public sealed class AuthController : ControllerBase
             return Unauthorized(new ErrorResponse(GenericErrorCode, GenericErrorMessage));
 
         return Ok(new LoginResponse(output.UserId, output.Email));
-    }
-
-    private ExecutionContext CreateExecutionContext(string businessOperationCode)
-    {
-        var correlationId = Guid.TryParse(
-            Request.Headers["X-Correlation-Id"].FirstOrDefault(),
-            out var parsed)
-            ? parsed
-            : Guid.NewGuid();
-
-        var tenantId = Guid.TryParse(
-            Request.Headers["X-Tenant-Id"].FirstOrDefault(),
-            out var tenantParsed)
-            ? tenantParsed
-            : Guid.Empty;
-
-        var executionUser = User.Identity?.Name ?? "anonymous";
-
-        return ExecutionContext.Create(
-            correlationId: correlationId,
-            tenantInfo: TenantInfo.Create(tenantId),
-            executionUser: executionUser,
-            executionOrigin: "Api",
-            businessOperationCode: businessOperationCode,
-            minimumMessageType: MessageType.Information,
-            timeProvider: TimeProvider.System);
     }
 }

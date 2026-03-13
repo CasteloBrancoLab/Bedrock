@@ -1,4 +1,4 @@
-namespace ShopDemo.Auth.Api.Models;
+namespace Bedrock.BuildingBlocks.Web.WebApi.Models;
 
 public sealed record ErrorResponse(
     string Code,

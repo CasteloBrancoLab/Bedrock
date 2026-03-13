@@ -1,4 +1,6 @@
 using Bedrock.BuildingBlocks.Testing;
+using Bedrock.BuildingBlocks.Web.ExecutionContexts;
+using Bedrock.BuildingBlocks.Web.WebApi.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -18,13 +20,15 @@ public class AuthControllerTests : TestBase
 {
     private readonly Mock<IRegisterUserUseCase> _registerMock;
     private readonly Mock<IAuthenticateUserUseCase> _authenticateMock;
+    private readonly ExecutionContextFactory _executionContextFactory;
     private readonly AuthController _sut;
 
     public AuthControllerTests(ITestOutputHelper output) : base(output)
     {
         _registerMock = new Mock<IRegisterUserUseCase>();
         _authenticateMock = new Mock<IAuthenticateUserUseCase>();
-        _sut = new AuthController(_registerMock.Object, _authenticateMock.Object);
+        _executionContextFactory = new ExecutionContextFactory(TimeProvider.System);
+        _sut = new AuthController(_executionContextFactory, _registerMock.Object, _authenticateMock.Object);
         SetupHttpContext();
     }
 
@@ -55,12 +59,21 @@ public class AuthControllerTests : TestBase
     #region Constructor Tests
 
     [Fact]
+    public void Constructor_WithNullExecutionContextFactory_ShouldThrow()
+    {
+        LogAct("Creating controller with null execution context factory");
+        LogAssert("Verifying ArgumentNullException is thrown");
+        Should.Throw<ArgumentNullException>(() =>
+            new AuthController(null!, _registerMock.Object, _authenticateMock.Object));
+    }
+
+    [Fact]
     public void Constructor_WithNullRegisterUseCase_ShouldThrow()
     {
         LogAct("Creating controller with null register use case");
         LogAssert("Verifying ArgumentNullException is thrown");
         Should.Throw<ArgumentNullException>(() =>
-            new AuthController(null!, _authenticateMock.Object));
+            new AuthController(_executionContextFactory, null!, _authenticateMock.Object));
     }
 
     [Fact]
@@ -69,7 +82,7 @@ public class AuthControllerTests : TestBase
         LogAct("Creating controller with null authenticate use case");
         LogAssert("Verifying ArgumentNullException is thrown");
         Should.Throw<ArgumentNullException>(() =>
-            new AuthController(_registerMock.Object, null!));
+            new AuthController(_executionContextFactory, _registerMock.Object, null!));
     }
 
     #endregion
