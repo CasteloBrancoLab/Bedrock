@@ -35,15 +35,18 @@ public class AuthControllerTests : TestBase
     private void SetupHttpContext(
         string? correlationId = null,
         string? tenantId = null,
-        string? userName = null)
+        string? userName = null,
+        string businessOperationCode = "TEST_OPERATION")
     {
         var httpContext = new DefaultHttpContext();
 
+        httpContext.Request.Headers[ExecutionContextFactory.BusinessOperationCodeHeaderName] = businessOperationCode;
+
         if (correlationId is not null)
-            httpContext.Request.Headers["X-Correlation-Id"] = correlationId;
+            httpContext.Request.Headers[ExecutionContextFactory.CorrelationIdHeaderName] = correlationId;
 
         if (tenantId is not null)
-            httpContext.Request.Headers["X-Tenant-Id"] = tenantId;
+            httpContext.Request.Headers[ExecutionContextFactory.TenantIdHeaderName] = tenantId;
 
         if (userName is not null)
         {

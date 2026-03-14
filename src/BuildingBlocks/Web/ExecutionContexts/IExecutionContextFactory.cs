@@ -4,5 +4,5 @@ namespace Bedrock.BuildingBlocks.Web.ExecutionContexts;
 
 public interface IExecutionContextFactory
 {
-    ExecutionContext Create(HttpContext httpContext, string businessOperationCode);
+    ExecutionContext Create(HttpContext httpContext);
 }

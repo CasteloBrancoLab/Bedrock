@@ -13,8 +13,8 @@ public abstract class BedrockApiControllerBase : ControllerBase
         _executionContextFactory = executionContextFactory ?? throw new ArgumentNullException(nameof(executionContextFactory));
     }
 
-    protected ExecutionContext CreateExecutionContext(string businessOperationCode)
+    protected ExecutionContext CreateExecutionContext()
     {
-        return _executionContextFactory.Create(HttpContext, businessOperationCode);
+        return _executionContextFactory.Create(HttpContext);
     }
 }

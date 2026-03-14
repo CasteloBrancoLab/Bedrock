@@ -2,7 +2,10 @@ using Asp.Versioning;
 using Bedrock.BuildingBlocks.Web.ExecutionContexts;
 using Bedrock.BuildingBlocks.Web.WebApi.Controllers;
 using Bedrock.BuildingBlocks.Web.WebApi.Models;
+using Bedrock.BuildingBlocks.Web.WebApi.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using ShopDemo.Auth.Api;
 using ShopDemo.Auth.Api.Models;
 using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Interfaces;
 using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Models;
@@ -13,6 +16,7 @@ namespace ShopDemo.Auth.Api.Controllers.V1;
 
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/auth")]
+[EnableRateLimiting(BedrockRateLimitingPolicyNames.Tenant)]
 public sealed class AuthController : BedrockApiControllerBase
 {
     private const string GenericErrorCode = "InvalidRequest";
@@ -32,12 +36,13 @@ public sealed class AuthController : BedrockApiControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting(RateLimitPolicyNames.Register)]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken
     )
     {
-        var executionContext = CreateExecutionContext("AUTH_REGISTER_USER");
+        var executionContext = CreateExecutionContext();
 
         var input = new RegisterUserInput(request.Email, request.Password);
         var output = await _registerUserUseCase.ExecuteAsync(executionContext, input, cancellationToken);
@@ -49,12 +54,13 @@ public sealed class AuthController : BedrockApiControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitPolicyNames.Login)]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken
     )
     {
-        var executionContext = CreateExecutionContext("AUTH_AUTHENTICATE_USER");
+        var executionContext = CreateExecutionContext();
 
         var input = new AuthenticateUserInput(request.Email, request.Password);
         var output = await _authenticateUserUseCase.ExecuteAsync(executionContext, input, cancellationToken);

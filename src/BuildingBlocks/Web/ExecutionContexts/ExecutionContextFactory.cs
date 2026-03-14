@@ -29,17 +29,16 @@ public sealed class ExecutionContextFactory : IExecutionContextFactory
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
-    public ExecutionContext Create(HttpContext httpContext, string businessOperationCode)
+    public ExecutionContext Create(HttpContext httpContext)
     {
         ArgumentNullException.ThrowIfNull(httpContext);
-        ArgumentException.ThrowIfNullOrWhiteSpace(businessOperationCode);
 
         return ExecutionContext.Create(
             correlationId: ExtractCorrelationId(httpContext),
             tenantInfo: ExtractTenantInfo(httpContext),
             executionUser: ExtractExecutionUser(httpContext),
             executionOrigin: ExtractExecutionOrigin(httpContext),
-            businessOperationCode: ExtractBusinessOperationCode(httpContext, businessOperationCode),
+            businessOperationCode: ExtractBusinessOperationCode(httpContext),
             minimumMessageType: MessageType.Information,
             timeProvider: _timeProvider);
     }
@@ -92,19 +91,20 @@ public sealed class ExecutionContextFactory : IExecutionContextFactory
         return DefaultExecutionOrigin;
     }
 
-    // Prioridade: header X-Business-Operation-Code (propagado pelo servico iniciador)
-    // > argumento local (definido na action da controller).
-    // Quando o servico e o iniciador do processo, o argumento local define o codigo.
-    // Quando e chamado por outro servico, o header propaga o codigo original,
-    // permitindo observabilidade end-to-end do use case em toda a cadeia.
-    private static string ExtractBusinessOperationCode(HttpContext httpContext, string fallback)
+    // Obrigatorio via header X-Business-Operation-Code.
+    // A API nunca e a iniciadora do processo — o client (web, mobile, outro servico)
+    // sempre define qual operacao de negocio esta sendo executada.
+    // Sem esse header, nao ha como rastrear o use case end-to-end.
+    private static string ExtractBusinessOperationCode(HttpContext httpContext)
     {
         var headerValue = httpContext.Request.Headers[BusinessOperationCodeHeaderName].FirstOrDefault();
-        if (!string.IsNullOrWhiteSpace(headerValue))
+        if (string.IsNullOrWhiteSpace(headerValue))
         {
-            return headerValue;
+            throw new InvalidOperationException(
+                $"Header '{BusinessOperationCodeHeaderName}' is required. " +
+                "The client must identify the business operation being executed.");
         }
 
-        return fallback;
+        return headerValue;
     }
 }
