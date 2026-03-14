@@ -2,6 +2,7 @@ using Bedrock.BuildingBlocks.Web.Hosting;
 using Bedrock.BuildingBlocks.Web.Security;
 using Bedrock.BuildingBlocks.Web.WebApi.ApiDocumentation;
 using Bedrock.BuildingBlocks.Web.WebApi.HealthChecks;
+using Bedrock.BuildingBlocks.Web.WebApi.Cors;
 using Bedrock.BuildingBlocks.Web.WebApi.RateLimiting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using ShopDemo.Auth.Api;
@@ -27,6 +28,7 @@ public class Program
 
         app.UseBedrockSecurityHeaders();
         app.UseBedrockRateLimiting();
+        app.UseBedrockCors();
         app.UseBedrockApiDocumentation();
         app.UseAuthorization();
         app.MapControllers();
