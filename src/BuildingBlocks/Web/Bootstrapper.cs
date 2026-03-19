@@ -1,5 +1,6 @@
 using Bedrock.BuildingBlocks.Web.ExecutionContexts;
-using Bedrock.BuildingBlocks.Web.Hosting;
+using Bedrock.BuildingBlocks.Web.ExecutionContexts.Interfaces;
+using Bedrock.BuildingBlocks.Web.Hosting.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

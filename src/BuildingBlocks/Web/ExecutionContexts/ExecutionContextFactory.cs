@@ -1,5 +1,6 @@
 using Bedrock.BuildingBlocks.Core.ExecutionContexts.Models.Enums;
 using Bedrock.BuildingBlocks.Core.TenantInfos;
+using Bedrock.BuildingBlocks.Web.ExecutionContexts.Interfaces;
 using Microsoft.AspNetCore.Http;
 
 namespace Bedrock.BuildingBlocks.Web.ExecutionContexts;
@@ -19,8 +20,10 @@ public sealed class ExecutionContextFactory : IExecutionContextFactory
     public const string ExecutionUserHeaderName = "X-Execution-User";
     public const string ExecutionOriginHeaderName = "X-Execution-Origin";
     public const string BusinessOperationCodeHeaderName = "X-Business-Operation-Code";
+    public const string AcceptLanguageHeaderName = "Accept-Language";
     public const string DefaultExecutionOrigin = "Api";
     public const string DefaultExecutionUser = "anonymous";
+    public const string DefaultLanguage = "en";
 
     private readonly TimeProvider _timeProvider;
 
@@ -40,7 +43,8 @@ public sealed class ExecutionContextFactory : IExecutionContextFactory
             executionOrigin: ExtractExecutionOrigin(httpContext),
             businessOperationCode: ExtractBusinessOperationCode(httpContext),
             minimumMessageType: MessageType.Information,
-            timeProvider: _timeProvider);
+            timeProvider: _timeProvider,
+            language: ExtractLanguage(httpContext));
     }
 
     // Auto-gera CorrelationId se o header nao for fornecido,
@@ -89,6 +93,31 @@ public sealed class ExecutionContextFactory : IExecutionContextFactory
         }
 
         return DefaultExecutionOrigin;
+    }
+
+    // Extrai o primary language tag do header Accept-Language.
+    // Parseia apenas o primeiro tag (antes de ',' e ';q='), ignorando qualidade.
+    // Nao altera CultureInfo — e string pura para traducao de message codes.
+    private static string ExtractLanguage(HttpContext httpContext)
+    {
+        var headerValue = httpContext.Request.Headers[AcceptLanguageHeaderName].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(headerValue))
+        {
+            return DefaultLanguage;
+        }
+
+        var commaIndex = headerValue.IndexOf(',');
+        var primaryTag = commaIndex >= 0 ? headerValue[..commaIndex] : headerValue;
+
+        var semicolonIndex = primaryTag.IndexOf(';');
+        if (semicolonIndex >= 0)
+        {
+            primaryTag = primaryTag[..semicolonIndex];
+        }
+
+        primaryTag = primaryTag.Trim();
+
+        return primaryTag.Length > 0 ? primaryTag : DefaultLanguage;
     }
 
     // Obrigatorio via header X-Business-Operation-Code.

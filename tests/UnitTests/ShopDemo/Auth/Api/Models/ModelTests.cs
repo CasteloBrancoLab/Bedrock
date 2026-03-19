@@ -1,6 +1,5 @@
 using Bedrock.BuildingBlocks.Testing;
-using Bedrock.BuildingBlocks.Web.WebApi.Models;
-using ShopDemo.Auth.Api.Models;
+using ShopDemo.Auth.Api.Controllers.V1.Auth.Models;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,39 +10,13 @@ public class ModelTests : TestBase
 {
     public ModelTests(ITestOutputHelper output) : base(output) { }
 
-    #region ErrorResponse
+    #region RegisterPayload
 
     [Fact]
-    public void ErrorResponse_ShouldStoreProperties()
+    public void RegisterPayload_ShouldStoreProperties()
     {
-        LogAct("Creating ErrorResponse");
-        var sut = new ErrorResponse("ERR_CODE", "Something went wrong");
-
-        LogAssert("Verifying properties");
-        sut.Code.ShouldBe("ERR_CODE");
-        sut.Message.ShouldBe("Something went wrong");
-    }
-
-    [Fact]
-    public void ErrorResponse_Equality_ShouldWorkByValue()
-    {
-        LogAct("Creating two identical ErrorResponse instances");
-        var a = new ErrorResponse("ERR", "msg");
-        var b = new ErrorResponse("ERR", "msg");
-
-        LogAssert("Verifying value equality");
-        a.ShouldBe(b);
-    }
-
-    #endregion
-
-    #region RegisterRequest
-
-    [Fact]
-    public void RegisterRequest_ShouldStoreProperties()
-    {
-        LogAct("Creating RegisterRequest");
-        var sut = new RegisterRequest("test@example.com", "SecurePassword123!");
+        LogAct("Creating RegisterPayload");
+        var sut = new RegisterPayload("test@example.com", "SecurePassword123!");
 
         LogAssert("Verifying properties");
         sut.Email.ShouldBe("test@example.com");
@@ -51,11 +24,11 @@ public class ModelTests : TestBase
     }
 
     [Fact]
-    public void RegisterRequest_Equality_ShouldWorkByValue()
+    public void RegisterPayload_Equality_ShouldWorkByValue()
     {
-        LogAct("Creating two identical RegisterRequest instances");
-        var a = new RegisterRequest("a@b.com", "pass");
-        var b = new RegisterRequest("a@b.com", "pass");
+        LogAct("Creating two identical RegisterPayload instances");
+        var a = new RegisterPayload("a@b.com", "pass");
+        var b = new RegisterPayload("a@b.com", "pass");
 
         LogAssert("Verifying value equality");
         a.ShouldBe(b);
@@ -91,13 +64,13 @@ public class ModelTests : TestBase
 
     #endregion
 
-    #region LoginRequest
+    #region LoginPayload
 
     [Fact]
-    public void LoginRequest_ShouldStoreProperties()
+    public void LoginPayload_ShouldStoreProperties()
     {
-        LogAct("Creating LoginRequest");
-        var sut = new LoginRequest("test@example.com", "SecurePassword123!");
+        LogAct("Creating LoginPayload");
+        var sut = new LoginPayload("test@example.com", "SecurePassword123!");
 
         LogAssert("Verifying properties");
         sut.Email.ShouldBe("test@example.com");
@@ -105,11 +78,11 @@ public class ModelTests : TestBase
     }
 
     [Fact]
-    public void LoginRequest_Equality_ShouldWorkByValue()
+    public void LoginPayload_Equality_ShouldWorkByValue()
     {
-        LogAct("Creating two identical LoginRequest instances");
-        var a = new LoginRequest("a@b.com", "pass");
-        var b = new LoginRequest("a@b.com", "pass");
+        LogAct("Creating two identical LoginPayload instances");
+        var a = new LoginPayload("a@b.com", "pass");
+        var b = new LoginPayload("a@b.com", "pass");
 
         LogAssert("Verifying value equality");
         a.ShouldBe(b);

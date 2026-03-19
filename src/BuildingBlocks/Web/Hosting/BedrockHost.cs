@@ -1,4 +1,5 @@
 using System.Globalization;
+using Bedrock.BuildingBlocks.Web.Hosting.Models;
 
 namespace Bedrock.BuildingBlocks.Web.Hosting;
 

@@ -1,5 +1,6 @@
 using Bedrock.BuildingBlocks.Testing;
 using Bedrock.BuildingBlocks.Web.Hosting;
+using Bedrock.BuildingBlocks.Web.Hosting.Models;
 using Microsoft.Extensions.DependencyInjection;
 using ShopDemo.Auth.Api;
 using Shouldly;

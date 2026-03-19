@@ -70,6 +70,7 @@ public sealed class ExecutionContext
     public string ExecutionUser { get; }
     public string ExecutionOrigin { get; }
     public string BusinessOperationCode { get; private set; }
+    public string Language { get; }
     public MessageType MinimumMessageType { get; }
     public TimeProvider TimeProvider { get; }
 
@@ -159,6 +160,7 @@ public sealed class ExecutionContext
         string executionUser,
         string executionOrigin,
         string businessOperationCode,
+        string language,
         MessageType minimumMessageType,
         TimeProvider timeProvider,
         ConcurrentDictionary<Id, Message> messageCollection,
@@ -171,6 +173,7 @@ public sealed class ExecutionContext
         ExecutionUser = executionUser;
         ExecutionOrigin = executionOrigin;
         BusinessOperationCode = businessOperationCode;
+        Language = language;
         MinimumMessageType = minimumMessageType;
         TimeProvider = timeProvider;
 
@@ -186,7 +189,8 @@ public sealed class ExecutionContext
         string executionOrigin,
         string businessOperationCode,
         MessageType minimumMessageType,
-        TimeProvider timeProvider
+        TimeProvider timeProvider,
+        string language = "en"
     )
     {
         ArgumentNullException.ThrowIfNull(timeProvider, nameof(timeProvider));
@@ -202,6 +206,7 @@ public sealed class ExecutionContext
             executionUser: executionUser,
             executionOrigin: executionOrigin,
             businessOperationCode: businessOperationCode,
+            language: language,
             minimumMessageType: minimumMessageType,
             timeProvider: timeProvider,
             messageCollection: [],
@@ -217,6 +222,7 @@ public sealed class ExecutionContext
             executionUser: ExecutionUser,
             executionOrigin: ExecutionOrigin,
             businessOperationCode: BusinessOperationCode,
+            language: Language,
             minimumMessageType: MinimumMessageType,
             timeProvider: TimeProvider,
             messageCollection: new ConcurrentDictionary<Id, Message>(_messageCollection),
@@ -409,7 +415,8 @@ public sealed class ExecutionContext
             ["TenantName"] = TenantInfo.Name,
             ["ExecutionUser"] = ExecutionUser,
             ["ExecutionOrigin"] = ExecutionOrigin,
-            ["BusinessOperationCode"] = BusinessOperationCode
+            ["BusinessOperationCode"] = BusinessOperationCode,
+            ["Language"] = Language
         };
     }
 

@@ -1,11 +1,12 @@
 using Bedrock.BuildingBlocks.Testing;
 using Bedrock.BuildingBlocks.Web.ExecutionContexts;
-using Bedrock.BuildingBlocks.Web.WebApi.Models;
+using Bedrock.BuildingBlocks.Web.ExecutionContexts.Interfaces;
+using Bedrock.BuildingBlocks.Web.WebApi.Envelope.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using ShopDemo.Auth.Api.Controllers.V1;
-using ShopDemo.Auth.Api.Models;
+using ShopDemo.Auth.Api.Controllers.V1.Auth;
+using ShopDemo.Auth.Api.Controllers.V1.Auth.Models;
 using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Interfaces;
 using ShopDemo.Auth.Application.UseCases.AuthenticateUser.Models;
 using ShopDemo.Auth.Application.UseCases.RegisterUser.Interfaces;
@@ -97,34 +98,36 @@ public class AuthControllerTests : TestBase
     {
         // Arrange
         LogArrange("Setting up successful registration");
-        var request = new RegisterRequest("test@example.com", "SecurePassword123!");
+        var payload = new RegisterPayload("test@example.com", "SecurePassword123!");
         var expectedOutput = new RegisterUserOutput(Guid.NewGuid(), "test@example.com");
 
         _registerMock
             .Setup(x => x.ExecuteAsync(
                 It.IsAny<ExecutionContext>(),
-                It.Is<RegisterUserInput>(i => i.Email == request.Email && i.Password == request.Password),
+                It.Is<RegisterUserInput>(i => i.Email == payload.Email && i.Password == payload.Password),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedOutput);
 
         // Act
         LogAct("Calling Register endpoint");
-        var result = await _sut.Register(request, CancellationToken.None);
+        var result = await _sut.Register(payload, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying Created result with RegisterResponse");
-        var createdResult = result.ShouldBeOfType<CreatedResult>();
-        var response = createdResult.Value.ShouldBeOfType<RegisterResponse>();
-        response.UserId.ShouldBe(expectedOutput.UserId);
-        response.Email.ShouldBe(expectedOutput.Email);
+        LogAssert("Verifying 201 result with ApiResponse containing RegisterResponse");
+        var objectResult = result.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(201);
+        var apiResponse = objectResult.Value.ShouldBeOfType<ApiResponse<RegisterResponse>>();
+        apiResponse.Data.ShouldNotBeNull();
+        apiResponse.Data.UserId.ShouldBe(expectedOutput.UserId);
+        apiResponse.Data.Email.ShouldBe(expectedOutput.Email);
     }
 
     [Fact]
-    public async Task Register_WhenFails_ShouldReturnBadRequest()
+    public async Task Register_WhenFails_ShouldReturnDomainError()
     {
         // Arrange
         LogArrange("Setting up failed registration");
-        var request = new RegisterRequest("test@example.com", "SecurePassword123!");
+        var payload = new RegisterPayload("test@example.com", "SecurePassword123!");
 
         _registerMock
             .Setup(x => x.ExecuteAsync(
@@ -135,12 +138,13 @@ public class AuthControllerTests : TestBase
 
         // Act
         LogAct("Calling Register endpoint");
-        var result = await _sut.Register(request, CancellationToken.None);
+        var result = await _sut.Register(payload, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying BadRequest result with ErrorResponse");
-        var badRequest = result.ShouldBeOfType<BadRequestObjectResult>();
-        badRequest.Value.ShouldBeOfType<ErrorResponse>();
+        LogAssert("Verifying 422 result with ApiResponse");
+        var objectResult = result.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(422);
+        objectResult.Value.ShouldBeOfType<ApiResponse<RegisterResponse>>();
     }
 
     #endregion
@@ -152,26 +156,28 @@ public class AuthControllerTests : TestBase
     {
         // Arrange
         LogArrange("Setting up successful login");
-        var request = new LoginRequest("test@example.com", "SecurePassword123!");
+        var payload = new LoginPayload("test@example.com", "SecurePassword123!");
         var expectedOutput = new AuthenticateUserOutput(Guid.NewGuid(), "test@example.com");
 
         _authenticateMock
             .Setup(x => x.ExecuteAsync(
                 It.IsAny<ExecutionContext>(),
-                It.Is<AuthenticateUserInput>(i => i.Email == request.Email && i.Password == request.Password),
+                It.Is<AuthenticateUserInput>(i => i.Email == payload.Email && i.Password == payload.Password),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedOutput);
 
         // Act
         LogAct("Calling Login endpoint");
-        var result = await _sut.Login(request, CancellationToken.None);
+        var result = await _sut.Login(payload, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying Ok result with LoginResponse");
-        var okResult = result.ShouldBeOfType<OkObjectResult>();
-        var response = okResult.Value.ShouldBeOfType<LoginResponse>();
-        response.UserId.ShouldBe(expectedOutput.UserId);
-        response.Email.ShouldBe(expectedOutput.Email);
+        LogAssert("Verifying 200 result with ApiResponse containing LoginResponse");
+        var objectResult = result.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(200);
+        var apiResponse = objectResult.Value.ShouldBeOfType<ApiResponse<LoginResponse>>();
+        apiResponse.Data.ShouldNotBeNull();
+        apiResponse.Data.UserId.ShouldBe(expectedOutput.UserId);
+        apiResponse.Data.Email.ShouldBe(expectedOutput.Email);
     }
 
     [Fact]
@@ -179,7 +185,7 @@ public class AuthControllerTests : TestBase
     {
         // Arrange
         LogArrange("Setting up failed login");
-        var request = new LoginRequest("test@example.com", "WrongPassword!");
+        var payload = new LoginPayload("test@example.com", "WrongPassword!");
 
         _authenticateMock
             .Setup(x => x.ExecuteAsync(
@@ -190,12 +196,13 @@ public class AuthControllerTests : TestBase
 
         // Act
         LogAct("Calling Login endpoint");
-        var result = await _sut.Login(request, CancellationToken.None);
+        var result = await _sut.Login(payload, CancellationToken.None);
 
         // Assert
-        LogAssert("Verifying Unauthorized result with ErrorResponse");
-        var unauthorized = result.ShouldBeOfType<UnauthorizedObjectResult>();
-        unauthorized.Value.ShouldBeOfType<ErrorResponse>();
+        LogAssert("Verifying 401 result with ApiResponse");
+        var objectResult = result.ShouldBeOfType<ObjectResult>();
+        objectResult.StatusCode.ShouldBe(401);
+        objectResult.Value.ShouldBeOfType<ApiResponse<LoginResponse>>();
     }
 
     #endregion
@@ -219,7 +226,7 @@ public class AuthControllerTests : TestBase
 
         // Act
         LogAct("Calling Register with correlation header");
-        await _sut.Register(new RegisterRequest("a@b.com", "ValidPassword12!"), CancellationToken.None);
+        await _sut.Register(new RegisterPayload("a@b.com", "ValidPassword12!"), CancellationToken.None);
 
         // Assert
         LogAssert("Verifying use case received the correlation id from header");
@@ -248,7 +255,7 @@ public class AuthControllerTests : TestBase
 
         // Act
         LogAct("Calling Register with tenant id header");
-        await _sut.Register(new RegisterRequest("a@b.com", "ValidPassword12!"), CancellationToken.None);
+        await _sut.Register(new RegisterPayload("a@b.com", "ValidPassword12!"), CancellationToken.None);
 
         // Assert
         LogAssert("Verifying use case received the tenant id from header");
@@ -276,7 +283,7 @@ public class AuthControllerTests : TestBase
 
         // Act
         LogAct("Calling Register with authenticated user");
-        await _sut.Register(new RegisterRequest("a@b.com", "ValidPassword12!"), CancellationToken.None);
+        await _sut.Register(new RegisterPayload("a@b.com", "ValidPassword12!"), CancellationToken.None);
 
         // Assert
         LogAssert("Verifying use case received the user name");
@@ -303,7 +310,7 @@ public class AuthControllerTests : TestBase
 
         // Act
         LogAct("Calling Register without authenticated user");
-        await _sut.Register(new RegisterRequest("a@b.com", "ValidPassword12!"), CancellationToken.None);
+        await _sut.Register(new RegisterPayload("a@b.com", "ValidPassword12!"), CancellationToken.None);
 
         // Assert
         LogAssert("Verifying use case received 'anonymous'");
