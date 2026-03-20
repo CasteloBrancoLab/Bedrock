@@ -477,6 +477,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.BuildingBlocks.Resi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.BuildingBlocks.Resilience.Polly", "src\BuildingBlocks\Resilience.Polly\Bedrock.BuildingBlocks.Resilience.Polly.csproj", "{24AF1464-A2D2-4018-8A1E-4DB977F41CDA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bedrock.BuildingBlocks.Resilience.Persistence.PostgreSql", "src\BuildingBlocks\Resilience.Persistence.PostgreSql\Bedrock.BuildingBlocks.Resilience.Persistence.PostgreSql.csproj", "{8C1A473A-53AA-4C68-811F-333AB74678BB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1855,6 +1857,18 @@ Global
 		{24AF1464-A2D2-4018-8A1E-4DB977F41CDA}.Release|x64.Build.0 = Release|Any CPU
 		{24AF1464-A2D2-4018-8A1E-4DB977F41CDA}.Release|x86.ActiveCfg = Release|Any CPU
 		{24AF1464-A2D2-4018-8A1E-4DB977F41CDA}.Release|x86.Build.0 = Release|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Debug|x64.Build.0 = Debug|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Debug|x86.Build.0 = Debug|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Release|x64.ActiveCfg = Release|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Release|x64.Build.0 = Release|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Release|x86.ActiveCfg = Release|Any CPU
+		{8C1A473A-53AA-4C68-811F-333AB74678BB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2093,5 +2107,6 @@ Global
 		{E191C88C-D18A-416A-B89C-6D46CFC56EE7} = {8BEB5BFB-CF63-05B3-21B8-9D0216CE71F9}
 		{FFA4EFC8-5857-4C90-AAAE-A33FFA4A7F1C} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
 		{24AF1464-A2D2-4018-8A1E-4DB977F41CDA} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
+		{8C1A473A-53AA-4C68-811F-333AB74678BB} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
 	EndGlobalSection
 EndGlobal
