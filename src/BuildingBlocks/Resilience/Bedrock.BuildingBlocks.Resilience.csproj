@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Assembly Information">
+    <Version>1.0.0-alpha.1</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0-alpha.1</InformationalVersion>
+    <Company>MarceloCastelo.IO</Company>
+    <Product>Bedrock</Product>
+    <Description>Resilience abstractions for Bedrock, providing contracts for retry and circuit breaker policies.</Description>
+    <Copyright>Copyright © 2023-2026 Marcelo Castelo Branco</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Bedrock.BuildingBlocks.Core.csproj" />
+  </ItemGroup>
+
+</Project>
