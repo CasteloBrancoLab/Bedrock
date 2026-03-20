@@ -5,7 +5,7 @@ using Bedrock.BuildingBlocks.Web.Logging.Extensions;
 using Bedrock.BuildingBlocks.Web.Security.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.ApiDocumentation.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.Cors.Extensions;
-using Bedrock.BuildingBlocks.Web.WebApi.CorrelationId.Extensions;
+using Bedrock.BuildingBlocks.Web.WebApi.ExecutionContextHeaders.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.ExceptionHandling.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.HealthChecks.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.OutputCaching.Extensions;
@@ -33,7 +33,7 @@ public class Program
         var app = builder.Build();
 
         app.UseBedrockSecurityHeaders();
-        app.UseBedrockCorrelationId();
+        app.UseBedrockExecutionContextHeaders();
         app.UseBedrockExceptionHandling();
         app.UseBedrockRequestLogging();
         app.UseBedrockRateLimiting();

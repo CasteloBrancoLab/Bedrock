@@ -23,11 +23,11 @@ public sealed class SecurityHeadersMiddleware
 
         // Previne MIME-type sniffing — forca o browser a respeitar o Content-Type
         // declarado, impedindo que interprete respostas como tipo diferente.
-        headers["X-Content-Type-Options"] = "nosniff";
+        headers.XContentTypeOptions = "nosniff";
 
         // Previne clickjacking — impede que a pagina seja carregada em iframes,
         // bloqueando ataques que sobrepoem UI maliciosa sobre a aplicacao.
-        headers["X-Frame-Options"] = "DENY";
+        headers.XFrameOptions = "DENY";
 
         // Controla o header Referer em navegacoes cross-origin — evita vazamento
         // de URLs internas (que podem conter tokens, IDs sensiveis) para dominios externos.
@@ -36,12 +36,12 @@ public sealed class SecurityHeadersMiddleware
         // Desabilita o filtro XSS legado do browser. A recomendacao atual da OWASP
         // e desabilitar porque o proprio filtro pode introduzir vulnerabilidades
         // (XSS Auditor bypass). A protecao correta e via CSP.
-        headers["X-XSS-Protection"] = "0";
+        headers.XXSSProtection = "0";
 
         // Content Security Policy baseline para APIs — restringe todas as origens
         // de conteudo ao proprio dominio. APIs nao servem HTML, mas o header
         // protege contra respostas interpretadas indevidamente pelo browser.
-        headers["Content-Security-Policy"] = "default-src 'self'";
+        headers.ContentSecurityPolicy = "default-src 'self'";
 
         _configure?.Invoke(headers);
 

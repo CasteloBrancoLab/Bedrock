@@ -73,7 +73,13 @@ public static class Bootstrapper
                     ExecutionContextFactory.ExecutionUserHeaderName,
                     ExecutionContextFactory.ExecutionOriginHeaderName,
                     ExecutionContextFactory.BusinessOperationCodeHeaderName)
-                .WithExposedHeaders("Retry-After", ExecutionContextFactory.CorrelationIdHeaderName)
+                .WithExposedHeaders(
+                    "Retry-After",
+                    ExecutionContextFactory.CorrelationIdHeaderName,
+                    ExecutionContextFactory.TenantIdHeaderName,
+                    ExecutionContextFactory.ExecutionUserHeaderName,
+                    ExecutionContextFactory.ExecutionOriginHeaderName,
+                    ExecutionContextFactory.BusinessOperationCodeHeaderName)
                 .WithCredentials()
                 .WithPreflightMaxAge(TimeSpan.FromHours(1)))
             .SetDefaultPolicy(CorsPolicyNames.Default)
