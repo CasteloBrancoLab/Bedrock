@@ -6,18 +6,25 @@ namespace Bedrock.BuildingBlocks.Resilience;
 /// Defines the contract for a resilience policy that wraps handler execution
 /// with retry and circuit breaker strategies.
 /// </summary>
+/// <remarks>
+/// Every resilience policy is inherently manageable — there is no separate marking interface.
+/// The <see cref="IResiliencePolicyManager"/> discovers all registered policies via DI
+/// and manages their distributed state.
+/// </remarks>
 public interface IResiliencePolicy
 {
     /// <summary>
+    /// Gets the unique identifier of this policy, used as the key in the distributed state store.
+    /// </summary>
+    string PolicyCode { get; }
+
+    // ================================
+    // Execution
+    // ================================
+
+    /// <summary>
     /// Executes the handler through the resilience pipeline with an input value.
     /// </summary>
-    /// <typeparam name="TInput">The type of the input passed to the handler.</typeparam>
-    /// <typeparam name="TOutput">The type of the handler's return value.</typeparam>
-    /// <param name="executionContext">The execution context for distributed tracing and observability.</param>
-    /// <param name="input">The input value to pass to the handler.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <param name="handler">The handler to execute within the resilience pipeline.</param>
-    /// <returns>A result envelope containing the output or failure information.</returns>
     Task<ResiliencePolicyExecutionResult<TOutput>> ExecuteAsync<TInput, TOutput>(
         ExecutionContext executionContext,
         TInput input,
@@ -26,15 +33,30 @@ public interface IResiliencePolicy
 
     /// <summary>
     /// Executes the handler through the resilience pipeline without an input value.
-    /// Delegates internally to the input-based overload with <c>null</c>.
     /// </summary>
-    /// <typeparam name="TOutput">The type of the handler's return value.</typeparam>
-    /// <param name="executionContext">The execution context for distributed tracing and observability.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <param name="handler">The handler to execute within the resilience pipeline.</param>
-    /// <returns>A result envelope containing the output or failure information.</returns>
     Task<ResiliencePolicyExecutionResult<TOutput>> ExecuteAsync<TOutput>(
         ExecutionContext executionContext,
         CancellationToken cancellationToken,
         Func<ExecutionContext, CancellationToken, Task<TOutput>> handler);
+
+    // ================================
+    // Circuit Management
+    // ================================
+
+    /// <summary>
+    /// Forces the circuit breaker to the open (isolated) state.
+    /// All subsequent calls are rejected until <see cref="ForceCloseCircuitAsync"/> is called.
+    /// </summary>
+    Task ForceOpenCircuitAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Forces the circuit breaker to the closed state, allowing all calls through.
+    /// </summary>
+    Task ForceCloseCircuitAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Registers a callback invoked when the circuit breaker changes state automatically
+    /// (due to failures, not manual control). Set by the <see cref="IResiliencePolicyManager"/>.
+    /// </summary>
+    void RegisterCircuitStateChangedCallback(CircuitStateChangedHandler handler);
 }

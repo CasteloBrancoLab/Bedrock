@@ -10,7 +10,6 @@ public sealed class PollyResiliencePolicyOptions
     internal CircuitBreakerOptions? CircuitBreaker { get; private set; }
     internal TimeProvider? TimeProvider { get; private set; }
     internal string? PolicyCode { get; private set; }
-    internal TimeSpan DistributedStatePollingInterval { get; private set; } = TimeSpan.FromSeconds(5);
 
     /// <summary>
     /// Configures the retry strategy.
@@ -64,15 +63,4 @@ public sealed class PollyResiliencePolicyOptions
         return this;
     }
 
-    /// <summary>
-    /// Sets the polling interval for reading distributed circuit breaker state from the state store.
-    /// Only effective when an <see cref="ICircuitBreakerStateStore"/> is provided. Default is 5 seconds.
-    /// </summary>
-    public PollyResiliencePolicyOptions WithDistributedStatePollingInterval(TimeSpan interval)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(interval, TimeSpan.Zero);
-
-        DistributedStatePollingInterval = interval;
-        return this;
-    }
 }

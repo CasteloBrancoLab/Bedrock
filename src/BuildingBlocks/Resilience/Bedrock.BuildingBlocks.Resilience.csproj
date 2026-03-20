@@ -7,12 +7,18 @@
     <InformationalVersion>1.0.0-alpha.1</InformationalVersion>
     <Company>MarceloCastelo.IO</Company>
     <Product>Bedrock</Product>
-    <Description>Resilience abstractions for Bedrock, providing contracts for retry and circuit breaker policies.</Description>
+    <Description>Resilience abstractions and policy manager for Bedrock, providing contracts for retry, circuit breaker, and distributed state synchronization.</Description>
     <Copyright>Copyright © 2023-2026 Marcelo Castelo Branco</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Core\Bedrock.BuildingBlocks.Core.csproj" />
+    <ProjectReference Include="..\Observability\Bedrock.BuildingBlocks.Observability.csproj" />
   </ItemGroup>
 
 </Project>
