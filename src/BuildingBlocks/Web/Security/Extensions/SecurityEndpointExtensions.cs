@@ -1,9 +1,10 @@
+using Bedrock.BuildingBlocks.Web.Security.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-namespace Bedrock.BuildingBlocks.Web.Security;
+namespace Bedrock.BuildingBlocks.Web.Security.Extensions;
 
-public static class WebApplicationExtensions
+public static class SecurityEndpointExtensions
 {
     // Registra o middleware de security headers no pipeline HTTP.
     // Deve ser chamado no inicio do pipeline (antes de routing, auth, etc.)

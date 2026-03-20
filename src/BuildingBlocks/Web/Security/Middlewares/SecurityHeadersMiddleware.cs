@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace Bedrock.BuildingBlocks.Web.Security;
+namespace Bedrock.BuildingBlocks.Web.Security.Middlewares;
 
 // Adiciona headers de seguranca padrao em todas as respostas HTTP.
 // Esses headers sao recomendacoes da OWASP para prevenir classes comuns

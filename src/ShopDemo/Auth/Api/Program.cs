@@ -2,7 +2,7 @@ using Bedrock.BuildingBlocks.Web.Hosting;
 using Bedrock.BuildingBlocks.Web.Hosting.Extensions;
 using Bedrock.BuildingBlocks.Web.Hosting.Models;
 using Bedrock.BuildingBlocks.Web.Logging.Extensions;
-using Bedrock.BuildingBlocks.Web.Security;
+using Bedrock.BuildingBlocks.Web.Security.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.ApiDocumentation.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.Cors.Extensions;
 using Bedrock.BuildingBlocks.Web.WebApi.CorrelationId.Extensions;
