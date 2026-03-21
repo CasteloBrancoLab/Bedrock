@@ -1,3 +1,5 @@
+using Polly;
+
 namespace Bedrock.BuildingBlocks.Resilience.Polly.Models;
 
 /// <summary>
@@ -5,8 +7,12 @@ namespace Bedrock.BuildingBlocks.Resilience.Polly.Models;
 /// </summary>
 public sealed class RetryOptions
 {
+    private readonly List<Action<PredicateBuilder>> _exceptionFilters = [];
+
     internal int MaxAttempts { get; private set; } = 3;
     internal Func<ExecutionContext, object?, int, TimeSpan>? JitterStrategy { get; private set; }
+    internal bool HasExceptionFilters => _exceptionFilters.Count > 0;
+    internal IReadOnlyList<Action<PredicateBuilder>> ExceptionFilters => _exceptionFilters;
 
     /// <summary>
     /// Sets the maximum number of retry attempts after the initial call.
@@ -32,6 +38,30 @@ public sealed class RetryOptions
         ArgumentNullException.ThrowIfNull(jitterStrategy);
 
         JitterStrategy = jitterStrategy;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an exception type that the retry strategy should handle.
+    /// Only exceptions matching at least one <c>Handle</c> filter are retried;
+    /// unmatched exceptions propagate immediately.
+    /// If no filters are configured, all exceptions are retried (default behavior).
+    /// </summary>
+    public RetryOptions Handle<TException>() where TException : Exception
+    {
+        _exceptionFilters.Add(pb => pb.Handle<TException>());
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a conditional exception filter for the retry strategy.
+    /// Only exceptions of the specified type that match the predicate are retried.
+    /// </summary>
+    public RetryOptions Handle<TException>(Func<TException, bool> predicate) where TException : Exception
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+
+        _exceptionFilters.Add(pb => pb.Handle(predicate));
         return this;
     }
 }

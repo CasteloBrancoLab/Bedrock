@@ -1,3 +1,5 @@
+using Polly;
+
 namespace Bedrock.BuildingBlocks.Resilience.Polly.Models;
 
 /// <summary>
@@ -5,6 +7,8 @@ namespace Bedrock.BuildingBlocks.Resilience.Polly.Models;
 /// </summary>
 public sealed class CircuitBreakerOptions
 {
+    private readonly List<Action<PredicateBuilder>> _exceptionFilters = [];
+
     internal double FailureRatio { get; private set; } = 0.5;
     internal int MinimumThroughput { get; private set; } = 10;
     internal TimeSpan BreakDuration { get; private set; } = TimeSpan.FromSeconds(30);
@@ -12,6 +16,8 @@ public sealed class CircuitBreakerOptions
     internal Action<ExecutionContext>? OnOpenedCallback { get; private set; }
     internal Action<ExecutionContext>? OnClosedCallback { get; private set; }
     internal Action<ExecutionContext>? OnHalfOpenedCallback { get; private set; }
+    internal bool HasExceptionFilters => _exceptionFilters.Count > 0;
+    internal IReadOnlyList<Action<PredicateBuilder>> ExceptionFilters => _exceptionFilters;
 
     /// <summary>
     /// Sets the failure ratio threshold within the sampling window that triggers the circuit to open.
@@ -94,6 +100,30 @@ public sealed class CircuitBreakerOptions
         ArgumentNullException.ThrowIfNull(callback);
 
         OnHalfOpenedCallback = callback;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an exception type that the circuit breaker should count toward its failure ratio.
+    /// Only exceptions matching at least one <c>Handle</c> filter are counted;
+    /// unmatched exceptions do not affect the circuit state.
+    /// If no filters are configured, all exceptions are counted (default behavior).
+    /// </summary>
+    public CircuitBreakerOptions Handle<TException>() where TException : Exception
+    {
+        _exceptionFilters.Add(pb => pb.Handle<TException>());
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a conditional exception filter for the circuit breaker.
+    /// Only exceptions of the specified type that match the predicate are counted.
+    /// </summary>
+    public CircuitBreakerOptions Handle<TException>(Func<TException, bool> predicate) where TException : Exception
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+
+        _exceptionFilters.Add(pb => pb.Handle(predicate));
         return this;
     }
 }

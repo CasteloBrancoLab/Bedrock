@@ -25,5 +25,11 @@ public enum ResiliencePolicyFailureReason
     /// <summary>
     /// The handler threw an unhandled exception that was not covered by a retry policy.
     /// </summary>
-    HandlerException = 3
+    HandlerException = 3,
+
+    /// <summary>
+    /// The handler exceeded the per-attempt timeout duration and was cancelled.
+    /// Only used when no retry policy is configured; with retry, timeouts result in <see cref="RetriesExhausted"/>.
+    /// </summary>
+    Timeout = 4
 }

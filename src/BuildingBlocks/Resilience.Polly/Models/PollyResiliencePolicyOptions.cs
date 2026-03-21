@@ -8,6 +8,7 @@ public sealed class PollyResiliencePolicyOptions
 {
     internal RetryOptions? Retry { get; private set; }
     internal CircuitBreakerOptions? CircuitBreaker { get; private set; }
+    internal TimeoutOptions? Timeout { get; private set; }
     internal TimeProvider? TimeProvider { get; private set; }
     internal string? PolicyCode { get; private set; }
 
@@ -52,6 +53,21 @@ public sealed class PollyResiliencePolicyOptions
     }
 
     /// <summary>
+    /// Configures the per-attempt timeout strategy.
+    /// The timeout wraps each individual handler invocation.
+    /// Pipeline order: CircuitBreaker → Retry → Timeout → Handler.
+    /// </summary>
+    public PollyResiliencePolicyOptions WithTimeout(Action<TimeoutOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+
+        var options = new TimeoutOptions();
+        configure(options);
+        Timeout = options;
+        return this;
+    }
+
+    /// <summary>
     /// Sets a custom policy code used as the key in the distributed state store.
     /// Defaults to the concrete policy class name if not specified.
     /// </summary>
@@ -62,5 +78,4 @@ public sealed class PollyResiliencePolicyOptions
         PolicyCode = policyCode;
         return this;
     }
-
 }

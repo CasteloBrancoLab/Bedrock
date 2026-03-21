@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using Bedrock.BuildingBlocks.Observability.ExtensionMethods;
 using Bedrock.BuildingBlocks.Resilience.Models;
 using Bedrock.BuildingBlocks.Resilience.Polly.Models;
@@ -5,35 +7,48 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.Retry;
+using Polly.Timeout;
 
 namespace Bedrock.BuildingBlocks.Resilience.Polly;
 
 /// <summary>
 /// Abstract base class for Polly-based resilience policies.
-/// Composes retry and circuit breaker strategies into a single thread-safe pipeline.
+/// Composes retry, circuit breaker, and timeout strategies into a single thread-safe pipeline.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Designed to be registered as a <b>singleton</b> in the DI container.
 /// The resilience pipeline is built once during construction and reused across all concurrent calls.
-/// All state (circuit breaker counters, timers) is managed internally by Polly's thread-safe infrastructure.
 /// </para>
 /// <para>
-/// Subclasses override <see cref="ConfigureInternal"/> to define retry, circuit breaker, and jitter settings.
-/// Logging uses the <c>*ForDistributedTracing</c> extension methods from <c>Bedrock.BuildingBlocks.Observability</c>.
-/// </para>
-/// <para>
-/// Pipeline composition: CircuitBreaker (outer) → Retry (inner) → Handler.
+/// Pipeline composition: CircuitBreaker (outer) → Retry → Timeout (inner) → Handler.
 /// The circuit breaker evaluates the final outcome after all retry attempts are exhausted.
+/// The timeout applies per-attempt, not to the total operation.
 /// </para>
 /// <para>
 /// Distributed state synchronization is handled externally by <see cref="IResiliencePolicyManager"/>.
-/// This class only fires <see cref="IResiliencePolicy.RegisterCircuitStateChangedCallback"/> notifications
-/// and exposes <see cref="ForceOpenCircuitAsync"/>/<see cref="ForceCloseCircuitAsync"/> for manual control.
 /// </para>
 /// </remarks>
 public abstract class PollyResiliencePolicyBase : IResiliencePolicy
 {
+    // ================================
+    // Metrics (OpenTelemetry-compatible via System.Diagnostics.Metrics)
+    // ================================
+
+    private static readonly Meter ResilienceMeter = new("Bedrock.BuildingBlocks.Resilience", "1.0.0");
+    private static readonly Counter<long> ExecutionCounter = ResilienceMeter.CreateCounter<long>("bedrock.resilience.executions", description: "Total resilience policy executions");
+    private static readonly Counter<long> SuccessCounter = ResilienceMeter.CreateCounter<long>("bedrock.resilience.successes", description: "Successful executions (including fallback)");
+    private static readonly Counter<long> FailureCounter = ResilienceMeter.CreateCounter<long>("bedrock.resilience.failures", description: "Failed executions");
+    private static readonly Counter<long> FallbackCounter = ResilienceMeter.CreateCounter<long>("bedrock.resilience.fallbacks", description: "Executions that used the fallback handler");
+    private static readonly Counter<long> RetryCounter = ResilienceMeter.CreateCounter<long>("bedrock.resilience.retries", description: "Individual retry attempts");
+    private static readonly Counter<long> CircuitOpenCounter = ResilienceMeter.CreateCounter<long>("bedrock.resilience.circuit_opens", description: "Circuit breaker open events");
+    private static readonly Counter<long> TimeoutCounter = ResilienceMeter.CreateCounter<long>("bedrock.resilience.timeouts", description: "Per-attempt timeout events");
+    private static readonly Histogram<double> ExecutionDuration = ResilienceMeter.CreateHistogram<double>("bedrock.resilience.execution_duration_ms", "ms", "Execution duration including retries");
+
+    // ================================
+    // Fields
+    // ================================
+
     private static readonly ResiliencePropertyKey<ExecutionContext> ExecutionContextKey = new("Bedrock.ExecutionContext");
     private static readonly ResiliencePropertyKey<object?> InputKey = new("Bedrock.Input");
 
@@ -47,7 +62,6 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
     /// <summary>
     /// Initializes the resilience policy by building the Polly pipeline from subclass configuration.
     /// </summary>
-    /// <param name="logger">The logger for distributed tracing.</param>
     protected PollyResiliencePolicyBase(ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -87,12 +101,17 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
         ExecutionContext executionContext,
         TInput input,
         CancellationToken cancellationToken,
-        Func<ExecutionContext, TInput, CancellationToken, Task<TOutput>> handler)
+        Func<ExecutionContext, TInput, CancellationToken, Task<TOutput>> handler,
+        Func<ExecutionContext, ResiliencePolicyFailureReason, Exception?, Task<TOutput>>? fallback = null)
     {
         ArgumentNullException.ThrowIfNull(executionContext);
         ArgumentNullException.ThrowIfNull(handler);
 
         var resilienceContext = ResilienceContextPool.Shared.Get(cancellationToken);
+        var stopwatch = Stopwatch.StartNew();
+        var tags = new TagList { { "policy", _policyCode } };
+
+        ExecutionCounter.Add(1, tags);
 
         try
         {
@@ -105,22 +124,38 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
                 (executionContext, input, handler)).ConfigureAwait(false);
 
             LogExecutionSucceeded(executionContext);
+            SuccessCounter.Add(1, tags);
             return ResiliencePolicyExecutionResult<TOutput>.CreateSuccess(result);
         }
         catch (BrokenCircuitException ex)
         {
-            return HandleCircuitOpenFailure<TOutput>(executionContext, ex);
+            return await HandleFailureWithOptionalFallback<TOutput>(
+                executionContext, ResiliencePolicyFailureReason.CircuitOpen, ex, fallback, tags).ConfigureAwait(false);
+        }
+        catch (TimeoutRejectedException ex)
+        {
+            TimeoutCounter.Add(1, tags);
+            var reason = _hasRetry
+                ? ResiliencePolicyFailureReason.RetriesExhausted
+                : ResiliencePolicyFailureReason.Timeout;
+
+            return await HandleFailureWithOptionalFallback<TOutput>(
+                executionContext, reason, ex, fallback, tags).ConfigureAwait(false);
         }
         catch (Exception ex) when (_hasRetry)
         {
-            return HandleRetriesExhaustedFailure<TOutput>(executionContext, ex);
+            return await HandleFailureWithOptionalFallback<TOutput>(
+                executionContext, ResiliencePolicyFailureReason.RetriesExhausted, ex, fallback, tags).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            return HandleHandlerException<TOutput>(executionContext, ex);
+            return await HandleFailureWithOptionalFallback<TOutput>(
+                executionContext, ResiliencePolicyFailureReason.HandlerException, ex, fallback, tags).ConfigureAwait(false);
         }
         finally
         {
+            stopwatch.Stop();
+            ExecutionDuration.Record(stopwatch.Elapsed.TotalMilliseconds, tags);
             ResilienceContextPool.Shared.Return(resilienceContext);
         }
     }
@@ -129,7 +164,8 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
     public Task<ResiliencePolicyExecutionResult<TOutput>> ExecuteAsync<TOutput>(
         ExecutionContext executionContext,
         CancellationToken cancellationToken,
-        Func<ExecutionContext, CancellationToken, Task<TOutput>> handler)
+        Func<ExecutionContext, CancellationToken, Task<TOutput>> handler,
+        Func<ExecutionContext, ResiliencePolicyFailureReason, Exception?, Task<TOutput>>? fallback = null)
     {
         ArgumentNullException.ThrowIfNull(handler);
 
@@ -137,7 +173,8 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
             executionContext,
             input: null,
             cancellationToken,
-            handler: (ctx, _, ct) => handler(ctx, ct));
+            handler: (ctx, _, ct) => handler(ctx, ct),
+            fallback);
     }
 
     // ================================
@@ -175,6 +212,7 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
         ConfigureTimeProvider(builder, options);
         ConfigureCircuitBreakerStrategy(builder, options.CircuitBreaker);
         ConfigureRetryStrategy(builder, options.Retry);
+        ConfigureTimeoutStrategy(builder, options.Timeout);
 
         return builder.Build();
     }
@@ -196,7 +234,7 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
             MinimumThroughput = options.MinimumThroughput,
             BreakDuration = options.BreakDuration,
             SamplingDuration = options.SamplingDuration,
-            ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+            ShouldHandle = BuildShouldHandlePredicate(options.HasExceptionFilters, options.ExceptionFilters),
             OnOpened = args =>
             {
                 HandleCircuitOpened(args, options);
@@ -228,7 +266,7 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
         builder.AddRetry(new RetryStrategyOptions
         {
             MaxRetryAttempts = options.MaxAttempts,
-            ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+            ShouldHandle = BuildShouldHandlePredicate(options.HasExceptionFilters, options.ExceptionFilters),
             DelayGenerator = CreateDelayGenerator(options),
             OnRetry = args =>
             {
@@ -236,6 +274,32 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
                 return ValueTask.CompletedTask;
             }
         });
+    }
+
+    private static void ConfigureTimeoutStrategy(ResiliencePipelineBuilder builder, TimeoutOptions? options)
+    {
+        if (options is null)
+            return;
+
+        builder.AddTimeout(options.Duration);
+    }
+
+    private static PredicateBuilder BuildShouldHandlePredicate(
+        bool hasFilters,
+        IReadOnlyList<Action<PredicateBuilder>> filters)
+    {
+        var predicateBuilder = new PredicateBuilder();
+
+        if (!hasFilters)
+        {
+            predicateBuilder.Handle<Exception>();
+            return predicateBuilder;
+        }
+
+        foreach (var filter in filters)
+            filter(predicateBuilder);
+
+        return predicateBuilder;
     }
 
     private static Func<RetryDelayGeneratorArguments<object>, ValueTask<TimeSpan?>>? CreateDelayGenerator(RetryOptions options)
@@ -260,6 +324,7 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
     private void HandleRetryAttemptFailed(OnRetryArguments<object> args, RetryOptions options)
     {
         var executionContext = GetExecutionContextFromResilienceContext(args.Context);
+        RetryCounter.Add(1, new TagList { { "policy", _policyCode } });
 
         _logger.LogWarningForDistributedTracing(
             executionContext,
@@ -272,6 +337,7 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
     private void HandleCircuitOpened(OnCircuitOpenedArguments<object> args, CircuitBreakerOptions options)
     {
         var executionContext = GetExecutionContextFromResilienceContext(args.Context);
+        CircuitOpenCounter.Add(1, new TagList { { "policy", _policyCode } });
 
         _logger.LogErrorForDistributedTracing(
             executionContext,
@@ -310,52 +376,100 @@ public abstract class PollyResiliencePolicyBase : IResiliencePolicy
     }
 
     // ================================
-    // Failure Handlers
+    // Failure Handling with Optional Fallback
     // ================================
 
-    private ResiliencePolicyExecutionResult<TOutput> HandleCircuitOpenFailure<TOutput>(
+    private async Task<ResiliencePolicyExecutionResult<TOutput>> HandleFailureWithOptionalFallback<TOutput>(
         ExecutionContext executionContext,
-        BrokenCircuitException exception)
+        ResiliencePolicyFailureReason reason,
+        Exception exception,
+        Func<ExecutionContext, ResiliencePolicyFailureReason, Exception?, Task<TOutput>>? fallback,
+        TagList tags)
     {
-        _logger.LogWarningForDistributedTracing(
-            executionContext,
-            "Resilience policy {PolicyName} execution rejected, circuit breaker is open",
-            GetType().Name);
+        LogFailure(executionContext, reason, exception);
 
-        return ResiliencePolicyExecutionResult<TOutput>.CreateFailure(
-            ResiliencePolicyFailureReason.CircuitOpen, exception);
+        if (fallback is not null)
+        {
+            return await ExecuteFallback(executionContext, reason, exception, fallback, tags).ConfigureAwait(false);
+        }
+
+        FailureCounter.Add(1, new TagList { { "policy", _policyCode }, { "reason", reason.ToString() } });
+        return ResiliencePolicyExecutionResult<TOutput>.CreateFailure(reason, exception);
     }
 
-    private ResiliencePolicyExecutionResult<TOutput> HandleRetriesExhaustedFailure<TOutput>(
+    private async Task<ResiliencePolicyExecutionResult<TOutput>> ExecuteFallback<TOutput>(
         ExecutionContext executionContext,
-        Exception exception)
+        ResiliencePolicyFailureReason originalReason,
+        Exception originalException,
+        Func<ExecutionContext, ResiliencePolicyFailureReason, Exception?, Task<TOutput>> fallback,
+        TagList tags)
     {
-        _logger.LogErrorForDistributedTracing(
-            executionContext,
-            "Resilience policy {PolicyName} all retry attempts exhausted",
-            GetType().Name);
+        try
+        {
+            var fallbackValue = await fallback(executionContext, originalReason, originalException).ConfigureAwait(false);
 
-        return ResiliencePolicyExecutionResult<TOutput>.CreateFailure(
-            ResiliencePolicyFailureReason.RetriesExhausted, exception);
-    }
+            _logger.LogInformationForDistributedTracing(
+                executionContext,
+                "Resilience policy {PolicyName} fallback executed successfully for {Reason}",
+                GetType().Name,
+                originalReason);
 
-    private ResiliencePolicyExecutionResult<TOutput> HandleHandlerException<TOutput>(
-        ExecutionContext executionContext,
-        Exception exception)
-    {
-        _logger.LogExceptionForDistributedTracing(
-            executionContext,
-            exception,
-            "Resilience policy {PolicyName} execution failed with unhandled exception",
-            GetType().Name);
+            FallbackCounter.Add(1, tags);
+            SuccessCounter.Add(1, tags);
+            return ResiliencePolicyExecutionResult<TOutput>.CreateFallback(fallbackValue, originalReason, originalException);
+        }
+        catch (Exception fallbackException)
+        {
+            _logger.LogExceptionForDistributedTracing(
+                executionContext,
+                fallbackException,
+                "Resilience policy {PolicyName} fallback also failed for {Reason}",
+                GetType().Name,
+                originalReason);
 
-        return ResiliencePolicyExecutionResult<TOutput>.CreateFailure(
-            ResiliencePolicyFailureReason.HandlerException, exception);
+            FailureCounter.Add(1, new TagList { { "policy", _policyCode }, { "reason", originalReason.ToString() } });
+            return ResiliencePolicyExecutionResult<TOutput>.CreateFailure(originalReason, originalException);
+        }
     }
 
     // ================================
     // Logging Helpers
     // ================================
+
+    private void LogFailure(ExecutionContext executionContext, ResiliencePolicyFailureReason reason, Exception exception)
+    {
+        switch (reason)
+        {
+            case ResiliencePolicyFailureReason.CircuitOpen:
+                _logger.LogWarningForDistributedTracing(
+                    executionContext,
+                    "Resilience policy {PolicyName} execution rejected, circuit breaker is open",
+                    GetType().Name);
+                break;
+
+            case ResiliencePolicyFailureReason.RetriesExhausted:
+                _logger.LogErrorForDistributedTracing(
+                    executionContext,
+                    "Resilience policy {PolicyName} all retry attempts exhausted",
+                    GetType().Name);
+                break;
+
+            case ResiliencePolicyFailureReason.Timeout:
+                _logger.LogErrorForDistributedTracing(
+                    executionContext,
+                    "Resilience policy {PolicyName} handler exceeded timeout",
+                    GetType().Name);
+                break;
+
+            case ResiliencePolicyFailureReason.HandlerException:
+                _logger.LogExceptionForDistributedTracing(
+                    executionContext,
+                    exception,
+                    "Resilience policy {PolicyName} execution failed with unhandled exception",
+                    GetType().Name);
+                break;
+        }
+    }
 
     private void LogExecutionStarted(ExecutionContext executionContext)
     {
